@@ -54,10 +54,6 @@ class FluxoCaixaApp {
 
     // Inicializar componentes
     async initComponents() {
-        // Preencher categorias
-        entradasSystem.preencherCategorias();
-        saidasSystem.preencherCategorias();
-
         // Preencher filtros
         entradasSystem.preencherFiltros();
         saidasSystem.preencherFiltros();
