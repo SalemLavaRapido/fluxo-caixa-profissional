@@ -1,0 +1,1562 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fluxo de Caixa - Estacionamento + Lava Rápido</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .status-conexao {
+            background: #28a745;
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-weight: bold;
+        }
+        
+        .status-conexao.offline {
+            background: #dc3545;
+        }
+        
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: transform 0.2s;
+        }
+        
+        .card:hover {
+            transform: translateY(-2px);
+        }
+        
+        .card h3 {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        
+        .card .valor {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .botoes-rapidos {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .btn-rapido {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            border: none;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .btn-rapido:hover {
+            transform: translateY(-3px);
+        }
+        
+        .btn-estacionamento-carro {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+        }
+        
+        .btn-estacionamento-moto {
+            background: linear-gradient(135deg, #ffc107, #ff6b6b);
+            color: white;
+        }
+        
+        .btn-lava-simples {
+            background: linear-gradient(135deg, #17a2b8, #6f42c1);
+            color: white;
+        }
+        
+        .btn-lava-completo {
+            background: linear-gradient(135deg, #e74c3c, #f39c12);
+            color: white;
+        }
+        
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .input-group input {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            width: 120px;
+            text-align: center;
+            font-size: 16px;
+        }
+        
+        .input-group button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        .tabs {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .tab-buttons {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .tab-btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .tab-btn:hover {
+            background: rgba(0,123,255,0.1);
+        }
+        
+        .tab-btn.active {
+            border-bottom-color: #007bff;
+            background: white;
+        }
+        
+        .tab-content {
+            padding: 20px;
+        }
+        
+        .tab-pane {
+            display: none;
+        }
+        
+        .tab-pane.active {
+            display: block;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-group label {
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .form-group input,
+        .form-group select {
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-warning {
+            background: #ffc107;
+            color: #333;
+        }
+        
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+        
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .table th,
+        .table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .table th {
+            background: #f8f9fa;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .table tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .badge-estacionamento {
+            background: #28a745;
+            color: white;
+        }
+        
+        .badge-lava {
+            background: #17a2b8;
+            color: white;
+        }
+        
+        .badge-carro {
+            background: #28a745;
+            color: white;
+        }
+        
+        .badge-moto {
+            background: #ffc107;
+            color: white;
+        }
+        
+        .badge-simples {
+            background: #17a2b8;
+            color: white;
+        }
+        
+        .badge-completo {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .text-success {
+            color: #28a745;
+        }
+        
+        .text-danger {
+            color: #dc3545;
+        }
+        
+        .text-warning {
+            color: #ffc107;
+        }
+        
+        .text-info {
+            color: #17a2b8;
+        }
+        
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            min-width: 300px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .alert-danger {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .alert-warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+        }
+        
+        .modal-content {
+            background: white;
+            margin: 50px auto;
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 600px;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+        }
+        
+        pre {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 14px;
+        }
+        
+        .config-nuvem {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            color: #1976d2;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .estatisticas {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .estatistica-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .estatistica-item .numero {
+            font-size: 20px;
+            font-weight: bold;
+            color: #007bff;
+        }
+        
+        .estatistica-item .label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Fluxo de Caixa Completo</h1>
+            <p>Estacionamento + Lava Rápido</p>
+            <p id="dataAtual"></p>
+        </div>
+
+        <!-- Status da Conexão -->
+        <div id="statusConexao" class="status-conexao">
+            <div class="loading" id="loadingIcon"></div>
+            <span id="statusText">Verificando conexão...</span>
+        </div>
+
+        <!-- Configuração da Nuvem -->
+        <div id="configNuvem" class="config-nuvem">
+            <h3>Configurar Conexão com Supabase</h3>
+            <p>Para usar este sistema na nuvem, você precisa configurar o Supabase:</p>
+            <ol>
+                <li>Crie uma conta gratuita em <a href="https://supabase.com" target="_blank">supabase.com</a></li>
+                <li>Crie um novo projeto</li>
+                <li>Vá em Settings > API</li>
+                <li>Copie a URL e a API Key</li>
+                <li>Execute o SQL do arquivo setup.sql</li>
+                <li>Clique no botão "Configurar" abaixo</li>
+            </ol>
+            <button class="btn btn-primary" onclick="mostrarConfigSupabase()">Configurar Supabase</button>
+        </div>
+
+        <!-- Dashboard -->
+        <div class="cards" id="dashboard" style="display: none;">
+            <div class="card">
+                <h3>Total do Dia</h3>
+                <div class="valor" id="totalDia">R$ 0,00</div>
+            </div>
+            <div class="card">
+                <h3>Estacionamento</h3>
+                <div class="valor text-success" id="totalEstacionamento">R$ 0,00</div>
+            </div>
+            <div class="card">
+                <h3>Lava Rápido</h3>
+                <div class="valor text-info" id="totalLavaRapido">R$ 0,00</div>
+            </div>
+            <div class="card">
+                <h3>Despesas</h3>
+                <div class="valor text-danger" id="totalDespesas">R$ 0,00</div>
+            </div>
+            <div class="card">
+                <h3>Lucro Líquido</h3>
+                <div class="valor text-warning" id="lucroLiquido">R$ 0,00</div>
+            </div>
+            <div class="card">
+                <button class="btn btn-warning" onclick="gerarRelatorioCompleto()">
+                    Relatório Completo
+                </button>
+            </div>
+        </div>
+
+        <!-- Botões Rápidos -->
+        <div class="botoes-rapidos" id="botoesRapidos" style="display: none;">
+            <div class="btn-rapido btn-estacionamento-carro">
+                <h3>🚗 Estacionamento Carro</h3>
+                <div class="input-group">
+                    <span style="color: white;">R$</span>
+                    <input type="number" id="valorCarro" value="15.00" step="0.01" min="0">
+                    <button onclick="registrarCarroRapido()">Registrar</button>
+                </div>
+            </div>
+            <div class="btn-rapido btn-estacionamento-moto">
+                <h3>🏍️ Estacionamento Moto</h3>
+                <div class="input-group">
+                    <span style="color: white;">R$</span>
+                    <input type="number" id="valorMoto" value="10.00" step="0.01" min="0">
+                    <button onclick="registrarMotoRapida()">Registrar</button>
+                </div>
+            </div>
+            <div class="btn-rapido btn-lava-simples">
+                <h3>🚗 Lava Simples</h3>
+                <div class="input-group">
+                    <span style="color: white;">R$</span>
+                    <input type="number" id="valorLavaSimples" value="25.00" step="0.01" min="0">
+                    <button onclick="registrarLavaSimplesRapido()">Registrar</button>
+                </div>
+            </div>
+            <div class="btn-rapido btn-lava-completo">
+                <h3>✨ Lava Completo</h3>
+                <div class="input-group">
+                    <span style="color: white;">R$</span>
+                    <input type="number" id="valorLavaCompleto" value="45.00" step="0.01" min="0">
+                    <button onclick="registrarLavaCompletoRapido()">Registrar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs" id="tabs" style="display: none;">
+            <div class="tab-buttons">
+                <button class="tab-btn active" onclick="showTab('entradas')">Entradas</button>
+                <button class="tab-btn" onclick="showTab('despesas')">Despesas</button>
+                <button class="tab-btn" onclick="showTab('estatisticas')">Estatísticas</button>
+                <button class="tab-btn" onclick="showTab('relatorio')">Relatório</button>
+            </div>
+            
+            <div class="tab-content">
+                <!-- Tab Entradas -->
+                <div id="entradas" class="tab-pane active">
+                    <form id="formEntrada" onsubmit="salvarEntrada(event)">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Serviço</label>
+                                <select id="servico" required onchange="atualizarCamposServico()">
+                                    <option value="estacionamento">Estacionamento</option>
+                                    <option value="lava_rapido">Lava Rápido</option>
+                                </select>
+                            </div>
+                            <div class="form-group" id="grupoTipoVeiculo">
+                                <label>Tipo de Veículo</label>
+                                <select id="tipoVeiculo" required>
+                                    <option value="carro">Carro</option>
+                                    <option value="moto">Moto</option>
+                                </select>
+                            </div>
+                            <div class="form-group" id="grupoTipoLava" style="display: none;">
+                                <label>Tipo de Lavagem</label>
+                                <select id="tipoLava">
+                                    <option value="simples">Lava Simples</option>
+                                    <option value="completo">Lava Completo</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Valor</label>
+                                <input type="number" id="valor" step="0.01" min="0" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Descrição</label>
+                                <input type="text" id="descricao" placeholder="Ex: Cliente normal" required>
+                            </div>
+                            <div class="form-group">
+                                <label>&nbsp;</label>
+                                <button type="submit" class="btn btn-success">Registrar</button>
+                            </div>
+                        </div>
+                    </form>
+                    
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Horário</th>
+                                <th>Serviço</th>
+                                <th>Tipo</th>
+                                <th>Descrição</th>
+                                <th>Valor</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="listaEntradas">
+                            <!-- Entradas serão carregadas aqui -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Tab Despesas -->
+                <div id="despesas" class="tab-pane">
+                    <form id="formDespesa" onsubmit="salvarDespesa(event)">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Categoria</label>
+                                <select id="categoriaDespesa" required>
+                                    <option value="">Selecione...</option>
+                                    <option value="funcionario_estacionamento">Funcionário Estacionamento</option>
+                                    <option value="funcionario_lava">Funcionário Lava</option>
+                                    <option value="produto_lavagem">Produto Lavagem</option>
+                                    <option value="manutencao_box">Manutenção Box</option>
+                                    <option value="energia">Energia</option>
+                                    <option value="agua">Água</option>
+                                    <option value="aluguel">Aluguel</option>
+                                    <option value="impostos">Impostos</option>
+                                    <option value="outros">Outros</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Valor</label>
+                                <input type="number" id="valorDespesa" step="0.01" min="0" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Descrição</label>
+                                <input type="text" id="descricaoDespesa" placeholder="Ex: Pagamento de funcionário" required>
+                            </div>
+                            <div class="form-group">
+                                <label>&nbsp;</label>
+                                <button type="submit" class="btn btn-danger">Registrar</button>
+                            </div>
+                        </div>
+                    </form>
+                    
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Horário</th>
+                                <th>Categoria</th>
+                                <th>Descrição</th>
+                                <th>Valor</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="listaDespesas">
+                            <!-- Despesas serão carregadas aqui -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Tab Estatísticas -->
+                <div id="estatisticas" class="tab-pane">
+                    <h3>Estatísticas do Dia</h3>
+                    <div class="estatisticas">
+                        <div class="estatistica-item">
+                            <div class="numero" id="statTotalCarros">0</div>
+                            <div class="label">Carros Estacionados</div>
+                        </div>
+                        <div class="estatistica-item">
+                            <div class="numero" id="statTotalMotos">0</div>
+                            <div class="label">Motos Estacionadas</div>
+                        </div>
+                        <div class="estatistica-item">
+                            <div class="numero" id="statTotalLavaSimples">0</div>
+                            <div class="label">Lava Simples</div>
+                        </div>
+                        <div class="estatistica-item">
+                            <div class="numero" id="statTotalLavaCompleto">0</div>
+                            <div class="label">Lava Completo</div>
+                        </div>
+                        <div class="estatistica-item">
+                            <div class="numero" id="statTicketMedio">R$ 0,00</div>
+                            <div class="label">Ticket Médio</div>
+                        </div>
+                        <div class="estatistica-item">
+                            <div class="numero" id="statServicoMaisPopular">-</div>
+                            <div class="label">Serviço Mais Popular</div>
+                        </div>
+                    </div>
+                    
+                    <h3>Faturamento por Serviço</h3>
+                    <div class="cards">
+                        <div class="card">
+                            <h3>Estacionamento Carros</h3>
+                            <div class="valor text-success" id="fatCarros">R$ 0,00</div>
+                        </div>
+                        <div class="card">
+                            <h3>Estacionamento Motos</h3>
+                            <div class="valor text-warning" id="fatMotos">R$ 0,00</div>
+                        </div>
+                        <div class="card">
+                            <h3>Lava Simples</h3>
+                            <div class="valor text-info" id="fatLavaSimples">R$ 0,00</div>
+                        </div>
+                        <div class="card">
+                            <h3>Lava Completo</h3>
+                            <div class="valor" style="color: #e74c3c;" id="fatLavaCompleto">R$ 0,00</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab Relatório -->
+                <div id="relatorio" class="tab-pane">
+                    <h3>Resumo Completo</h3>
+                    <div class="cards">
+                        <div class="card">
+                            <h3>Total de Entradas</h3>
+                            <div class="valor text-success" id="relatorioTotalEntradas">R$ 0,00</div>
+                        </div>
+                        <div class="card">
+                            <h3>Total de Despesas</h3>
+                            <div class="valor text-danger" id="relatorioTotalDespesas">R$ 0,00</div>
+                        </div>
+                        <div class="card">
+                            <h3>Lucro Líquido</h3>
+                            <div class="valor text-warning" id="relatorioLucro">R$ 0,00</div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 20px;">
+                        <button class="btn btn-success" onclick="exportarDados()">Exportar Dados</button>
+                        <button class="btn btn-info" onclick="gerarRelatorioCompleto()">Relatório Detalhado</button>
+                        <button class="btn btn-warning" onclick="imprimirRelatorio()">Imprimir Relatório</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Config Supabase -->
+    <div id="modalConfig" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="fecharModalConfig()">&times;</button>
+            <h3>Configurar Supabase</h3>
+            <div class="form-group">
+                <label>URL do Supabase</label>
+                <input type="text" id="supabaseUrl" placeholder="https://seu-projeto.supabase.co">
+            </div>
+            <div class="form-group">
+                <label>API Key (Anon Key)</label>
+                <input type="text" id="supabaseKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+            </div>
+            <div style="margin-top: 20px;">
+                <button class="btn btn-primary" onclick="salvarConfigSupabase()">Salvar Configuração</button>
+                <button class="btn btn-danger" onclick="fecharModalConfig()">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="fecharModal()">&times;</button>
+            <div id="modalContent"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Variáveis globais
+        let supabase = null;
+        let dados = {
+            entradas: [],
+            despesas: []
+        };
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            inicializarData();
+            verificarConfiguracao();
+        });
+
+        // Configurar data atual
+        function inicializarData() {
+            document.getElementById('dataAtual').textContent = formatarData(new Date());
+        }
+
+        // Verificar configuração do Supabase
+        function verificarConfiguracao() {
+            const config = localStorage.getItem('supabaseConfig');
+            if (config) {
+                const configData = JSON.parse(config);
+                inicializarSupabase(configData.url, configData.key);
+            } else {
+                mostrarStatusConexao(false, 'Configure o Supabase para usar o sistema na nuvem');
+            }
+        }
+
+        // Inicializar Supabase
+        function inicializarSupabase(url, key) {
+            try {
+                supabase = window.supabase.createClient(url, key);
+                mostrarStatusConexao(true, 'Conectado à nuvem');
+                carregarDados();
+                mostrarSistema();
+            } catch (error) {
+                mostrarStatusConexao(false, 'Erro na configuração do Supabase');
+                console.error('Erro ao inicializar Supabase:', error);
+            }
+        }
+
+        // Mostrar status da conexão
+        function mostrarStatusConexao(conectado, mensagem) {
+            const statusDiv = document.getElementById('statusConexao');
+            const statusText = document.getElementById('statusText');
+            const loadingIcon = document.getElementById('loadingIcon');
+            
+            if (conectado) {
+                statusDiv.className = 'status-conexao';
+                statusText.textContent = mensagem;
+                loadingIcon.style.display = 'none';
+            } else {
+                statusDiv.className = 'status-conexao offline';
+                statusText.textContent = mensagem;
+                loadingIcon.style.display = 'none';
+            }
+        }
+
+        // Mostrar sistema principal
+        function mostrarSistema() {
+            document.getElementById('configNuvem').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'grid';
+            document.getElementById('botoesRapidos').style.display = 'grid';
+            document.getElementById('tabs').style.display = 'block';
+        }
+
+        // Mostrar modal de configuração
+        function mostrarConfigSupabase() {
+            document.getElementById('modalConfig').style.display = 'block';
+        }
+
+        // Fechar modal de configuração
+        function fecharModalConfig() {
+            document.getElementById('modalConfig').style.display = 'none';
+        }
+
+        // Salvar configuração do Supabase
+        function salvarConfigSupabase() {
+            const url = document.getElementById('supabaseUrl').value.trim();
+            const key = document.getElementById('supabaseKey').value.trim();
+            
+            if (!url || !key) {
+                alert('Preencha todos os campos!');
+                return;
+            }
+            
+            // Salvar no localStorage
+            localStorage.setItem('supabaseConfig', JSON.stringify({ url, key }));
+            
+            // Inicializar Supabase
+            inicializarSupabase(url, key);
+            
+            // Fechar modal
+            fecharModalConfig();
+        }
+
+        // Atualizar campos baseado no serviço
+        function atualizarCamposServico() {
+            const servico = document.getElementById('servico').value;
+            const grupoTipoVeiculo = document.getElementById('grupoTipoVeiculo');
+            const grupoTipoLava = document.getElementById('grupoTipoLava');
+            
+            if (servico === 'estacionamento') {
+                grupoTipoVeiculo.style.display = 'block';
+                grupoTipoLava.style.display = 'none';
+            } else {
+                grupoTipoVeiculo.style.display = 'none';
+                grupoTipoLava.style.display = 'block';
+            }
+        }
+
+        // Carregar dados do Supabase
+        async function carregarDados() {
+            if (!supabase) return;
+            
+            try {
+                const hoje = new Date().toISOString().split('T')[0];
+                
+                // Carregar entradas
+                const { data: entradas, error: errorEntradas } = await supabase
+                    .from('entradas')
+                    .select('*')
+                    .gte('data', hoje)
+                    .lte('data', hoje + 'T23:59:59')
+                    .order('data', { ascending: false });
+                
+                // Carregar despesas
+                const { data: despesas, error: errorDespesas } = await supabase
+                    .from('despesas')
+                    .select('*')
+                    .gte('data', hoje)
+                    .lte('data', hoje + 'T23:59:59')
+                    .order('data', { ascending: false });
+                
+                if (errorEntradas) throw errorEntradas;
+                if (errorDespesas) throw errorDespesas;
+                
+                dados.entradas = entradas || [];
+                dados.despesas = despesas || [];
+                
+                renderizarEntradas();
+                renderizarDespesas();
+                atualizarDashboard();
+                atualizarEstatisticas();
+                
+            } catch (error) {
+                console.error('Erro ao carregar dados:', error);
+                mostrarNotificacao('Erro ao carregar dados da nuvem', 'danger');
+            }
+        }
+
+        // Salvar entrada no Supabase
+        async function salvarEntrada(e) {
+            e.preventDefault();
+            
+            if (!supabase) {
+                mostrarNotificacao('Configure o Supabase primeiro', 'warning');
+                return;
+            }
+            
+            const servico = document.getElementById('servico').value;
+            let entrada = {
+                servico: servico,
+                valor: parseFloat(document.getElementById('valor').value),
+                descricao: document.getElementById('descricao').value,
+                data: new Date().toISOString()
+            };
+            
+            if (servico === 'estacionamento') {
+                entrada.tipo_veiculo = document.getElementById('tipoVeiculo').value;
+                entrada.tipo_lavagem = null;
+            } else {
+                entrada.tipo_veiculo = null;
+                entrada.tipo_lavagem = document.getElementById('tipoLava').value;
+            }
+            
+            try {
+                const { error } = await supabase
+                    .from('entradas')
+                    .insert([entrada]);
+                
+                if (error) throw error;
+                
+                // Limpar formulário
+                document.getElementById('formEntrada').reset();
+                
+                // Recarregar dados
+                await carregarDados();
+                
+                mostrarNotificacao('Entrada salva na nuvem com sucesso!', 'success');
+                
+            } catch (error) {
+                console.error('Erro ao salvar entrada:', error);
+                mostrarNotificacao('Erro ao salvar na nuvem', 'danger');
+            }
+        }
+
+        // Salvar despesa no Supabase
+        async function salvarDespesa(e) {
+            e.preventDefault();
+            
+            if (!supabase) {
+                mostrarNotificacao('Configure o Supabase primeiro', 'warning');
+                return;
+            }
+            
+            const despesa = {
+                categoria: document.getElementById('categoriaDespesa').value,
+                valor: parseFloat(document.getElementById('valorDespesa').value),
+                descricao: document.getElementById('descricaoDespesa').value,
+                data: new Date().toISOString()
+            };
+            
+            try {
+                const { error } = await supabase
+                    .from('despesas')
+                    .insert([despesa]);
+                
+                if (error) throw error;
+                
+                // Limpar formulário
+                document.getElementById('formDespesa').reset();
+                
+                // Recarregar dados
+                await carregarDados();
+                
+                mostrarNotificacao('Despesa salva na nuvem com sucesso!', 'success');
+                
+            } catch (error) {
+                console.error('Erro ao salvar despesa:', error);
+                mostrarNotificacao('Erro ao salvar na nuvem', 'danger');
+            }
+        }
+
+        // Funções de registro rápido
+        async function registrarCarroRapido() {
+            const valor = parseFloat(document.getElementById('valorCarro').value);
+            
+            if (!valor || valor <= 0) {
+                mostrarNotificacao('Informe um valor válido', 'warning');
+                return;
+            }
+            
+            if (!supabase) {
+                mostrarNotificacao('Configure o Supabase primeiro', 'warning');
+                return;
+            }
+            
+            const entrada = {
+                servico: 'estacionamento',
+                tipo_veiculo: 'carro',
+                tipo_lavagem: null,
+                valor: valor,
+                descricao: 'Carro - Registro rápido',
+                data: new Date().toISOString()
+            };
+            
+            try {
+                const { error } = await supabase
+                    .from('entradas')
+                    .insert([entrada]);
+                
+                if (error) throw error;
+                
+                await carregarDados();
+                mostrarNotificacao(`Carro de ${formatarDinheiro(valor)} salvo!`, 'success');
+                
+            } catch (error) {
+                console.error('Erro ao registrar carro:', error);
+                mostrarNotificacao('Erro ao salvar na nuvem', 'danger');
+            }
+        }
+
+        async function registrarMotoRapida() {
+            const valor = parseFloat(document.getElementById('valorMoto').value);
+            
+            if (!valor || valor <= 0) {
+                mostrarNotificacao('Informe um valor válido', 'warning');
+                return;
+            }
+            
+            if (!supabase) {
+                mostrarNotificacao('Configure o Supabase primeiro', 'warning');
+                return;
+            }
+            
+            const entrada = {
+                servico: 'estacionamento',
+                tipo_veiculo: 'moto',
+                tipo_lavagem: null,
+                valor: valor,
+                descricao: 'Moto - Registro rápido',
+                data: new Date().toISOString()
+            };
+            
+            try {
+                const { error } = await supabase
+                    .from('entradas')
+                    .insert([entrada]);
+                
+                if (error) throw error;
+                
+                await carregarDados();
+                mostrarNotificacao(`Moto de ${formatarDinheiro(valor)} salva!`, 'success');
+                
+            } catch (error) {
+                console.error('Erro ao registrar moto:', error);
+                mostrarNotificacao('Erro ao salvar na nuvem', 'danger');
+            }
+        }
+
+        async function registrarLavaSimplesRapido() {
+            const valor = parseFloat(document.getElementById('valorLavaSimples').value);
+            
+            if (!valor || valor <= 0) {
+                mostrarNotificacao('Informe um valor válido', 'warning');
+                return;
+            }
+            
+            if (!supabase) {
+                mostrarNotificacao('Configure o Supabase primeiro', 'warning');
+                return;
+            }
+            
+            const entrada = {
+                servico: 'lava_rapido',
+                tipo_veiculo: null,
+                tipo_lavagem: 'simples',
+                valor: valor,
+                descricao: 'Lava Simples - Registro rápido',
+                data: new Date().toISOString()
+            };
+            
+            try {
+                const { error } = await supabase
+                    .from('entradas')
+                    .insert([entrada]);
+                
+                if (error) throw error;
+                
+                await carregarDados();
+                mostrarNotificacao(`Lava Simples de ${formatarDinheiro(valor)} salvo!`, 'success');
+                
+            } catch (error) {
+                console.error('Erro ao registrar lava simples:', error);
+                mostrarNotificacao('Erro ao salvar na nuvem', 'danger');
+            }
+        }
+
+        async function registrarLavaCompletoRapido() {
+            const valor = parseFloat(document.getElementById('valorLavaCompleto').value);
+            
+            if (!valor || valor <= 0) {
+                mostrarNotificacao('Informe um valor válido', 'warning');
+                return;
+            }
+            
+            if (!supabase) {
+                mostrarNotificacao('Configure o Supabase primeiro', 'warning');
+                return;
+            }
+            
+            const entrada = {
+                servico: 'lava_rapido',
+                tipo_veiculo: null,
+                tipo_lavagem: 'completo',
+                valor: valor,
+                descricao: 'Lava Completo - Registro rápido',
+                data: new Date().toISOString()
+            };
+            
+            try {
+                const { error } = await supabase
+                    .from('entradas')
+                    .insert([entrada]);
+                
+                if (error) throw error;
+                
+                await carregarDados();
+                mostrarNotificacao(`Lava Completo de ${formatarDinheiro(valor)} salvo!`, 'success');
+                
+            } catch (error) {
+                console.error('Erro ao registrar lava completo:', error);
+                mostrarNotificacao('Erro ao salvar na nuvem', 'danger');
+            }
+        }
+
+        // Excluir entrada
+        async function excluirEntrada(id) {
+            if (!confirm('Tem certeza que deseja excluir esta entrada?')) return;
+            
+            if (!supabase) return;
+            
+            try {
+                const { error } = await supabase
+                    .from('entradas')
+                    .delete()
+                    .eq('id', id);
+                
+                if (error) throw error;
+                
+                await carregarDados();
+                mostrarNotificacao('Entrada excluída com sucesso!', 'success');
+                
+            } catch (error) {
+                console.error('Erro ao excluir entrada:', error);
+                mostrarNotificacao('Erro ao excluir da nuvem', 'danger');
+            }
+        }
+
+        // Excluir despesa
+        async function excluirDespesa(id) {
+            if (!confirm('Tem certeza que deseja excluir esta despesa?')) return;
+            
+            if (!supabase) return;
+            
+            try {
+                const { error } = await supabase
+                    .from('despesas')
+                    .delete()
+                    .eq('id', id);
+                
+                if (error) throw error;
+                
+                await carregarDados();
+                mostrarNotificacao('Despesa excluída com sucesso!', 'success');
+                
+            } catch (error) {
+                console.error('Erro ao excluir despesa:', error);
+                mostrarNotificacao('Erro ao excluir da nuvem', 'danger');
+            }
+        }
+
+        // Atualizar dashboard
+        function atualizarDashboard() {
+            const estacionamentoCarros = dados.entradas
+                .filter(e => e.servico === 'estacionamento' && e.tipo_veiculo === 'carro')
+                .reduce((sum, e) => sum + e.valor, 0);
+            
+            const estacionamentoMotos = dados.entradas
+                .filter(e => e.servico === 'estacionamento' && e.tipo_veiculo === 'moto')
+                .reduce((sum, e) => sum + e.valor, 0);
+            
+            const lavaSimples = dados.entradas
+                .filter(e => e.servico === 'lava_rapido' && e.tipo_lavagem === 'simples')
+                .reduce((sum, e) => sum + e.valor, 0);
+            
+            const lavaCompleto = dados.entradas
+                .filter(e => e.servico === 'lava_rapido' && e.tipo_lavagem === 'completo')
+                .reduce((sum, e) => sum + e.valor, 0);
+            
+            const totalEstacionamento = estacionamentoCarros + estacionamentoMotos;
+            const totalLavaRapido = lavaSimples + lavaCompleto;
+            const totalEntradas = totalEstacionamento + totalLavaRapido;
+            const totalDespesas = dados.despesas.reduce((sum, d) => sum + d.valor, 0);
+            const lucroLiquido = totalEntradas - totalDespesas;
+            
+            document.getElementById('totalDia').textContent = formatarDinheiro(totalEntradas);
+            document.getElementById('totalEstacionamento').textContent = formatarDinheiro(totalEstacionamento);
+            document.getElementById('totalLavaRapido').textContent = formatarDinheiro(totalLavaRapido);
+            document.getElementById('totalDespesas').textContent = formatarDinheiro(totalDespesas);
+            document.getElementById('lucroLiquido').textContent = formatarDinheiro(lucroLiquido);
+            
+            // Atualizar relatório
+            document.getElementById('relatorioTotalEntradas').textContent = formatarDinheiro(totalEntradas);
+            document.getElementById('relatorioTotalDespesas').textContent = formatarDinheiro(totalDespesas);
+            document.getElementById('relatorioLucro').textContent = formatarDinheiro(lucroLiquido);
+        }
+
+        // Atualizar estatísticas
+        function atualizarEstatisticas() {
+            const carros = dados.entradas.filter(e => e.servico === 'estacionamento' && e.tipo_veiculo === 'carro');
+            const motos = dados.entradas.filter(e => e.servico === 'estacionamento' && e.tipo_veiculo === 'moto');
+            const lavaSimples = dados.entradas.filter(e => e.servico === 'lava_rapido' && e.tipo_lavagem === 'simples');
+            const lavaCompleto = dados.entradas.filter(e => e.servico === 'lava_rapido' && e.tipo_lavagem === 'completo');
+            
+            const totalEntradas = dados.entradas.reduce((sum, e) => sum + e.valor, 0);
+            const ticketMedio = dados.entradas.length > 0 ? totalEntradas / dados.entradas.length : 0;
+            
+            // Encontrar serviço mais popular
+            const servicos = {};
+            dados.entradas.forEach(e => {
+                const key = e.servico === 'estacionamento' ? 
+                    (e.tipo_veiculo === 'carro' ? 'Est. Carros' : 'Est. Motos') :
+                    (e.tipo_lavagem === 'simples' ? 'Lava Simples' : 'Lava Completo');
+                servicos[key] = (servicos[key] || 0) + 1;
+            });
+            
+            const servicoMaisPopular = Object.keys(servicos).reduce((a, b) => 
+                servicos[a] > servicos[b] ? a : b, '-');
+            
+            // Atualizar contadores
+            document.getElementById('statTotalCarros').textContent = carros.length;
+            document.getElementById('statTotalMotos').textContent = motos.length;
+            document.getElementById('statTotalLavaSimples').textContent = lavaSimples.length;
+            document.getElementById('statTotalLavaCompleto').textContent = lavaCompleto.length;
+            document.getElementById('statTicketMedio').textContent = formatarDinheiro(ticketMedio);
+            document.getElementById('statServicoMaisPopular').textContent = servicoMaisPopular;
+            
+            // Atualizar faturamento
+            const fatCarros = carros.reduce((sum, e) => sum + e.valor, 0);
+            const fatMotos = motos.reduce((sum, e) => sum + e.valor, 0);
+            const fatLavaSimples = lavaSimples.reduce((sum, e) => sum + e.valor, 0);
+            const fatLavaCompleto = lavaCompleto.reduce((sum, e) => sum + e.valor, 0);
+            
+            document.getElementById('fatCarros').textContent = formatarDinheiro(fatCarros);
+            document.getElementById('fatMotos').textContent = formatarDinheiro(fatMotos);
+            document.getElementById('fatLavaSimples').textContent = formatarDinheiro(fatLavaSimples);
+            document.getElementById('fatLavaCompleto').textContent = formatarDinheiro(fatLavaCompleto);
+        }
+
+        // Renderizar entradas
+        function renderizarEntradas() {
+            const tbody = document.getElementById('listaEntradas');
+            
+            if (dados.entradas.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Nenhuma entrada registrada</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = dados.entradas.map(entrada => {
+                let servicoBadge = '';
+                let tipoBadge = '';
+                
+                if (entrada.servico === 'estacionamento') {
+                    servicoBadge = '<span class="badge badge-estacionamento">Estacionamento</span>';
+                    tipoBadge = entrada.tipo_veiculo === 'carro' ? 
+                        '<span class="badge badge-carro">Carro</span>' : 
+                        '<span class="badge badge-moto">Moto</span>';
+                } else {
+                    servicoBadge = '<span class="badge badge-lava">Lava Rápido</span>';
+                    tipoBadge = entrada.tipo_lavagem === 'simples' ? 
+                        '<span class="badge badge-simples">Simples</span>' : 
+                        '<span class="badge badge-completo">Completo</span>';
+                }
+                
+                return `
+                    <tr>
+                        <td>${formatarHora(new Date(entrada.data))}</td>
+                        <td>${servicoBadge}</td>
+                        <td>${tipoBadge}</td>
+                        <td>${entrada.descricao}</td>
+                        <td class="text-success">+${formatarDinheiro(entrada.valor)}</td>
+                        <td>
+                            <button class="btn btn-sm btn-danger" onclick="excluirEntrada(${entrada.id})">
+                                Excluir
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Renderizar despesas
+        function renderizarDespesas() {
+            const tbody = document.getElementById('listaDespesas');
+            
+            if (dados.despesas.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Nenhuma despesa registrada</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = dados.despesas.map(despesa => `
+                <tr>
+                    <td>${formatarHora(new Date(despesa.data))}</td>
+                    <td>${formatarCategoria(despesa.categoria)}</td>
+                    <td>${despesa.descricao}</td>
+                    <td class="text-danger">-${formatarDinheiro(despesa.valor)}</td>
+                    <td>
+                        <button class="btn btn-sm btn-danger" onclick="excluirDespesa(${despesa.id})">
+                            Excluir
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Exportar dados
+        function exportarDados() {
+            const dadosExport = {
+                data: formatarData(new Date()),
+                entradas: dados.entradas,
+                despesas: dados.despesas,
+                resumo: {
+                    estacionamentoCarros: dados.entradas.filter(e => e.servico === 'estacionamento' && e.tipo_veiculo === 'carro').reduce((sum, e) => sum + e.valor, 0),
+                    estacionamentoMotos: dados.entradas.filter(e => e.servico === 'estacionamento' && e.tipo_veiculo === 'moto').reduce((sum, e) => sum + e.valor, 0),
+                    lavaSimples: dados.entradas.filter(e => e.servico === 'lava_rapido' && e.tipo_lavagem === 'simples').reduce((sum, e) => sum + e.valor, 0),
+                    lavaCompleto: dados.entradas.filter(e => e.servico === 'lava_rapido' && e.tipo_lavagem === 'completo').reduce((sum, e) => sum + e.valor, 0),
+                    totalDespesas: dados.despesas.reduce((sum, d) => sum + d.valor, 0)
+                }
+            };
+            
+            const blob = new Blob([JSON.stringify(dadosExport, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `fluxo-completo-${formatarData(new Date()).replace(/\//g, '-')}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            mostrarNotificacao('Dados exportados com sucesso!', 'success');
+        }
+
+        // Gerar relatório completo
+        function gerarRelatorioCompleto() {
+            const estacionamentoCarros = dados.entradas
+                .filter(e => e.servico === 'estacionamento' && e.tipo_veiculo === 'carro')
+                .reduce((sum, e) => sum + e.valor, 0);
+            
+            const estacionamentoMotos = dados.entradas
+                .filter(e => e.servico === 'estacionamento' && e.tipo_veiculo === 'moto')
+                .reduce((sum, e) => sum + e.valor, 0);
+            
+            const lavaSimples = dados.entradas
+                .filter(e => e.servico === 'lava_rapido' && e.tipo_lavagem === 'simples')
+                .reduce((sum, e) => sum + e.valor, 0);
+            
+            const lavaCompleto = dados.entradas
+                .filter(e => e.servico === 'lava_rapido' && e.tipo_lavagem === 'completo')
+                .reduce((sum, e) => sum + e.valor, 0);
+            
+            const totalEstacionamento = estacionamentoCarros + estacionamentoMotos;
+            const totalLavaRapido = lavaSimples + lavaCompleto;
+            const totalEntradas = totalEstacionamento + totalLavaRapido;
+            const totalDespesas = dados.despesas.reduce((sum, d) => sum + d.valor, 0);
+            const lucro = totalEntradas - totalDespesas;
+            
+            const relatorio = `
+=====================================================
+RELATÓRIO COMPLETO - ESTACIONAMENTO + LAVA RÁPIDO
+${formatarData(new Date())}
+=====================================================
+
+ESTACIONAMENTO:
+  Carros: ${formatarDinheiro(estacionamentoCarros)} (${dados.entradas.filter(e => e.servico === 'estacionamento' && e.tipo_veiculo === 'carro').length} veículos)
+  Motos: ${formatarDinheiro(estacionamentoMotos)} (${dados.entradas.filter(e => e.servico === 'estacionamento' && e.tipo_veiculo === 'moto').length} veículos)
+  Total Estacionamento: ${formatarDinheiro(totalEstacionamento)}
+
+LAVA RÁPIDO:
+  Lava Simples: ${formatarDinheiro(lavaSimples)} (${dados.entradas.filter(e => e.servico === 'lava_rapido' && e.tipo_lavagem === 'simples').length} serviços)
+  Lava Completo: ${formatarDinheiro(lavaCompleto)} (${dados.entradas.filter(e => e.servico === 'lava_rapido' && e.tipo_lavagem === 'completo').length} serviços)
+  Total Lava Rápido: ${formatarDinheiro(totalLavaRapido)}
+
+RESUMO FINANCEIRO:
+  Total de Entradas: ${formatarDinheiro(totalEntradas)}
+  Total de Despesas: ${formatarDinheiro(totalDespesas)}
+  Lucro Líquido do Dia: ${formatarDinheiro(lucro)}
+
+ESTATÍSTICAS:
+  Total de Serviços: ${dados.entradas.length}
+  Ticket Médio: ${dados.entradas.length > 0 ? formatarDinheiro(totalEntradas / dados.entradas.length) : 'R$ 0,00'}
+  Total de Despesas: ${dados.despesas.length}
+
+=====================================================
+Dados salvos na nuvem via Supabase
+=====================================================
+            `;
+            
+            // Mostrar modal
+            const modalContent = document.getElementById('modalContent');
+            modalContent.innerHTML = `
+                <h3>Relatório Completo do Dia</h3>
+                <pre>${relatorio}</pre>
+                <div style="margin-top: 20px;">
+                    <button class="btn btn-primary" onclick="copiarRelatorio()">Copiar Relatório</button>
+                    <button class="btn btn-success" onclick="exportarDados()">Exportar Dados</button>
+                    <button class="btn btn-danger" onclick="fecharModal()">Fechar</button>
+                </div>
+            `;
+            
+            document.getElementById('modal').style.display = 'block';
+            window.relatorioAtual = relatorio;
+        }
+
+        // Imprimir relatório
+        function imprimirRelatorio() {
+            window.print();
+        }
+
+        // Copiar relatório para área de transferência
+        function copiarRelatorio() {
+            if (window.relatorioAtual) {
+                navigator.clipboard.writeText(window.relatorioAtual).then(() => {
+                    mostrarNotificacao('Relatório copiado para a área de transferência!', 'success');
+                }).catch(() => {
+                    mostrarNotificacao('Erro ao copiar relatório', 'danger');
+                });
+            }
+        }
+
+        // Fechar modal
+        function fecharModal() {
+            document.getElementById('modal').style.display = 'none';
+        }
+
+        // Tabs
+        function showTab(tabName) {
+            // Esconder todas as tabs
+            document.querySelectorAll('.tab-pane').forEach(pane => {
+                pane.classList.remove('active');
+            });
+            
+            // Remover active de todos os botões
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Mostrar tab selecionada
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Funções utilitárias
+        function formatarDinheiro(valor) {
+            return new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+            }).format(valor);
+        }
+
+        function formatarData(data) {
+            return new Intl.DateTimeFormat('pt-BR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            }).format(data);
+        }
+
+        function formatarHora(data) {
+            return new Intl.DateTimeFormat('pt-BR', {
+                hour: '2-digit',
+                minute: '2-digit'
+            }).format(data);
+        }
+
+        function formatarCategoria(categoria) {
+            const categorias = {
+                'funcionario_estacionamento': 'Func. Estacionamento',
+                'funcionario_lava': 'Func. Lava',
+                'produto_lavagem': 'Produto Lavagem',
+                'manutencao_box': 'Manutenção Box',
+                'energia': 'Energia',
+                'agua': 'Água',
+                'aluguel': 'Aluguel',
+                'impostos': 'Impostos',
+                'outros': 'Outros'
+            };
+            return categorias[categoria] || categoria;
+        }
+
+        function mostrarNotificacao(mensagem, tipo = 'success') {
+            const notificacao = document.createElement('div');
+            notificacao.className = `alert alert-${tipo}`;
+            notificacao.textContent = mensagem;
+            
+            document.body.appendChild(notificacao);
+            
+            // Auto remover após 3 segundos
+            setTimeout(() => {
+                if (notificacao.parentNode) {
+                    notificacao.parentNode.removeChild(notificacao);
+                }
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

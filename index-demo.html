@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fluxo de Caixa - Modo Demo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .main-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            margin: 20px auto;
+            max-width: 1200px;
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #007bff, #17a2b8);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .demo-notice {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px;
+        }
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+        .btn-custom {
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="main-container">
+            <div class="header">
+                <h1>Fluxo de Caixa Profissional</h1>
+                <p>Modo Demo - Teste de Interface</p>
+            </div>
+
+            <div class="demo-notice">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>MODO DEMO:</strong> Sistema funcionando em modo demonstração. Configure o Supabase para usar dados reais.
+            </div>
+
+            <div class="p-4">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <h3 class="text-success">R$ 1.500,00</h3>
+                            <p>Total de Entradas</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <h3 class="text-danger">R$ 800,00</h3>
+                            <p>Total de Saídas</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <h3 class="text-info">R$ 700,00</h3>
+                            <p>Saldo Final</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <h3 class="text-warning">87.5%</h3>
+                            <p>Crescimento</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <h5>Entradas Recentes</h5>
+                            <table class="table">
+                                <tr>
+                                    <td>20/04/2024</td>
+                                    <td>Venda de produto</td>
+                                    <td class="text-success">+R$ 500,00</td>
+                                </tr>
+                                <tr>
+                                    <td>19/04/2024</td>
+                                    <td>Serviço prestado</td>
+                                    <td class="text-success">+R$ 300,00</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <h5>Saídas Recentes</h5>
+                            <table class="table">
+                                <tr>
+                                    <td>20/04/2024</td>
+                                    <td>Aluguel</td>
+                                    <td class="text-danger">-R$ 500,00</td>
+                                </tr>
+                                <tr>
+                                    <td>19/04/2024</td>
+                                    <td>Compras</td>
+                                    <td class="text-danger">-R$ 300,00</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-center mt-4">
+                    <button class="btn btn-success btn-custom" onclick="alert('Sistema pronto! Configure o Supabase para usar dados reais.')">
+                        <i class="fas fa-check me-2"></i>Sistema Funcionando!
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

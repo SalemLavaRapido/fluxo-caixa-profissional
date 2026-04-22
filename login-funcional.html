@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Funcional - Fluxo de Caixa</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .login-container {
+            max-width: 400px;
+            margin: 50px auto;
+            padding: 40px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        .form-floating {
+            margin-bottom: 20px;
+        }
+        .btn-custom {
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="text-center mb-4">
+            <h2>Fluxo de Caixa Profissional</h2>
+            <p>Configuração Corrigida</p>
+        </div>
+
+        <div id="status"></div>
+
+        <!-- Login Form -->
+        <form id="loginForm">
+            <div class="form-floating">
+                <input type="email" class="form-control" id="email" placeholder="name@example.com" required>
+                <label for="email">Email</label>
+            </div>
+            <div class="form-floating">
+                <input type="password" class="form-control" id="password" placeholder="Senha" required>
+                <label for="password">Senha</label>
+            </div>
+            <button type="submit" class="btn btn-primary btn-custom">
+                <i class="fas fa-sign-in-alt me-2"></i>Entrar
+            </button>
+        </form>
+
+        <!-- Register Form -->
+        <div class="text-center mt-3">
+            <button class="btn btn-success btn-custom" onclick="showRegisterForm()">
+                <i class="fas fa-user-plus me-2"></i>Cadastrar Novo Usuário
+            </button>
+        </div>
+
+        <!-- Register Form (Hidden Initially) -->
+        <form id="registerForm" style="display: none;">
+            <div class="form-floating">
+                <input type="text" class="form-control" id="name" placeholder="Seu nome" required>
+                <label for="name">Nome</label>
+            </div>
+            <div class="form-floating">
+                <input type="email" class="form-control" id="regEmail" placeholder="name@example.com" required>
+                <label for="regEmail">Email</label>
+            </div>
+            <div class="form-floating">
+                <input type="password" class="form-control" id="regPassword" placeholder="Senha" required>
+                <label for="regPassword">Senha</label>
+            </div>
+            <div class="form-floating">
+                <input type="password" class="form-control" id="confirmPassword" placeholder="Confirmar senha" required>
+                <label for="confirmPassword">Confirmar Senha</label>
+            </div>
+            <button type="submit" class="btn btn-success btn-custom">
+                <i class="fas fa-user-plus me-2"></i>Cadastrar
+            </button>
+        </form>
+
+        <div class="text-center mt-3">
+            <button class="btn btn-info btn-custom" onclick="goToMainApp()">
+                <i class="fas fa-arrow-right me-2"></i>Ir para Sistema Principal
+            </button>
+        </div>
+
+        <div class="text-center mt-3">
+            <button class="btn btn-warning btn-custom" onclick="goToLocalVersion()">
+                <i class="fas fa-database me-2"></i>Usar Versão Local
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Configuração direta no código
+        const SUPABASE_URL = 'https://emkiewosmlnyjnpujbui.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_Bd982ryXG_esL01jPijc_A_2u3pY8vV';
+        
+        let supabase;
+
+        // Inicializar Supabase
+        function initSupabase() {
+            try {
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                console.log('✅ Supabase inicializado com sucesso!');
+                console.log('URL:', SUPABASE_URL);
+                showStatus('success', 'Supabase conectado com sucesso!');
+                return true;
+            } catch (error) {
+                console.error('Erro ao inicializar Supabase:', error);
+                showStatus('error', 'Erro ao inicializar Supabase: ' + error.message);
+                return false;
+            }
+        }
+
+        // Mostrar status
+        function showStatus(type, message) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        // Mostrar/Ocultar formulários
+        function showRegisterForm() {
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('registerForm').style.display = 'block';
+        }
+
+        function showLoginForm() {
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('registerForm').style.display = 'none';
+        }
+
+        // Login
+        async function handleLogin(event) {
+            event.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            if (!email || !password) {
+                showStatus('error', 'Preencha todos os campos!');
+                return;
+            }
+
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+
+                if (error) {
+                    showStatus('error', 'Erro no login: ' + error.message);
+                } else {
+                    showStatus('success', 'Login realizado com sucesso! Redirecionando...');
+                    // Salvar sessão
+                    localStorage.setItem('user_session', JSON.stringify(data));
+                    // Redirecionar para o sistema principal
+                    setTimeout(() => {
+                        window.open('index.html', '_self');
+                    }, 2000);
+                }
+            } catch (err) {
+                showStatus('error', 'Erro no login: ' + err.message);
+            }
+        }
+
+        // Registro
+        async function handleRegister(event) {
+            event.preventDefault();
+            
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            if (!name || !email || !password || !confirmPassword) {
+                showStatus('error', 'Preencha todos os campos!');
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                showStatus('error', 'As senhas não coincidem!');
+                return;
+            }
+
+            if (password.length < 6) {
+                showStatus('error', 'A senha deve ter pelo menos 6 caracteres!');
+                return;
+            }
+
+            try {
+                const { data, error } = await supabase.auth.signUp({
+                    email: email,
+                    password: password,
+                    options: {
+                        data: {
+                            name: name
+                        }
+                    }
+                });
+
+                if (error) {
+                    showStatus('error', 'Erro no cadastro: ' + error.message);
+                } else {
+                    showStatus('success', 'Cadastro realizado com sucesso! Verifique seu email.');
+                    // Limpar formulário
+                    document.getElementById('registerForm').reset();
+                    // Mostrar formulário de login
+                    setTimeout(() => {
+                        showLoginForm();
+                    }, 3000);
+                }
+            } catch (err) {
+                showStatus('error', 'Erro no cadastro: ' + err.message);
+            }
+        }
+
+        // Navegação
+        function goToMainApp() {
+            window.open('index.html', '_self');
+        }
+
+        function goToLocalVersion() {
+            window.open('fluxo-caixa-local.html', '_self');
+        }
+
+        // Event listeners
+        document.getElementById('loginForm').addEventListener('submit', handleLogin);
+        document.getElementById('registerForm').addEventListener('submit', handleRegister);
+
+        // Inicializar ao carregar
+        window.onload = function() {
+            initSupabase();
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug de Erro - Fluxo de Caixa</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .debug-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            margin: 20px auto;
+            max-width: 1000px;
+            padding: 30px;
+        }
+        .debug-header {
+            background: linear-gradient(135deg, #dc3545, #fd7e14);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .debug-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #dc3545;
+        }
+        .debug-log {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 10px 0;
+        }
+        .status-ok {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .status-error {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .status-warning {
+            color: #ffc107;
+            font-weight: bold;
+        }
+        .btn-debug {
+            background: linear-gradient(135deg, #17a2b8, #6f42c1);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .btn-debug:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(23, 162, 184, 0.3);
+        }
+        .test-result {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            font-family: monospace;
+        }
+        .test-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .test-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .test-warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+    </style>
+</head>
+<body>
+    <div class="debug-container">
+        <!-- Header -->
+        <div class="debug-header">
+            <h1>DEBUG DE ERRO</h1>
+            <p>Fluxo de Caixa - Sa Lavagem e Estacionamento</p>
+        </div>
+
+        <!-- Informações do Sistema -->
+        <div class="debug-section">
+            <h3><i class="fas fa-info-circle me-2"></i>Informações do Sistema</h3>
+            <div id="systemInfo"></div>
+        </div>
+
+        <!-- Teste de Conexão -->
+        <div class="debug-section">
+            <h3><i class="fas fa-wifi me-2"></i>Teste de Conexão</h3>
+            <button class="btn btn-debug me-2" onclick="testarConexao()">
+                <i class="fas fa-plug me-2"></i>Testar Conexão
+            </button>
+            <button class="btn btn-debug" onclick="testarSupabase()">
+                <i class="fas fa-database me-2"></i>Testar Supabase
+            </button>
+            <div id="conexaoResult"></div>
+        </div>
+
+        <!-- Teste de JavaScript -->
+        <div class="debug-section">
+            <h3><i class="fas fa-code me-2"></i>Teste de JavaScript</h3>
+            <button class="btn btn-debug me-2" onclick="testarJavaScript()">
+                <i class="fas fa-bug me-2"></i>Testar JavaScript
+            </button>
+            <button class="btn btn-debug" onclick="testarLocalStorage()">
+                <i class="fas fa-save me-2"></i>Testar LocalStorage
+            </button>
+            <div id="jsResult"></div>
+        </div>
+
+        <!-- Teste de Login -->
+        <div class="debug-section">
+            <h3><i class="fas fa-sign-in-alt me-2"></i>Teste de Login</h3>
+            <button class="btn btn-debug me-2" onclick="testarLoginLocal()">
+                <i class="fas fa-user me-2"></i>Testar Login Local
+            </button>
+            <button class="btn btn-debug" onclick="testarLoginSupabase()">
+                <i class="fas fa-cloud me-2"></i>Testar Login Supabase
+            </button>
+            <div id="loginResult"></div>
+        </div>
+
+        <!-- Teste de CRUD -->
+        <div class="debug-section">
+            <h3><i class="fas fa-database me-2"></i>Teste de CRUD</h3>
+            <button class="btn btn-debug me-2" onclick="testarCRUD()">
+                <i class="fas fa-plus me-2"></i>Testar CRUD
+            </button>
+            <button class="btn btn-debug" onclick="testarDados()">
+                <i class="fas fa-table me-2"></i>Testar Dados
+            </button>
+            <div id="crudResult"></div>
+        </div>
+
+        <!-- Console Log -->
+        <div class="debug-section">
+            <h3><i class="fas fa-terminal me-2"></i>Console Log</h3>
+            <div class="debug-log" id="debugLog"></div>
+            <button class="btn btn-debug" onclick="limparLog()">
+                <i class="fas fa-trash me-2"></i>Limpar Log
+            </button>
+        </div>
+
+        <!-- Recomendações -->
+        <div class="debug-section">
+            <h3><i class="fas fa-lightbulb me-2"></i>Recomendações</h3>
+            <div id="recomendacoes"></div>
+        </div>
+    </div>
+
+    <script>
+        // Sistema de Debug
+        class DebugSystem {
+            constructor() {
+                this.logMessages = [];
+                this.init();
+            }
+
+            init() {
+                this.mostrarInformacoesSistema();
+                this.interceptarErros();
+                this.adicionarLog('Sistema de debug inicializado', 'info');
+            }
+
+            interceptarErros() {
+                // Interceptar erros JavaScript
+                window.addEventListener('error', (event) => {
+                    this.adicionarLog(`ERRO: ${event.message} em ${event.filename}:${event.lineno}`, 'error');
+                });
+
+                // Interceptar erros de Promise
+                window.addEventListener('unhandledrejection', (event) => {
+                    this.adicionarLog(`ERRO DE PROMISE: ${event.reason}`, 'error');
+                });
+            }
+
+            mostrarInformacoesSistema() {
+                const info = document.getElementById('systemInfo');
+                info.innerHTML = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Navegador:</strong> ${navigator.userAgent}</p>
+                            <p><strong>Plataforma:</strong> ${navigator.platform}</p>
+                            <p><strong>Idioma:</strong> ${navigator.language}</p>
+                            <p><strong>Online:</strong> <span class="${navigator.onLine ? 'status-ok' : 'status-error'}">${navigator.onLine ? 'Sim' : 'Não'}</span></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>URL:</strong> ${window.location.href}</p>
+                            <p><strong>Protocolo:</strong> ${window.location.protocol}</p>
+                            <p><strong>Host:</strong> ${window.location.host}</p>
+                            <p><strong>Path:</strong> ${window.location.pathname}</p>
+                        </div>
+                    </div>
+                `;
+            }
+
+            async testarConexao() {
+                const resultDiv = document.getElementById('conexaoResult');
+                resultDiv.innerHTML = '<div class="test-warning">Testando conexão...</div>';
+
+                try {
+                    const response = await fetch('https://httpbin.org/status/200');
+                    if (response.ok) {
+                        resultDiv.innerHTML = '<div class="test-success">Conexão com internet OK</div>';
+                        this.adicionarLog('Teste de conexão: SUCESSO', 'success');
+                    } else {
+                        throw new Error(`Status: ${response.status}`);
+                    }
+                } catch (error) {
+                    resultDiv.innerHTML = `<div class="test-error">Erro de conexão: ${error.message}</div>`;
+                    this.adicionarLog(`Teste de conexão: ERRO - ${error.message}`, 'error');
+                }
+            }
+
+            async testarSupabase() {
+                const resultDiv = document.getElementById('conexaoResult');
+                resultDiv.innerHTML = '<div class="test-warning">Testando Supabase...</div>';
+
+                try {
+                    const response = await fetch('https://emkiewosmlnyjnpujbui.supabase.co/rest/v1/', {
+                        headers: {
+                            'apikey': 'sb_publishable_Bd982ryXG_esL01jPijc_A_2u3pY8vV'
+                        }
+                    });
+
+                    if (response.ok) {
+                        resultDiv.innerHTML = '<div class="test-success">Conexão com Supabase OK</div>';
+                        this.adicionarLog('Teste de Supabase: SUCESSO', 'success');
+                    } else {
+                        throw new Error(`Status: ${response.status}`);
+                    }
+                } catch (error) {
+                    resultDiv.innerHTML = `<div class="test-error">Erro de Supabase: ${error.message}</div>`;
+                    this.adicionarLog(`Teste de Supabase: ERRO - ${error.message}`, 'error');
+                }
+            }
+
+            testarJavaScript() {
+                const resultDiv = document.getElementById('jsResult');
+                const testes = [];
+
+                // Teste 1: Variáveis globais
+                try {
+                    const testVar = 'teste';
+                    testes.push({ nome: 'Variáveis globais', status: 'OK', detalhe: 'Funcionando' });
+                } catch (error) {
+                    testes.push({ nome: 'Variáveis globais', status: 'ERRO', detalhe: error.message });
+                }
+
+                // Teste 2: Funções
+                try {
+                    function testeFunction() { return true; }
+                    const result = testeFunction();
+                    testes.push({ nome: 'Funções', status: 'OK', detalhe: 'Funcionando' });
+                } catch (error) {
+                    testes.push({ nome: 'Funções', status: 'ERRO', detalhe: error.message });
+                }
+
+                // Teste 3: Objetos
+                try {
+                    const obj = { teste: 'valor' };
+                    testes.push({ nome: 'Objetos', status: 'OK', detalhe: 'Funcionando' });
+                } catch (error) {
+                    testes.push({ nome: 'Objetos', status: 'ERRO', detalhe: error.message });
+                }
+
+                // Teste 4: Arrays
+                try {
+                    const arr = [1, 2, 3];
+                    testes.push({ nome: 'Arrays', status: 'OK', detalhe: 'Funcionando' });
+                } catch (error) {
+                    testes.push({ nome: 'Arrays', status: 'ERRO', detalhe: error.message });
+                }
+
+                // Exibir resultados
+                let html = '';
+                testes.forEach(teste => {
+                    const statusClass = teste.status === 'OK' ? 'test-success' : 'test-error';
+                    html += `<div class="test-result ${statusClass}">
+                        <strong>${teste.nome}:</strong> ${teste.status} - ${teste.detalhe}
+                    </div>`;
+                });
+
+                resultDiv.innerHTML = html;
+                this.adicionarLog('Teste de JavaScript: Concluído', 'info');
+            }
+
+            testarLocalStorage() {
+                const resultDiv = document.getElementById('jsResult');
+                const testes = [];
+
+                // Teste 1: Verificar disponibilidade
+                try {
+                    const storageDisponivel = typeof(Storage) !== "undefined";
+                    testes.push({ 
+                        nome: 'LocalStorage disponível', 
+                        status: storageDisponivel ? 'OK' : 'ERRO', 
+                        detalhe: storageDisponivel ? 'Funcionando' : 'Não disponível' 
+                    });
+                } catch (error) {
+                    testes.push({ nome: 'LocalStorage disponível', status: 'ERRO', detalhe: error.message });
+                }
+
+                // Teste 2: Gravar dados
+                try {
+                    localStorage.setItem('debugTest', 'valor de teste');
+                    testes.push({ nome: 'Gravar dados', status: 'OK', detalhe: 'Funcionando' });
+                } catch (error) {
+                    testes.push({ nome: 'Gravar dados', status: 'ERRO', detalhe: error.message });
+                }
+
+                // Teste 3: Ler dados
+                try {
+                    const valor = localStorage.getItem('debugTest');
+                    testes.push({ nome: 'Ler dados', status: valor ? 'OK' : 'ERRO', detalhe: valor || 'Não foi possível ler' });
+                } catch (error) {
+                    testes.push({ nome: 'Ler dados', status: 'ERRO', detalhe: error.message });
+                }
+
+                // Teste 4: Remover dados
+                try {
+                    localStorage.removeItem('debugTest');
+                    testes.push({ nome: 'Remover dados', status: 'OK', detalhe: 'Funcionando' });
+                } catch (error) {
+                    testes.push({ nome: 'Remover dados', status: 'ERRO', detalhe: error.message });
+                }
+
+                // Exibir resultados
+                let html = '';
+                testes.forEach(teste => {
+                    const statusClass = teste.status === 'OK' ? 'test-success' : 'test-error';
+                    html += `<div class="test-result ${statusClass}">
+                        <strong>${teste.nome}:</strong> ${teste.status} - ${teste.detalhe}
+                    </div>`;
+                });
+
+                resultDiv.innerHTML = html;
+                this.adicionarLog('Teste de LocalStorage: Concluído', 'info');
+            }
+
+            testarLoginLocal() {
+                const resultDiv = document.getElementById('loginResult');
+                const testes = [];
+
+                // Teste 1: Verificar usuário salvo
+                try {
+                    const usuario = JSON.parse(localStorage.getItem('usuario') || 'null');
+                    testes.push({ 
+                        nome: 'Usuário salvo', 
+                        status: usuario ? 'OK' : 'AVISO', 
+                        detalhe: usuario ? `Usuário: ${usuario.email}` : 'Nenhum usuário salvo' 
+                    });
+                } catch (error) {
+                    testes.push({ nome: 'Usuário salvo', status: 'ERRO', detalhe: error.message });
+                }
+
+                // Teste 2: Verificar estrutura do usuário
+                try {
+                    const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+                    const camposObrigatorios = ['email', 'nome'];
+                    const camposFaltantes = camposObrigatorios.filter(campo => !usuario[campo]);
+                    
+                    testes.push({ 
+                        nome: 'Estrutura do usuário', 
+                        status: camposFaltantes.length === 0 ? 'OK' : 'AVISO', 
+                        detalhe: camposFaltantes.length === 0 ? 'Completa' : `Campos faltantes: ${camposFaltantes.join(', ')}` 
+                    });
+                } catch (error) {
+                    testes.push({ nome: 'Estrutura do usuário', status: 'ERRO', detalhe: error.message });
+                }
+
+                // Exibir resultados
+                let html = '';
+                testes.forEach(teste => {
+                    let statusClass = 'test-success';
+                    if (teste.status === 'ERRO') statusClass = 'test-error';
+                    else if (teste.status === 'AVISO') statusClass = 'test-warning';
+                    
+                    html += `<div class="test-result ${statusClass}">
+                        <strong>${teste.nome}:</strong> ${teste.status} - ${teste.detalhe}
+                    </div>`;
+                });
+
+                resultDiv.innerHTML = html;
+                this.adicionarLog('Teste de Login Local: Concluído', 'info');
+            }
+
+            async testarLoginSupabase() {
+                const resultDiv = document.getElementById('loginResult');
+                resultDiv.innerHTML = '<div class="test-warning">Testando login Supabase...</div>';
+
+                try {
+                    // Testar se a biblioteca Supabase está carregada
+                    if (typeof window.supabase === 'undefined') {
+                        throw new Error('Biblioteca Supabase não carregada');
+                    }
+
+                    // Tentar criar cliente Supabase
+                    const supabase = window.supabase.createClient(
+                        'https://emkiewosmlnyjnpujbui.supabase.co',
+                        'sb_publishable_Bd982ryXG_esL01jPijc_A_2u3pY8vV'
+                    );
+
+                    // Testar conexão básica
+                    const { data, error } = await supabase.from('entradas').select('count').limit(1);
+
+                    if (error) {
+                        throw new Error(`Erro Supabase: ${error.message}`);
+                    }
+
+                    resultDiv.innerHTML = '<div class="test-success">Login Supabase OK - Biblioteca carregada e conectada</div>';
+                    this.adicionarLog('Teste de Login Supabase: SUCESSO', 'success');
+                } catch (error) {
+                    resultDiv.innerHTML = `<div class="test-error">Erro no login Supabase: ${error.message}</div>`;
+                    this.adicionarLog(`Teste de Login Supabase: ERRO - ${error.message}`, 'error');
+                }
+            }
+
+            testarCRUD() {
+                const resultDiv = document.getElementById('crudResult');
+                const testes = [];
+
+                // Teste 1: Criar dados de teste
+                try {
+                    const dadosTeste = {
+                        id: Date.now(),
+                        data: new Date().toISOString().split('T')[0],
+                        descricao: 'Teste de debug',
+                        valor: 100.50
+                    };
+                    
+                    localStorage.setItem('crudTest', JSON.stringify(dadosTeste));
+                    testes.push({ nome: 'Criar dados', status: 'OK', detalhe: 'Dados criados com sucesso' });
+                } catch (error) {
+                    testes.push({ nome: 'Criar dados', status: 'ERRO', detalhe: error.message });
+                }
+
+                // Teste 2: Ler dados
+                try {
+                    const dados = JSON.parse(localStorage.getItem('crudTest') || '{}');
+                    testes.push({ 
+                        nome: 'Ler dados', 
+                        status: dados.id ? 'OK' : 'ERRO', 
+                        detalhe: dados.id ? `ID: ${dados.id}` : 'Não foi possível ler' 
+                    });
+                } catch (error) {
+                    testes.push({ nome: 'Ler dados', status: 'ERRO', detalhe: error.message });
+                }
+
+                // Teste 3: Atualizar dados
+                try {
+                    const dados = JSON.parse(localStorage.getItem('crudTest') || '{}');
+                    dados.descricao = 'Teste atualizado';
+                    localStorage.setItem('crudTest', JSON.stringify(dados));
+                    testes.push({ nome: 'Atualizar dados', status: 'OK', detalhe: 'Dados atualizados com sucesso' });
+                } catch (error) {
+                    testes.push({ nome: 'Atualizar dados', status: 'ERRO', detalhe: error.message });
+                }
+
+                // Teste 4: Deletar dados
+                try {
+                    localStorage.removeItem('crudTest');
+                    const dados = localStorage.getItem('crudTest');
+                    testes.push({ 
+                        nome: 'Deletar dados', 
+                        status: !dados ? 'OK' : 'ERRO', 
+                        detalhe: !dados ? 'Dados removidos com sucesso' : 'Não foi possível remover' 
+                    });
+                } catch (error) {
+                    testes.push({ nome: 'Deletar dados', status: 'ERRO', detalhe: error.message });
+                }
+
+                // Exibir resultados
+                let html = '';
+                testes.forEach(teste => {
+                    const statusClass = teste.status === 'OK' ? 'test-success' : 'test-error';
+                    html += `<div class="test-result ${statusClass}">
+                        <strong>${teste.nome}:</strong> ${teste.status} - ${teste.detalhe}
+                    </div>`;
+                });
+
+                resultDiv.innerHTML = html;
+                this.adicionarLog('Teste de CRUD: Concluído', 'info');
+            }
+
+            testarDados() {
+                const resultDiv = document.getElementById('crudResult');
+                const dados = {
+                    entradas: JSON.parse(localStorage.getItem('entradas') || '[]'),
+                    saidas: JSON.parse(localStorage.getItem('saidas') || '[]'),
+                    usuarios: JSON.parse(localStorage.getItem('usuarios') || '[]')
+                };
+
+                let html = '<div class="test-result test-success">';
+                html += `<p><strong>Entradas:</strong> ${dados.entradas.length} registros</p>`;
+                html += `<p><strong>Saídas:</strong> ${dados.saidas.length} registros</p>`;
+                html += `<p><strong>Usuários:</strong> ${dados.usuarios.length} registros</p>`;
+                
+                if (dados.entradas.length > 0) {
+                    html += `<p><strong>Última entrada:</strong> ${dados.entradas[0].descricao || 'Sem descrição'}</p>`;
+                }
+                
+                if (dados.saidas.length > 0) {
+                    html += `<p><strong>Última saída:</strong> ${dados.saidas[0].descricao || 'Sem descrição'}</p>`;
+                }
+                
+                html += '</div>';
+
+                resultDiv.innerHTML = html;
+                this.adicionarLog('Teste de Dados: Concluído', 'info');
+            }
+
+            adicionarLog(mensagem, tipo = 'info') {
+                const timestamp = new Date().toLocaleTimeString('pt-BR');
+                const logMessage = `[${timestamp}] ${mensagem}`;
+                
+                this.logMessages.push({ mensagem: logMessage, tipo });
+                
+                const logDiv = document.getElementById('debugLog');
+                if (logDiv) {
+                    logDiv.innerHTML += logMessage + '\n';
+                    logDiv.scrollTop = logDiv.scrollHeight;
+                }
+
+                // Também exibir no console
+                console.log(logMessage);
+            }
+
+            limparLog() {
+                this.logMessages = [];
+                document.getElementById('debugLog').innerHTML = '';
+                this.adicionarLog('Log limpo', 'info');
+            }
+
+            gerarRecomendacoes() {
+                const recomendacoesDiv = document.getElementById('recomendacoes');
+                let recomendacoes = [];
+
+                // Verificar se está online
+                if (!navigator.onLine) {
+                    recomendacoes.push('Verifique sua conexão com a internet');
+                }
+
+                // Verificar se o localStorage está funcionando
+                try {
+                    localStorage.setItem('test', 'test');
+                    localStorage.removeItem('test');
+                } catch (error) {
+                    recomendacoes.push('Seu navegador não suporta localStorage. Use um navegador moderno.');
+                }
+
+                // Verificar se está usando HTTPS
+                if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
+                    recomendacoes.push('Use HTTPS para melhor segurança');
+                }
+
+                // Adicionar recomendações gerais
+                recomendacoes.push('Limpe o cache do navegador se houver problemas');
+                recomendacoes.push('Use o navegador Chrome ou Firefox para melhor compatibilidade');
+                recomendacoes.push('Verifique se o JavaScript está habilitado');
+
+                let html = '';
+                recomendacoes.forEach(rec => {
+                    html += `<div class="test-result test-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>${rec}
+                    </div>`;
+                });
+
+                recomendacoesDiv.innerHTML = html;
+            }
+        }
+
+        // Inicializar sistema de debug
+        const debugSystem = new DebugSystemSystem();
+        
+        // Funções globais
+        function testarConexao() {
+            debugSystem.testarConexao();
+        }
+
+        function testarSupabase() {
+            debugSystem.testarSupabase();
+        }
+
+        function testarJavaScript() {
+            debugSystem.testarJavaScript();
+        }
+
+        function testarLocalStorage() {
+            debugSystem.testarLocalStorage();
+        }
+
+        function testarLoginLocal() {
+            debugSystem.testarLoginLocal();
+        }
+
+        function testarLoginSupabase() {
+            debugSystem.testarLoginSupabase();
+        }
+
+        function testarCRUD() {
+            debugSystem.testarCRUD();
+        }
+
+        function testarDados() {
+            debugSystem.testarDados();
+        }
+
+        function limparLog() {
+            debugSystem.limparLog();
+        }
+
+        // Gerar recomendações automaticamente
+        setTimeout(() => {
+            debugSystem.gerarRecomendacoes();
+        }, 1000);
+    </script>
+</body>
+</html>

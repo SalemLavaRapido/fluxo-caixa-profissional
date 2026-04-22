@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fluxo de Caixa - Versão Local</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .main-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            margin: 20px auto;
+            max-width: 1200px;
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #007bff, #17a2b8);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+        .btn-custom {
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .local-notice {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            color: #1976d2;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px;
+            text-align: center;
+        }
+        .table {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        }
+        .table th {
+            background: #f8f9fa;
+            font-weight: bold;
+            color: #333;
+        }
+        .text-success { color: #28a745; font-weight: bold; }
+        .text-danger { color: #dc3545; font-weight: bold; }
+        .text-info { color: #17a2b8; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="main-container">
+            <!-- Header -->
+            <div class="header">
+                <h1>Fluxo de Caixa Profissional</h1>
+                <p>Versão Local - Dados Salvos no Navegador</p>
+            </div>
+
+            <!-- Aviso Local -->
+            <div class="local-notice">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>VERSÃO LOCAL:</strong> Dados são salvos no navegador. Para usar na nuvem, configure o Supabase.
+            </div>
+
+            <div class="p-4">
+                <!-- Cards Resumo -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <h3 class="text-success" id="totalEntradas">R$ 0,00</h3>
+                            <p>Total de Entradas</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <h3 class="text-danger" id="totalSaidas">R$ 0,00</h3>
+                            <p>Total de Saídas</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <h3 class="text-info" id="saldoFinal">R$ 0,00</h3>
+                            <p>Saldo Final</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <h3 class="text-warning" id="percentualCrescimento">0%</h3>
+                            <p>Crescimento</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabs -->
+                <ul class="nav nav-tabs" id="mainTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="entradas-tab" data-bs-toggle="tab" data-bs-target="#entradas" type="button" role="tab">
+                            <i class="fas fa-arrow-up me-2"></i>Entradas
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="saidas-tab" data-bs-toggle="tab" data-bs-target="#saidas" type="button" role="tab">
+                            <i class="fas fa-arrow-down me-2"></i>Saídas
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="relatorios-tab" data-bs-toggle="tab" data-bs-target="#relatorios" type="button" role="tab">
+                            <i class="fas fa-file-pdf me-2"></i>Relatórios
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="mainTabContent">
+                    <!-- Tab Entradas -->
+                    <div class="tab-pane fade show active" id="entradas" role="tabpanel">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5>Gerenciar Entradas</h5>
+                            <button class="btn btn-success" onclick="openModalEntrada()">
+                                <i class="fas fa-plus me-2"></i>Nova Entrada
+                            </button>
+                        </div>
+
+                        <div class="table">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Data</th>
+                                        <th>Descrição</th>
+                                        <th>Categoria</th>
+                                        <th>Valor</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabelaEntradas">
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted">
+                                            <i class="fas fa-inbox fa-2x mb-2"></i>
+                                            <p>Nenhuma entrada encontrada</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Tab Saídas -->
+                    <div class="tab-pane fade" id="saidas" role="tabpanel">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5>Gerenciar Saídas</h5>
+                            <button class="btn btn-danger" onclick="openModalSaida()">
+                                <i class="fas fa-plus me-2"></i>Nova Saída
+                            </button>
+                        </div>
+
+                        <div class="table">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Data</th>
+                                        <th>Descrição</th>
+                                        <th>Categoria</th>
+                                        <th>Tipo</th>
+                                        <th>Valor</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabelaSaidas">
+                                    <tr>
+                                        <td colspan="6" class="text-center text-muted">
+                                            <i class="fas fa-inbox fa-2x mb-2"></i>
+                                            <p>Nenhuma saída encontrada</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Tab Relatórios -->
+                    <div class="tab-pane fade" id="relatorios" role="tabpanel">
+                        <div class="text-center">
+                            <button class="btn btn-primary btn-lg" onclick="gerarRelatorioHTML()">
+                                <i class="fas fa-file-pdf me-2"></i>Gerar Relatório
+                            </button>
+                            <button class="btn btn-info btn-lg ms-2" onclick="exportarDados()">
+                                <i class="fas fa-download me-2"></i>Exportar Dados
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Entrada -->
+    <div class="modal fade" id="modalEntrada" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-arrow-up me-2"></i>Nova Entrada
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formEntrada">
+                        <div class="mb-3">
+                            <label class="form-label">Data</label>
+                            <input type="date" class="form-control" id="entradaData" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Descrição</label>
+                            <input type="text" class="form-control" id="entradaDescricao" placeholder="Descrição" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Categoria</label>
+                            <select class="form-control" id="entradaCategoria" required>
+                                <option value="">Selecione...</option>
+                                <option value="vendas">Vendas</option>
+                                <option value="servicos">Serviços</option>
+                                <option value="aluguel">Aluguel</option>
+                                <option value="investimentos">Investimentos</option>
+                                <option value="outras">Outras</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Valor</label>
+                            <input type="number" class="form-control" id="entradaValor" step="0.01" min="0" placeholder="0,00" required>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-success" onclick="salvarEntrada()">
+                        <i class="fas fa-save me-2"></i>Salvar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Saída -->
+    <div class="modal fade" id="modalSaida" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-arrow-down me-2"></i>Nova Saída
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formSaida">
+                        <div class="mb-3">
+                            <label class="form-label">Data</label>
+                            <input type="date" class="form-control" id="saidaData" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Descrição</label>
+                            <input type="text" class="form-control" id="saidaDescricao" placeholder="Descrição" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Categoria</label>
+                            <select class="form-control" id="saidaCategoria" required>
+                                <option value="">Selecione...</option>
+                                <option value="aluguel">Aluguel</option>
+                                <option value="funcionarios">Funcionários</option>
+                                <option value="fornecedores">Fornecedores</option>
+                                <option value="impostos">Impostos</option>
+                                <option value="marketing">Marketing</option>
+                                <option value="transporte">Transporte</option>
+                                <option value="outras">Outras</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Tipo</label>
+                            <select class="form-control" id="saidaTipo" required>
+                                <option value="">Selecione...</option>
+                                <option value="fixo">Fixo</option>
+                                <option value="variavel">Variável</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Valor</label>
+                            <input type="number" class="form-control" id="saidaValor" step="0.01" min="0" placeholder="0,00" required>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-danger" onclick="salvarSaida()">
+                        <i class="fas fa-save me-2"></i>Salvar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Sistema Local - Dados no localStorage
+        class FluxoCaixaLocal {
+            constructor() {
+                this.entradas = JSON.parse(localStorage.getItem('entradas') || '[]');
+                this.saidas = JSON.parse(localStorage.getItem('saidas') || '[]');
+                this.editingId = null;
+                this.init();
+            }
+
+            init() {
+                this.carregarDados();
+                this.atualizarResumo();
+                this.renderizarTabelas();
+            }
+
+            carregarDados() {
+                // Dados já carregados no construtor
+            }
+
+            salvarDados() {
+                localStorage.setItem('entradas', JSON.stringify(this.entradas));
+                localStorage.setItem('saidas', JSON.stringify(this.saidas));
+            }
+
+            salvarEntrada() {
+                const entrada = {
+                    id: Date.now(),
+                    data: document.getElementById('entradaData').value,
+                    descricao: document.getElementById('entradaDescricao').value,
+                    categoria: document.getElementById('entradaCategoria').value,
+                    valor: parseFloat(document.getElementById('entradaValor').value)
+                };
+
+                if (this.editingId) {
+                    const index = this.entradas.findIndex(e => e.id === this.editingId);
+                    if (index !== -1) {
+                        this.entradas[index] = { ...entrada, id: this.editingId };
+                    }
+                    this.editingId = null;
+                } else {
+                    this.entradas.unshift(entrada);
+                }
+
+                this.salvarDados();
+                this.renderizarTabelas();
+                this.atualizarResumo();
+
+                // Fechar modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('modalEntrada'));
+                modal.hide();
+
+                // Limpar formulário
+                document.getElementById('formEntrada').reset();
+                this.mostrarAlerta('Entrada salva com sucesso!', 'success');
+            }
+
+            salvarSaida() {
+                const saida = {
+                    id: Date.now(),
+                    data: document.getElementById('saidaData').value,
+                    descricao: document.getElementById('saidaDescricao').value,
+                    categoria: document.getElementById('saidaCategoria').value,
+                    tipo: document.getElementById('saidaTipo').value,
+                    valor: parseFloat(document.getElementById('saidaValor').value)
+                };
+
+                if (this.editingId) {
+                    const index = this.saidas.findIndex(s => s.id === this.editingId);
+                    if (index !== -1) {
+                        this.saidas[index] = { ...saida, id: this.editingId };
+                    }
+                    this.editingId = null;
+                } else {
+                    this.saidas.unshift(saida);
+                }
+
+                this.salvarDados();
+                this.renderizarTabelas();
+                this.atualizarResumo();
+
+                // Fechar modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('modalSaida'));
+                modal.hide();
+
+                // Limpar formulário
+                document.getElementById('formSaida').reset();
+                this.mostrarAlerta('Saída salva com sucesso!', 'success');
+            }
+
+            excluirEntrada(id) {
+                if (confirm('Tem certeza que deseja excluir esta entrada?')) {
+                    this.entradas = this.entradas.filter(e => e.id !== id);
+                    this.salvarDados();
+                    this.renderizarTabelas();
+                    this.atualizarResumo();
+                    this.mostrarAlerta('Entrada excluída com sucesso!', 'success');
+                }
+            }
+
+            excluirSaida(id) {
+                if (confirm('Tem certeza que deseja excluir esta saída?')) {
+                    this.saidas = this.saidas.filter(s => s.id !== id);
+                    this.salvarDados();
+                    this.renderizarTabelas();
+                    this.atualizarResumo();
+                    this.mostrarAlerta('Saída excluída com sucesso!', 'success');
+                }
+            }
+
+            editarEntrada(id) {
+                const entrada = this.entradas.find(e => e.id === id);
+                if (!entrada) return;
+
+                this.editingId = id;
+                document.getElementById('entradaData').value = entrada.data;
+                document.getElementById('entradaDescricao').value = entrada.descricao;
+                document.getElementById('entradaCategoria').value = entrada.categoria;
+                document.getElementById('entradaValor').value = entrada.valor;
+
+                const modal = new bootstrap.Modal(document.getElementById('modalEntrada'));
+                modal.show();
+            }
+
+            editarSaida(id) {
+                const saida = this.saidas.find(s => s.id === id);
+                if (!saida) return;
+
+                this.editingId = id;
+                document.getElementById('saidaData').value = saida.data;
+                document.getElementById('saidaDescricao').value = saida.descricao;
+                document.getElementById('saidaCategoria').value = saida.categoria;
+                document.getElementById('saidaTipo').value = saida.tipo;
+                document.getElementById('saidaValor').value = saida.valor;
+
+                const modal = new bootstrap.Modal(document.getElementById('modalSaida'));
+                modal.show();
+            }
+
+            renderizarTabelas() {
+                this.renderizarEntradas();
+                this.renderizarSaidas();
+            }
+
+            renderizarEntradas() {
+                const tbody = document.getElementById('tabelaEntradas');
+                if (!tbody) return;
+
+                if (this.entradas.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="5" class="text-center text-muted">
+                                <i class="fas fa-inbox fa-2x mb-2"></i>
+                                <p>Nenhuma entrada encontrada</p>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                tbody.innerHTML = this.entradas.map(entrada => `
+                    <tr>
+                        <td>${this.formatarData(entrada.data)}</td>
+                        <td>${entrada.descricao}</td>
+                        <td><span class="badge bg-success">${this.formatarCategoriaEntrada(entrada.categoria)}</span></td>
+                        <td class="text-success fw-bold">+${this.formatarDinheiro(entrada.valor)}</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary" onclick="fluxoCaixa.editarEntrada(${entrada.id})">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="fluxoCaixa.excluirEntrada(${entrada.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            renderizarSaidas() {
+                const tbody = document.getElementById('tabelaSaidas');
+                if (!tbody) return;
+
+                if (this.saidas.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">
+                                <i class="fas fa-inbox fa-2x mb-2"></i>
+                                <p>Nenhuma saída encontrada</p>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                tbody.innerHTML = this.saidas.map(saida => `
+                    <tr>
+                        <td>${this.formatarData(saida.data)}</td>
+                        <td>${saida.descricao}</td>
+                        <td><span class="badge bg-secondary">${this.formatarCategoriaSaida(saida.categoria)}</span></td>
+                        <td><span class="badge ${saida.tipo === 'fixo' ? 'bg-warning' : 'bg-info'}">${saida.tipo === 'fixo' ? 'Fixo' : 'Variável'}</span></td>
+                        <td class="text-danger fw-bold">-${this.formatarDinheiro(saida.valor)}</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary" onclick="fluxoCaixa.editarSaida(${saida.id})">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="fluxoCaixa.excluirSaida(${saida.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            atualizarResumo() {
+                const totalEntradas = this.entradas.reduce((total, e) => total + e.valor, 0);
+                const totalSaidas = this.saidas.reduce((total, s) => total + s.valor, 0);
+                const saldoFinal = totalEntradas - totalSaidas;
+                const percentualCrescimento = totalSaidas > 0 ? ((totalEntradas - totalSaidas) / totalSaidas * 100) : 0;
+
+                document.getElementById('totalEntradas').textContent = this.formatarDinheiro(totalEntradas);
+                document.getElementById('totalSaidas').textContent = this.formatarDinheiro(totalSaidas);
+                document.getElementById('saldoFinal').textContent = this.formatarDinheiro(saldoFinal);
+                document.getElementById('percentualCrescimento').textContent = percentualCrescimento.toFixed(1) + '%';
+            }
+
+            formatarData(dataString) {
+                const data = new Date(dataString);
+                return data.toLocaleDateString('pt-BR');
+            }
+
+            formatarDinheiro(valor) {
+                return new Intl.NumberFormat('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL'
+                }).format(parseFloat(valor));
+            }
+
+            formatarCategoriaEntrada(categoria) {
+                const categorias = {
+                    'vendas': 'Vendas',
+                    'servicos': 'Serviços',
+                    'aluguel': 'Aluguel',
+                    'investimentos': 'Investimentos',
+                    'outras': 'Outras'
+                };
+                return categorias[categoria] || categoria;
+            }
+
+            formatarCategoriaSaida(categoria) {
+                const categorias = {
+                    'aluguel': 'Aluguel',
+                    'funcionarios': 'Funcionários',
+                    'fornecedores': 'Fornecedores',
+                    'impostos': 'Impostos',
+                    'marketing': 'Marketing',
+                    'transporte': 'Transporte',
+                    'outras': 'Outras'
+                };
+                return categorias[categoria] || categoria;
+            }
+
+            mostrarAlerta(mensagem, tipo = 'info') {
+                const alertDiv = document.createElement('div');
+                alertDiv.className = `alert alert-${tipo} alert-dismissible fade show`;
+                alertDiv.style.position = 'fixed';
+                alertDiv.style.top = '20px';
+                alertDiv.style.right = '20px';
+                alertDiv.style.zIndex = '9999';
+                alertDiv.style.minWidth = '300px';
+                alertDiv.innerHTML = `
+                    ${mensagem}
+                    <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
+                `;
+                document.body.appendChild(alertDiv);
+
+                setTimeout(() => {
+                    if (alertDiv.parentNode) {
+                        alertDiv.parentNode.removeChild(alertDiv);
+                    }
+                }, 3000);
+            }
+
+            exportarDados() {
+                const dados = {
+                    data: new Date().toISOString(),
+                    entradas: this.entradas,
+                    saidas: this.saidas,
+                    resumo: {
+                        totalEntradas: this.entradas.reduce((total, e) => total + e.valor, 0),
+                        totalSaidas: this.saidas.reduce((total, s) => total + s.valor, 0),
+                        saldoFinal: this.entradas.reduce((total, e) => total + e.valor, 0) - this.saidas.reduce((total, s) => total + s.valor, 0)
+                    }
+                };
+
+                const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `fluxo-caixa-backup-${new Date().toISOString().split('T')[0]}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+
+                this.mostrarAlerta('Dados exportados com sucesso!', 'success');
+            }
+
+            gerarRelatorioHTML() {
+                const totalEntradas = this.entradas.reduce((total, e) => total + e.valor, 0);
+                const totalSaidas = this.saidas.reduce((total, s) => total + s.valor, 0);
+                const saldoFinal = totalEntradas - totalSaidas;
+
+                const html = `
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>Relatório Financeiro</title>
+                        <style>
+                            body { font-family: Arial, sans-serif; margin: 20px; }
+                            h1 { color: #333; text-align: center; }
+                            .resumo { background: #f5f5f5; padding: 20px; margin: 20px 0; border-radius: 5px; }
+                            table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+                            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                            th { background: #f2f2f2; font-weight: bold; }
+                            .text-success { color: green; }
+                            .text-danger { color: red; }
+                        </style>
+                    </head>
+                    <body>
+                        <h1>Relatório Financeiro</h1>
+                        <div class="resumo">
+                            <h2>Resumo</h2>
+                            <p><strong>Total de Entradas:</strong> <span class="text-success">${this.formatarDinheiro(totalEntradas)}</span></p>
+                            <p><strong>Total de Saídas:</strong> <span class="text-danger">${this.formatarDinheiro(totalSaidas)}</span></p>
+                            <p><strong>Saldo Final:</strong> ${this.formatarDinheiro(saldoFinal)}</p>
+                        </div>
+                        
+                        <h2>Entradas</h2>
+                        <table>
+                            <tr><th>Data</th><th>Descrição</th><th>Categoria</th><th>Valor</th></tr>
+                            ${this.entradas.map(e => `
+                                <tr>
+                                    <td>${this.formatarData(e.data)}</td>
+                                    <td>${e.descricao}</td>
+                                    <td>${this.formatarCategoriaEntrada(e.categoria)}</td>
+                                    <td class="text-success">+${this.formatarDinheiro(e.valor)}</td>
+                                </tr>
+                            `).join('')}
+                        </table>
+                        
+                        <h2>Saídas</h2>
+                        <table>
+                            <tr><th>Data</th><th>Descrição</th><th>Categoria</th><th>Tipo</th><th>Valor</th></tr>
+                            ${this.saidas.map(s => `
+                                <tr>
+                                    <td>${this.formatarData(s.data)}</td>
+                                    <td>${s.descricao}</td>
+                                    <td>${this.formatarCategoriaSaida(s.categoria)}</td>
+                                    <td>${s.tipo}</td>
+                                    <td class="text-danger">-${this.formatarDinheiro(s.valor)}</td>
+                                </tr>
+                            `).join('')}
+                        </table>
+                    </body>
+                    </html>
+                `;
+
+                const novaJanela = window.open('', '_blank');
+                novaJanela.document.write(html);
+                novaJanela.document.close();
+                novaJanela.print();
+
+                this.mostrarAlerta('Relatório gerado com sucesso!', 'success');
+            }
+        }
+
+        // Funções globais
+        function openModalEntrada() {
+            document.getElementById('formEntrada').reset();
+            document.getElementById('entradaData').value = new Date().toISOString().split('T')[0];
+            const modal = new bootstrap.Modal(document.getElementById('modalEntrada'));
+            modal.show();
+        }
+
+        function openModalSaida() {
+            document.getElementById('formSaida').reset();
+            document.getElementById('saidaData').value = new Date().toISOString().split('T')[0];
+            const modal = new bootstrap.Modal(document.getElementById('modalSaida'));
+            modal.show();
+        }
+
+        function salvarEntrada() {
+            fluxoCaixa.salvarEntrada();
+        }
+
+        function salvarSaida() {
+            fluxoCaixa.salvarSaida();
+        }
+
+        function exportarDados() {
+            fluxoCaixa.exportarDados();
+        }
+
+        function gerarRelatorioHTML() {
+            fluxoCaixa.gerarRelatorioHTML();
+        }
+
+        // Inicializar sistema
+        const fluxoCaixa = new FluxoCaixaLocal();
+    </script>
+</body>
+</html>

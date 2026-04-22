@@ -1,0 +1,2562 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fluxo de Caixa Avançado - Sa Lavagem e Estacionamento</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
+    <style>
+        :root {
+            --primary-color: #007bff;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --info-color: #17a2b8;
+            --dark-color: #343a40;
+            --light-color: #f8f9fa;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .main-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            margin: 20px auto;
+            max-width: 1400px;
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #007bff, #17a2b8);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-weight: 700;
+            font-size: 2.5rem;
+        }
+        .header p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+        }
+        .auth-container {
+            max-width: 400px;
+            margin: 50px auto;
+            padding: 40px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        .auth-container h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: var(--dark-color);
+        }
+        .form-floating {
+            margin-bottom: 20px;
+        }
+        .btn-custom {
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+        }
+        .btn-primary-custom {
+            background: linear-gradient(135deg, var(--primary-color), var(--info-color));
+            border: none;
+            color: white;
+        }
+        .btn-primary-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,123,255,0.3);
+        }
+        .dashboard-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            transition: transform 0.3s ease;
+            margin-bottom: 20px;
+        }
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+        }
+        .dashboard-card .card-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+        .dashboard-card.success .card-icon {
+            background: rgba(40, 167, 69, 0.1);
+            color: var(--success-color);
+        }
+        .dashboard-card.danger .card-icon {
+            background: rgba(220, 53, 69, 0.1);
+            color: var(--danger-color);
+        }
+        .dashboard-card.info .card-icon {
+            background: rgba(23, 162, 184, 0.1);
+            color: var(--info-color);
+        }
+        .dashboard-card.warning .card-icon {
+            background: rgba(255, 193, 7, 0.1);
+            color: var(--warning-color);
+        }
+        .dashboard-card h3 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 0;
+        }
+        .dashboard-card p {
+            color: #6c757d;
+            margin: 5px 0 0 0;
+        }
+        .nav-tabs .nav-link {
+            border-radius: 10px 10px 0 0;
+            font-weight: 600;
+            color: var(--dark-color);
+            transition: all 0.3s ease;
+        }
+        .nav-tabs .nav-link.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        .table-custom {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        }
+        .table-custom th {
+            border: none;
+            font-weight: 600;
+            color: var(--dark-color);
+            padding: 15px;
+        }
+        .table-custom td {
+            padding: 15px;
+            vertical-align: middle;
+        }
+        .badge-custom {
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+        .btn-action {
+            padding: 8px 15px;
+            border-radius: 8px;
+            border: none;
+            font-size: 14px;
+            margin: 0 2px;
+            transition: all 0.3s ease;
+        }
+        .btn-edit {
+            background: var(--info-color);
+            color: white;
+        }
+        .btn-delete {
+            background: var(--danger-color);
+            color: white;
+        }
+        .btn-action:hover {
+            transform: translateY(-2px);
+            opacity: 0.8;
+        }
+        .filter-section {
+            background: var(--light-color);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        .form-control-custom {
+            border-radius: 10px;
+            border: 1px solid #dee2e6;
+            padding: 12px;
+        }
+        .form-control-custom:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
+        }
+        .modal-content {
+            border-radius: 15px;
+            border: none;
+        }
+        .modal-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--info-color));
+            color: white;
+            border-radius: 15px 15px 0 0;
+        }
+        .modal-header .btn-close {
+            filter: brightness(0) invert(1);
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 20px 0;
+        }
+        .loading-spinner {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 9999;
+        }
+        .loading-spinner.show {
+            display: block;
+        }
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+            border-width: 0.3em;
+        }
+        .alert-custom {
+            border-radius: 10px;
+            border: none;
+            padding: 15px 20px;
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .hidden {
+            display: none !important;
+        }
+        .chart-wrapper {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+        .business-info {
+            background: rgba(0,123,255,0.1);
+            border: 1px solid rgba(0,123,255,0.2);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .period-selector {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        .period-btn {
+            padding: 10px 20px;
+            border-radius: 25px;
+            border: 2px solid var(--primary-color);
+            background: white;
+            color: var(--primary-color);
+            font-weight: 600;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+        .period-btn:hover {
+            background: var(--primary-color);
+            color: white;
+            transform: translateY(-2px);
+        }
+        .period-btn.active {
+            background: var(--primary-color);
+            color: white;
+        }
+        .quick-add-section {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        .quick-add-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid white;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 30px;
+            font-weight: 600;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+        .quick-add-btn:hover {
+            background: white;
+            color: var(--success-color);
+            transform: translateY(-2px);
+        }
+        .date-range-picker {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .date-range-picker .form-control {
+            flex: 1;
+        }
+        .flatpickr-calendar {
+            font-size: 14px;
+        }
+        @media (max-width: 768px) {
+            .main-container {
+                margin: 10px;
+                border-radius: 15px;
+            }
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            .dashboard-card h3 {
+                font-size: 1.5rem;
+            }
+            .user-info {
+                position: static;
+                justify-content: center;
+                margin-top: 15px;
+            }
+            .table-custom {
+                font-size: 0.9rem;
+            }
+            .btn-action {
+                padding: 6px 10px;
+                font-size: 12px;
+            }
+            .period-btn {
+                padding: 8px 15px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Spinner -->
+    <div class="loading-spinner">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Carregando...</span>
+        </div>
+    </div>
+
+    <!-- Login Container -->
+    <div id="loginContainer" class="auth-container">
+        <div class="text-center mb-4">
+            <i class="fas fa-car fa-3x text-primary mb-3"></i>
+            <h2>Fluxo de Caixa Avançado</h2>
+            <p class="text-muted">Sa Lavagem e Estacionamento</p>
+        </div>
+
+        <!-- Login Form -->
+        <form id="loginForm">
+            <div class="form-floating mb-3">
+                <input type="email" class="form-control form-control-custom" id="loginEmail" placeholder="name@example.com" required>
+                <label for="loginEmail">Email</label>
+            </div>
+            <div class="form-floating mb-3">
+                <input type="password" class="form-control form-control-custom" id="loginPassword" placeholder="Senha" required>
+                <label for="loginPassword">Senha</label>
+            </div>
+            <button type="submit" class="btn btn-primary-custom btn-custom w-100 mb-3">
+                <i class="fas fa-sign-in-alt me-2"></i>Entrar
+            </button>
+        </form>
+
+        <div class="text-center">
+            <button class="btn btn-link text-primary" onclick="showRegisterForm()">
+                <i class="fas fa-user-plus me-2"></i>Não tem conta? Cadastre-se
+            </button>
+        </div>
+    </div>
+
+    <!-- Register Container -->
+    <div id="registerContainer" class="auth-container hidden">
+        <div class="text-center mb-4">
+            <i class="fas fa-user-plus fa-3x text-success mb-3"></i>
+            <h2>Criar Conta</h2>
+            <p class="text-muted">Preencha os dados para criar sua conta</p>
+        </div>
+
+        <!-- Register Form -->
+        <form id="registerForm">
+            <div class="form-floating mb-3">
+                <input type="text" class="form-control form-control-custom" id="registerName" placeholder="Seu nome" required>
+                <label for="registerName">Nome</label>
+            </div>
+            <div class="form-floating mb-3">
+                <input type="email" class="form-control form-control-custom" id="registerEmail" placeholder="name@example.com" required>
+                <label for="registerEmail">Email</label>
+            </div>
+            <div class="form-floating mb-3">
+                <input type="password" class="form-control form-control-custom" id="registerPassword" placeholder="Senha" required>
+                <label for="registerPassword">Senha</label>
+            </div>
+            <div class="form-floating mb-3">
+                <input type="password" class="form-control form-control-custom" id="registerConfirmPassword" placeholder="Confirmar senha" required>
+                <label for="registerConfirmPassword">Confirmar Senha</label>
+            </div>
+            <button type="submit" class="btn btn-success btn-custom w-100 mb-3">
+                <i class="fas fa-user-plus me-2"></i>Cadastrar
+            </button>
+        </form>
+
+        <div class="text-center">
+            <button class="btn btn-link text-primary" onclick="showLoginForm()">
+                <i class="fas fa-arrow-left me-2"></i>Já tem conta? Faça login
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div id="mainApp" class="main-container hidden">
+        <!-- Header -->
+        <div class="header">
+            <div class="user-info">
+                <div class="user-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div>
+                    <div id="userName">Usuário</div>
+                    <small id="userEmail">email@example.com</small>
+                </div>
+                <button class="btn btn-sm btn-light" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+            <h1>Fluxo de Caixa Avançado - Sa Lavagem e Estacionamento</h1>
+            <p>Controle financeiro inteligente com cadastramento diário, mensal e anual</p>
+        </div>
+
+        <!-- Alert Container -->
+        <div id="alertContainer"></div>
+
+        <!-- Quick Add Section -->
+        <div class="quick-add-section">
+            <h4><i class="fas fa-bolt me-2"></i>Adicionar Rápido</h4>
+            <div class="row">
+                <div class="col-md-6">
+                    <button class="quick-add-btn" onclick="quickAddEntrada()">
+                        <i class="fas fa-plus me-2"></i>Entrada Rápida
+                    </button>
+                    <button class="quick-add-btn" onclick="quickAddSaida()">
+                        <i class="fas fa-minus me-2"></i>Saída Rápida
+                    </button>
+                </div>
+                <div class="col-md-6">
+                    <button class="quick-add-btn" onclick="openModalEntradaDiaria()">
+                        <i class="fas fa-calendar-day me-2"></i>Diária
+                    </button>
+                    <button class="quick-add-btn" onclick="openModalEntradaMensal()">
+                        <i class="fas fa-calendar-alt me-2"></i>Mensal
+                    </button>
+                    <button class="quick-add-btn" onclick="openModalEntradaAnual()">
+                        <i class="fas fa-calendar me-2"></i>Anual
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Period Selector -->
+        <div class="period-selector">
+            <h4><i class="fas fa-calendar-alt me-2"></i>Selecionar Período</h4>
+            <div class="btn-group" role="group">
+                <button class="period-btn active" onclick="setPeriod('daily')">Diário</button>
+                <button class="period-btn" onclick="setPeriod('weekly')">Semanal</button>
+                <button class="period-btn" onclick="setPeriod('monthly')">Mensal</button>
+                <button class="period-btn" onclick="setPeriod('quarterly')">Trimestral</button>
+                <button class="period-btn" onclick="setPeriod('yearly')">Anual</button>
+                <button class="period-btn" onclick="setPeriod('custom')">Personalizado</button>
+            </div>
+            <div class="date-range-picker hidden" id="customDateRange">
+                <input type="text" class="form-control" id="dateRangeInput" placeholder="Selecione o período">
+                <button class="btn btn-primary" onclick="applyCustomRange()">
+                    <i class="fas fa-check me-2"></i>Aplicar
+                </button>
+            </div>
+        </div>
+
+        <!-- Business Info -->
+        <div class="business-info">
+            <h4><i class="fas fa-info-circle me-2"></i>Sobre o Negócio</h4>
+            <p><strong>Tipo:</strong> Sa Lavagem e Estacionamento</p>
+            <p><strong>Serviços:</strong> Lavagem de veículos, estacionamento rotativo, serviços adicionais</p>
+        </div>
+
+        <!-- Dashboard -->
+        <div class="p-4">
+            <!-- Cards Resumo -->
+            <div class="row mb-4">
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="dashboard-card success fade-in">
+                        <div class="card-icon">
+                            <i class="fas fa-arrow-up"></i>
+                        </div>
+                        <h3 id="totalEntradas">R$ 0,00</h3>
+                        <p>Total de Entradas</p>
+                        <small class="text-muted" id="periodoEntradas">Este período</small>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="dashboard-card danger fade-in">
+                        <div class="card-icon">
+                            <i class="fas fa-arrow-down"></i>
+                        </div>
+                        <h3 id="totalSaidas">R$ 0,00</h3>
+                        <p>Total de Saídas</p>
+                        <small class="text-muted" id="periodoSaidas">Este período</small>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="dashboard-card info fade-in">
+                        <div class="card-icon">
+                            <i class="fas fa-balance-scale"></i>
+                        </div>
+                        <h3 id="saldoFinal">R$ 0,00</h3>
+                        <p>Saldo Final</p>
+                        <small class="text-muted" id="periodoSaldo">Este período</small>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="dashboard-card warning fade-in">
+                        <div class="card-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <h3 id="percentualCrescimento">0%</h3>
+                        <p>Crescimento</p>
+                        <small class="text-muted" id="periodoCrescimento">vs período anterior</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gráfico Principal -->
+            <div class="chart-wrapper fade-in">
+                <h5 class="mb-3">Visão Geral - <span id="chartPeriodTitle">Diário</span></h5>
+                <div class="chart-container">
+                    <canvas id="mainChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Filtros Avançados -->
+            <div class="filter-section fade-in">
+                <h5><i class="fas fa-filter me-2"></i>Filtros Avançados</h5>
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Categoria</label>
+                        <select class="form-control form-control-custom" id="filtroCategoria">
+                            <option value="">Todas</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Tipo</label>
+                        <select class="form-control form-control-custom" id="filtroTipo">
+                            <option value="">Todos</option>
+                            <option value="fixo">Fixo</option>
+                            <option value="variavel">Variável</option>
+                            <option value="recorrente">Recorrente</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Valor Mínimo</label>
+                        <input type="number" class="form-control form-control-custom" id="valorMinimo" placeholder="R$ 0,00">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Valor Máximo</label>
+                        <input type="number" class="form-control form-control-custom" id="valorMaximo" placeholder="R$ 0,00">
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-12">
+                        <button class="btn btn-primary" onclick="aplicarFiltros()">
+                            <i class="fas fa-filter me-2"></i>Aplicar Filtros
+                        </button>
+                        <button class="btn btn-secondary ms-2" onclick="limparFiltros()">
+                            <i class="fas fa-times me-2"></i>Limpar Filtros
+                        </button>
+                        <button class="btn btn-success ms-2" onclick="exportarFiltrados()">
+                            <i class="fas fa-download me-2"></i>Exportar Filtrados
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="fade-in">
+                <ul class="nav nav-tabs" id="mainTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="entradas-tab" data-bs-toggle="tab" data-bs-target="#entradas" type="button" role="tab">
+                            <i class="fas fa-arrow-up me-2"></i>Entradas
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="saidas-tab" data-bs-toggle="tab" data-bs-target="#saidas" type="button" role="tab">
+                            <i class="fas fa-arrow-down me-2"></i>Saídas
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="recorrentes-tab" data-bs-toggle="tab" data-bs-target="#recorrentes" type="button" role="tab">
+                            <i class="fas fa-sync me-2"></i>Recorrentes
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="relatorios-tab" data-bs-toggle="tab" data-bs-target="#relatorios" type="button" role="tab">
+                            <i class="fas fa-file-pdf me-2"></i>Relatórios
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="mainTabContent">
+                    <!-- Tab Entradas -->
+                    <div class="tab-pane fade show active" id="entradas" role="tabpanel">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5>Gerenciar Entradas</h5>
+                            <div>
+                                <button class="btn btn-success me-2" onclick="openModalEntrada()">
+                                    <i class="fas fa-plus me-2"></i>Nova Entrada
+                                </button>
+                                <button class="btn btn-info me-2" onclick="openModalEntradaDiaria()">
+                                    <i class="fas fa-calendar-day me-2"></i>Diária
+                                </button>
+                                <button class="btn btn-warning me-2" onclick="openModalEntradaMensal()">
+                                    <i class="fas fa-calendar-alt me-2"></i>Mensal
+                                </button>
+                                <button class="btn btn-danger" onclick="openModalEntradaAnual()">
+                                    <i class="fas fa-calendar me-2"></i>Anual
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="table-custom">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Data</th>
+                                        <th>Descrição</th>
+                                        <th>Categoria</th>
+                                        <th>Tipo</th>
+                                        <th>Valor</th>
+                                        <th>Recorrência</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabelaEntradas">
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted">
+                                            <i class="fas fa-inbox fa-2x mb-2"></i>
+                                            <p>Nenhuma entrada encontrada</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Tab Saídas -->
+                    <div class="tab-pane fade" id="saidas" role="tabpanel">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5>Gerenciar Saídas</h5>
+                            <div>
+                                <button class="btn btn-danger me-2" onclick="openModalSaida()">
+                                    <i class="fas fa-plus me-2"></i>Nova Saída
+                                </button>
+                                <button class="btn btn-info me-2" onclick="openModalSaidaDiaria()">
+                                    <i class="fas fa-calendar-day me-2"></i>Diária
+                                </button>
+                                <button class="btn btn-warning me-2" onclick="openModalSaidaMensal()">
+                                    <i class="fas fa-calendar-alt me-2"></i>Mensal
+                                </button>
+                                <button class="btn btn-success" onclick="openModalSaidaAnual()">
+                                    <i class="fas fa-calendar me-2"></i>Anual
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="table-custom">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Data</th>
+                                        <th>Descrição</th>
+                                        <th>Categoria</th>
+                                        <th>Tipo</th>
+                                        <th>Valor</th>
+                                        <th>Recorrência</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabelaSaidas">
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted">
+                                            <i class="fas fa-inbox fa-2x mb-2"></i>
+                                            <p>Nenhuma saída encontrada</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Tab Recorrentes -->
+                    <div class="tab-pane fade" id="recorrentes" role="tabpanel">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5>Transações Recorrentes</h5>
+                            <button class="btn btn-primary" onclick="openModalRecorrente()">
+                                <i class="fas fa-plus me-2"></i>Nova Recorrente
+                            </button>
+                        </div>
+
+                        <div class="table-custom">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Descrição</th>
+                                        <th>Tipo</th>
+                                        <th>Valor</th>
+                                        <th>Frequência</th>
+                                        <th>Próxima Data</th>
+                                        <th>Status</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabelaRecorrentes">
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted">
+                                            <i class="fas fa-sync fa-2x mb-2"></i>
+                                            <p>Nenhuma transação recorrente encontrada</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Tab Relatórios -->
+                    <div class="tab-pane fade" id="relatorios" role="tabpanel">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="chart-wrapper">
+                                    <h5>Distribuição por Categoria</h5>
+                                    <div class="chart-container">
+                                        <canvas id="categoriaChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="chart-wrapper">
+                                    <h5>Evolção Temporal</h5>
+                                    <div class="chart-container">
+                                        <canvas id="evolucaoChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mt-4">
+                            <div class="col-md-12">
+                                <div class="chart-wrapper">
+                                    <h5>Comparação de Períodos</h5>
+                                    <div class="chart-container">
+                                        <canvas id="comparacaoChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-center mt-4">
+                            <button class="btn btn-primary btn-lg me-2" onclick="gerarRelatorioPDF()">
+                                <i class="fas fa-file-pdf me-2"></i>Relatório PDF
+                            </button>
+                            <button class="btn btn-success btn-lg me-2" onclick="gerarRelatorioExcel()">
+                                <i class="fas fa-file-excel me-2"></i>Exportar Excel
+                            </button>
+                            <button class="btn btn-info btn-lg" onclick="gerarRelatorioCompleto()">
+                                <i class="fas fa-chart-bar me-2"></i>Relatório Completo
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Entrada -->
+    <div class="modal fade" id="modalEntrada" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-arrow-up me-2"></i>Nova Entrada
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formEntrada">
+                        <input type="hidden" id="entradaId">
+                        <div class="form-floating mb-3">
+                            <input type="text" class="form-control form-control-custom flatpickr" id="entradaData" placeholder="Data" required>
+                            <label for="entradaData">Data</label>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <input type="text" class="form-control form-control-custom" id="entradaDescricao" placeholder="Descrição" required>
+                            <label for="entradaDescricao">Descrição</label>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <select class="form-control form-control-custom" id="entradaCategoria" required>
+                                <option value="">Selecione...</option>
+                                <option value="lavagem">Lavagem</option>
+                                <option value="estacionamento">Estacionamento</option>
+                                <option value="servicos">Serviços Adicionais</option>
+                                <option value="outros">Outros</option>
+                            </select>
+                            <label for="entradaCategoria">Categoria</label>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <select class="form-control form-control-custom" id="entradaTipo" required>
+                                <option value="">Selecione...</option>
+                                <option value="unica">Única</option>
+                                <option value="recorrente">Recorrente</option>
+                            </select>
+                            <label for="entradaTipo">Tipo</label>
+                        </div>
+                        <div class="form-floating mb-3" id="entradaRecorrenteDiv" style="display: none;">
+                            <select class="form-control form-control-custom" id="entradaRecorrente">
+                                <option value="">Selecione...</option>
+                                <option value="diaria">Diária</option>
+                                <option value="semanal">Semanal</option>
+                                <option value="mensal">Mensal</option>
+                                <option value="anual">Anual</option>
+                            </select>
+                            <label for="entradaRecorrente">Recorrência</label>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <input type="number" class="form-control form-control-custom" id="entradaValor" step="0.01" min="0" placeholder="0,00" required>
+                            <label for="entradaValor">Valor (R$)</label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-success" onclick="salvarEntrada()">
+                        <i class="fas fa-save me-2"></i>Salvar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Saída -->
+    <div class="modal fade" id="modalSaida" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-arrow-down me-2"></i>Nova Saída
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formSaida">
+                        <input type="hidden" id="saidaId">
+                        <div class="form-floating mb-3">
+                            <input type="text" class="form-control form-control-custom flatpickr" id="saidaData" placeholder="Data" required>
+                            <label for="saidaData">Data</label>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <input type="text" class="form-control form-control-custom" id="saidaDescricao" placeholder="Descrição" required>
+                            <label for="saidaDescricao">Descrição</label>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <select class="form-control form-control-custom" id="saidaCategoria" required>
+                                <option value="">Selecione...</option>
+                                <option value="aluguel">Aluguel</option>
+                                <option value="salarios">Salários</option>
+                                <option value="produtos">Produtos de Limpeza</option>
+                                <option value="manutencao">Manutenção</option>
+                                <option value="agua">Água</option>
+                                <option value="luz">Luz</option>
+                                <option value="telefone">Telefone/Internet</option>
+                                <option value="impostos">Impostos</option>
+                                <option value="outros">Outros</option>
+                            </select>
+                            <label for="saidaCategoria">Categoria</label>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <select class="form-control form-control-custom" id="saidaTipo" required>
+                                <option value="">Selecione...</option>
+                                <option value="fixo">Fixo</option>
+                                <option value="variavel">Variável</option>
+                                <option value="recorrente">Recorrente</option>
+                            </select>
+                            <label for="saidaTipo">Tipo</label>
+                        </div>
+                        <div class="form-floating mb-3" id="saidaRecorrenteDiv" style="display: none;">
+                            <select class="form-control form-control-custom" id="saidaRecorrente">
+                                <option value="">Selecione...</option>
+                                <option value="diaria">Diária</option>
+                                <option value="semanal">Semanal</option>
+                                <option value="mensal">Mensal</option>
+                                <option value="anual">Anual</option>
+                            </select>
+                            <label for="saidaRecorrente">Recorrência</label>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <input type="number" class="form-control form-control-custom" id="saidaValor" step="0.01" min="0" placeholder="0,00" required>
+                            <label for="saidaValor">Valor (R$)</label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-danger" onclick="salvarSaida()">
+                        <i class="fas fa-save me-2"></i>Salvar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Recorrente -->
+    <div class="modal fade" id="modalRecorrente" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-sync me-2"></i>Nova Transação Recorrente
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formRecorrente">
+                        <div class="form-floating mb-3">
+                            <input type="text" class="form-control form-control-custom" id="recorrenteDescricao" placeholder="Descrição" required>
+                            <label for="recorrenteDescricao">Descrição</label>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <select class="form-control form-control-custom" id="recorrenteTipo" required>
+                                <option value="">Selecione...</option>
+                                <option value="entrada">Entrada</option>
+                                <option value="saida">Saída</option>
+                            </select>
+                            <label for="recorrenteTipo">Tipo</label>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <select class="form-control form-control-custom" id="recorrenteCategoria" required>
+                                <option value="">Selecione...</option>
+                            </select>
+                            <label for="recorrenteCategoria">Categoria</label>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <select class="form-control form-control-custom" id="recorrenteFrequencia" required>
+                                <option value="">Selecione...</option>
+                                <option value="diaria">Diária</option>
+                                <option value="semanal">Semanal</option>
+                                <option value="mensal">Mensal</option>
+                                <option value="anual">Anual</option>
+                            </select>
+                            <label for="recorrenteFrequencia">Frequência</label>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <input type="text" class="form-control form-control-custom flatpickr" id="recorrenteInicio" placeholder="Data de início" required>
+                            <label for="recorrenteInicio">Data de Início</label>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <input type="number" class="form-control form-control-custom" id="recorrenteValor" step="0.01" min="0" placeholder="0,00" required>
+                            <label for="recorrenteValor">Valor (R$)</label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="salvarRecorrente()">
+                        <i class="fas fa-save me-2"></i>Salvar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Sistema de Fluxo de Caixa Avançado
+        class FluxoCaixaAvancado {
+            constructor() {
+                this.entradas = JSON.parse(localStorage.getItem('entradas') || '[]');
+                this.saidas = JSON.parse(localStorage.getItem('saidas') || '[]');
+                this.recorrentes = JSON.parse(localStorage.getItem('recorrentes') || '[]');
+                this.usuario = JSON.parse(localStorage.getItem('usuario') || 'null');
+                this.usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]');
+                this.editingId = null;
+                this.currentPeriod = 'daily';
+                this.dateRangePicker = null;
+                this.init();
+            }
+
+            init() {
+                this.verificarLogin();
+                this.renderizarTabelas();
+                this.atualizarDashboard();
+                this.inicializarEventos();
+                this.inicializarDatePicker();
+                this.processarRecorrentes();
+            }
+
+            inicializarDatePicker() {
+                // Inicializar Flatpickr para todos os inputs de data
+                const dateInputs = document.querySelectorAll('.flatpickr');
+                dateInputs.forEach(input => {
+                    flatpickr(input, {
+                        locale: 'pt',
+                        dateFormat: 'd/m/Y',
+                        allowInput: true,
+                        defaultDate: 'today'
+                    });
+                });
+
+                // Inicializar seletor de período personalizado
+                this.dateRangePicker = flatpickr('#dateRangeInput', {
+                    mode: 'range',
+                    locale: 'pt',
+                    dateFormat: 'd/m/Y',
+                    defaultDate: [new Date(), new Date()]
+                });
+            }
+
+            inicializarEventos() {
+                // Form submissions
+                document.getElementById('loginForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.fazerLogin();
+                });
+
+                document.getElementById('registerForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.fazerCadastro();
+                });
+
+                // Evento de mudança de tipo de entrada/saída
+                document.getElementById('entradaTipo').addEventListener('change', (e) => {
+                    const recorrenteDiv = document.getElementById('entradaRecorrenteDiv');
+                    recorrenteDiv.style.display = e.target.value === 'recorrente' ? 'block' : 'none';
+                });
+
+                document.getElementById('saidaTipo').addEventListener('change', (e) => {
+                    const recorrenteDiv = document.getElementById('saidaRecorrenteDiv');
+                    recorrenteDiv.style.display = e.target.value === 'recorrente' ? 'block' : 'none';
+                });
+
+                // Evento de mudança de tipo de recorrente
+                document.getElementById('recorrenteTipo').addEventListener('change', (e) => {
+                    this.atualizarCategoriasRecorrente(e.target.value);
+                });
+
+                // Tab change events
+                const tabButtons = document.querySelectorAll('[data-bs-toggle="tab"]');
+                tabButtons.forEach(button => {
+                    button.addEventListener('shown.bs.tab', (e) => {
+                        const target = e.target.getAttribute('data-bs-target');
+                        
+                        if (target === '#entradas') {
+                            this.renderizarEntradas();
+                        } else if (target === '#saidas') {
+                            this.renderizarSaidas();
+                        } else if (target === '#recorrentes') {
+                            this.renderizarRecorrentes();
+                        } else if (target === '#relatorios') {
+                            this.atualizarGraficos();
+                        }
+                    });
+                });
+            }
+
+            verificarLogin() {
+                const loginSection = document.getElementById('loginContainer');
+                const mainApp = document.getElementById('mainApp');
+
+                if (this.usuario) {
+                    loginSection.classList.add('hidden');
+                    mainApp.classList.remove('hidden');
+                    this.mostrarUserInfo();
+                } else {
+                    loginSection.classList.remove('hidden');
+                    mainApp.classList.add('hidden');
+                }
+            }
+
+            mostrarUserInfo() {
+                const userInfo = document.getElementById('userName');
+                const userEmail = document.getElementById('userEmail');
+                if (userInfo) userInfo.textContent = this.usuario.nome || 'Usuário';
+                if (userEmail) userEmail.textContent = this.usuario.email || 'seu@email.com';
+            }
+
+            fazerLogin() {
+                const email = document.getElementById('loginEmail').value;
+                const password = document.getElementById('loginPassword').value;
+
+                if (!email || !password) {
+                    alert('Preencha email e senha!');
+                    return;
+                }
+
+                const usuarioExistente = this.usuarios.find(u => u.email === email);
+                
+                if (!usuarioExistente) {
+                    alert('Email não cadastrado! Por favor, crie uma conta.');
+                    return;
+                }
+
+                if (usuarioExistente.password !== password) {
+                    alert('Senha incorreta! Por favor, tente novamente.');
+                    return;
+                }
+
+                this.usuario = {
+                    email: usuarioExistente.email,
+                    nome: usuarioExistente.nome,
+                    loginTime: new Date().toISOString()
+                };
+
+                localStorage.setItem('usuario', JSON.stringify(this.usuario));
+                this.verificarLogin();
+                alert('Login realizado com sucesso!');
+            }
+
+            fazerCadastro() {
+                const nome = document.getElementById('registerName').value;
+                const email = document.getElementById('registerEmail').value;
+                const password = document.getElementById('registerPassword').value;
+                const confirmPassword = document.getElementById('registerConfirmPassword').value;
+
+                if (!nome || !email || !password || !confirmPassword) {
+                    alert('Preencha todos os campos!');
+                    return;
+                }
+
+                if (password !== confirmPassword) {
+                    alert('As senhas não coincidem!');
+                    return;
+                }
+
+                if (password.length < 6) {
+                    alert('A senha deve ter pelo menos 6 caracteres!');
+                    return;
+                }
+
+                const usuarioExistente = this.usuarios.find(u => u.email === email);
+                if (usuarioExistente) {
+                    alert('Email já cadastrado! Por favor, use outro email ou faça login.');
+                    return;
+                }
+
+                const novoUsuario = {
+                    email: email,
+                    nome: nome,
+                    password: password,
+                    createdAt: new Date().toISOString()
+                };
+
+                this.usuarios.push(novoUsuario);
+                localStorage.setItem('usuarios', JSON.stringify(this.usuarios));
+
+                this.usuario = {
+                    email: novoUsuario.email,
+                    nome: novoUsuario.nome,
+                    loginTime: new Date().toISOString()
+                };
+
+                localStorage.setItem('usuario', JSON.stringify(this.usuario));
+                this.verificarLogin();
+                alert('Cadastro realizado com sucesso!');
+            }
+
+            fazerLogout() {
+                localStorage.removeItem('usuario');
+                this.usuario = null;
+                this.verificarLogin();
+                alert('Logout realizado com sucesso!');
+            }
+
+            setPeriod(period) {
+                this.currentPeriod = period;
+                
+                // Atualizar botões
+                document.querySelectorAll('.period-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                event.target.classList.add('active');
+
+                // Mostrar/esconder seletor de período personalizado
+                const customRange = document.getElementById('customDateRange');
+                if (period === 'custom') {
+                    customRange.classList.remove('hidden');
+                } else {
+                    customRange.classList.add('hidden');
+                    this.atualizarDashboard();
+                }
+            }
+
+            applyCustomRange() {
+                const selectedDates = this.dateRangePicker.selectedDates;
+                if (selectedDates.length === 2) {
+                    this.customStartDate = selectedDates[0];
+                    this.customEndDate = selectedDates[1];
+                    this.atualizarDashboard();
+                }
+            }
+
+            getDateRange() {
+                const now = new Date();
+                let startDate, endDate;
+
+                switch (this.currentPeriod) {
+                    case 'daily':
+                        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                        endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+                        break;
+                    case 'weekly':
+                        startDate = new Date(now);
+                        startDate.setDate(now.getDate() - now.getDay());
+                        endDate = new Date(startDate);
+                        endDate.setDate(startDate.getDate() + 7);
+                        break;
+                    case 'monthly':
+                        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                        break;
+                    case 'quarterly':
+                        const quarter = Math.floor(now.getMonth() / 3);
+                        startDate = new Date(now.getFullYear(), quarter * 3, 1);
+                        endDate = new Date(now.getFullYear(), (quarter + 1) * 3, 0);
+                        break;
+                    case 'yearly':
+                        startDate = new Date(now.getFullYear(), 0, 1);
+                        endDate = new Date(now.getFullYear(), 11, 31);
+                        break;
+                    case 'custom':
+                        startDate = this.customStartDate;
+                        endDate = this.customEndDate;
+                        break;
+                    default:
+                        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                        endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+                }
+
+                return { startDate, endDate };
+            }
+
+            filtrarPorPeriodo(dados) {
+                const { startDate, endDate } = this.getDateRange();
+                return dados.filter(item => {
+                    const itemDate = new Date(item.data);
+                    return itemDate >= startDate && itemDate <= endDate;
+                });
+            }
+
+            processarRecorrentes() {
+                const now = new Date();
+                this.recorrentes.forEach(recorrente => {
+                    const proximaData = new Date(recorrente.proximaData);
+                    if (proximaData <= now) {
+                        // Criar transação a partir da recorrente
+                        const transacao = {
+                            id: Date.now() + Math.random(),
+                            data: recorrente.proximaData,
+                            descricao: recorrente.descricao,
+                            categoria: recorrente.categoria,
+                            valor: recorrente.valor,
+                            tipo: 'recorrente'
+                        };
+
+                        if (recorrente.tipo === 'entrada') {
+                            this.entradas.push(transacao);
+                        } else {
+                            this.saidas.push(transacao);
+                        }
+
+                        // Atualizar próxima data
+                        recorrente.proximaData = this.calcularProximaData(recorrente.frequencia, proximaData);
+                    }
+                });
+
+                // Salvar alterações
+                this.salvarDados();
+            }
+
+            calcularProximaData(frequencia, dataAtual) {
+                const proxima = new Date(dataAtual);
+                switch (frequencia) {
+                    case 'diaria':
+                        proxima.setDate(proxima.getDate() + 1);
+                        break;
+                    case 'semanal':
+                        proxima.setDate(proxima.getDate() + 7);
+                        break;
+                    case 'mensal':
+                        proxima.setMonth(proxima.getMonth() + 1);
+                        break;
+                    case 'anual':
+                        proxima.setFullYear(proxima.getFullYear() + 1);
+                        break;
+                }
+                return proxima.toISOString().split('T')[0];
+            }
+
+            openModalEntrada() {
+                document.getElementById('formEntrada').reset();
+                document.getElementById('entradaData').value = new Date().toLocaleDateString('pt-BR');
+                this.editingId = null;
+                const modal = new bootstrap.Modal(document.getElementById('modalEntrada'));
+                modal.show();
+            }
+
+            openModalEntradaDiaria() {
+                document.getElementById('formEntrada').reset();
+                document.getElementById('entradaData').value = new Date().toLocaleDateString('pt-BR');
+                document.getElementById('entradaTipo').value = 'recorrente';
+                document.getElementById('entradaRecorrente').value = 'diaria';
+                document.getElementById('entradaRecorrenteDiv').style.display = 'block';
+                this.editingId = null;
+                const modal = new bootstrap.Modal(document.getElementById('modalEntrada'));
+                modal.show();
+            }
+
+            openModalEntradaMensal() {
+                document.getElementById('formEntrada').reset();
+                document.getElementById('entradaData').value = new Date().toLocaleDateString('pt-BR');
+                document.getElementById('entradaTipo').value = 'recorrente';
+                document.getElementById('entradaRecorrente').value = 'mensal';
+                document.getElementById('entradaRecorrenteDiv').style.display = 'block';
+                this.editingId = null;
+                const modal = new bootstrap.Modal(document.getElementById('modalEntrada'));
+                modal.show();
+            }
+
+            openModalEntradaAnual() {
+                document.getElementById('formEntrada').reset();
+                document.getElementById('entradaData').value = new Date().toLocaleDateString('pt-BR');
+                document.getElementById('entradaTipo').value = 'recorrente';
+                document.getElementById('entradaRecorrente').value = 'anual';
+                document.getElementById('entradaRecorrenteDiv').style.display = 'block';
+                this.editingId = null;
+                const modal = new bootstrap.Modal(document.getElementById('modalEntrada'));
+                modal.show();
+            }
+
+            salvarEntrada() {
+                const data = document.getElementById('entradaData').value;
+                const descricao = document.getElementById('entradaDescricao').value;
+                const categoria = document.getElementById('entradaCategoria').value;
+                const tipo = document.getElementById('entradaTipo').value;
+                const recorrente = document.getElementById('entradaRecorrente').value;
+                const valor = document.getElementById('entradaValor').value;
+
+                if (!data || !descricao || !categoria || !tipo || !valor) {
+                    alert('Preencha todos os campos!');
+                    return;
+                }
+
+                if (parseFloat(valor) <= 0) {
+                    alert('O valor deve ser maior que zero!');
+                    return;
+                }
+
+                try {
+                    const entrada = {
+                        id: this.editingId || Date.now(),
+                        data: this.formatarDataParaISO(data),
+                        descricao: descricao,
+                        categoria: categoria,
+                        tipo: tipo,
+                        valor: parseFloat(valor)
+                    };
+
+                    if (tipo === 'recorrente' && recorrente) {
+                        // Criar transação recorrente
+                        const recorrenteObj = {
+                            id: Date.now(),
+                            descricao: descricao,
+                            tipo: 'entrada',
+                            categoria: categoria,
+                            frequencia: recorrente,
+                            valor: parseFloat(valor),
+                            proximaData: this.formatarDataParaISO(data),
+                            status: 'ativa'
+                        };
+                        this.recorrentes.push(recorrenteObj);
+                    }
+
+                    if (this.editingId) {
+                        const index = this.entradas.findIndex(e => e.id === this.editingId);
+                        if (index !== -1) {
+                            this.entradas[index] = entrada;
+                        }
+                        this.editingId = null;
+                    } else {
+                        this.entradas.unshift(entrada);
+                    }
+
+                    this.salvarDados();
+                    this.renderizarTabelas();
+                    this.atualizarDashboard();
+
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('modalEntrada'));
+                    if (modal) {
+                        modal.hide();
+                    }
+
+                    alert('Entrada salva com sucesso!');
+                } catch (error) {
+                    console.error('Erro ao salvar entrada:', error);
+                    alert('Erro ao salvar entrada: ' + error.message);
+                }
+            }
+
+            openModalSaida() {
+                document.getElementById('formSaida').reset();
+                document.getElementById('saidaData').value = new Date().toLocaleDateString('pt-BR');
+                this.editingId = null;
+                const modal = new bootstrap.Modal(document.getElementById('modalSaida'));
+                modal.show();
+            }
+
+            openModalSaidaDiaria() {
+                document.getElementById('formSaida').reset();
+                document.getElementById('saidaData').value = new Date().toLocaleDateString('pt-BR');
+                document.getElementById('saidaTipo').value = 'recorrente';
+                document.getElementById('saidaRecorrente').value = 'diaria';
+                document.getElementById('saidaRecorrenteDiv').style.display = 'block';
+                this.editingId = null;
+                const modal = new bootstrap.Modal(document.getElementById('modalSaida'));
+                modal.show();
+            }
+
+            openModalSaidaMensal() {
+                document.getElementById('formSaida').reset();
+                document.getElementById('saidaData').value = new Date().toLocaleDateString('pt-BR');
+                document.getElementById('saidaTipo').value = 'recorrente';
+                document.getElementById('saidaRecorrente').value = 'mensal';
+                document.getElementById('saidaRecorrenteDiv').style.display = 'block';
+                this.editingId = null;
+                const modal = new bootstrap.Modal(document.getElementById('modalSaida'));
+                modal.show();
+            }
+
+            openModalSaidaAnual() {
+                document.getElementById('formSaida').reset();
+                document.getElementById('saidaData').value = new Date().toLocaleDateString('pt-BR');
+                document.getElementById('saidaTipo').value = 'recorrente';
+                document.getElementById('saidaRecorrente').value = 'anual';
+                document.getElementById('saidaRecorrenteDiv').style.display = 'block';
+                this.editingId = null;
+                const modal = new bootstrap.Modal(document.getElementById('modalSaida'));
+                modal.show();
+            }
+
+            salvarSaida() {
+                const data = document.getElementById('saidaData').value;
+                const descricao = document.getElementById('saidaDescricao').value;
+                const categoria = document.getElementById('saidaCategoria').value;
+                const tipo = document.getElementById('saidaTipo').value;
+                const recorrente = document.getElementById('saidaRecorrente').value;
+                const valor = document.getElementById('saidaValor').value;
+
+                if (!data || !descricao || !categoria || !tipo || !valor) {
+                    alert('Preencha todos os campos!');
+                    return;
+                }
+
+                if (parseFloat(valor) <= 0) {
+                    alert('O valor deve ser maior que zero!');
+                    return;
+                }
+
+                try {
+                    const saida = {
+                        id: this.editingId || Date.now(),
+                        data: this.formatarDataParaISO(data),
+                        descricao: descricao,
+                        categoria: categoria,
+                        tipo: tipo,
+                        valor: parseFloat(valor)
+                    };
+
+                    if (tipo === 'recorrente' && recorrente) {
+                        // Criar transação recorrente
+                        const recorrenteObj = {
+                            id: Date.now(),
+                            descricao: descricao,
+                            tipo: 'saida',
+                            categoria: categoria,
+                            frequencia: recorrente,
+                            valor: parseFloat(valor),
+                            proximaData: this.formatarDataParaISO(data),
+                            status: 'ativa'
+                        };
+                        this.recorrentes.push(recorrenteObj);
+                    }
+
+                    if (this.editingId) {
+                        const index = this.saidas.findIndex(s => s.id === this.editingId);
+                        if (index !== -1) {
+                            this.saidas[index] = saida;
+                        }
+                        this.editingId = null;
+                    } else {
+                        this.saidas.unshift(saida);
+                    }
+
+                    this.salvarDados();
+                    this.renderizarTabelas();
+                    this.atualizarDashboard();
+
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('modalSaida'));
+                    if (modal) {
+                        modal.hide();
+                    }
+
+                    alert('Saída salva com sucesso!');
+                } catch (error) {
+                    console.error('Erro ao salvar saída:', error);
+                    alert('Erro ao salvar saída: ' + error.message);
+                }
+            }
+
+            openModalRecorrente() {
+                document.getElementById('formRecorrente').reset();
+                document.getElementById('recorrenteInicio').value = new Date().toLocaleDateString('pt-BR');
+                const modal = new bootstrap.Modal(document.getElementById('modalRecorrente'));
+                modal.show();
+            }
+
+            salvarRecorrente() {
+                const descricao = document.getElementById('recorrenteDescricao').value;
+                const tipo = document.getElementById('recorrenteTipo').value;
+                const categoria = document.getElementById('recorrenteCategoria').value;
+                const frequencia = document.getElementById('recorrenteFrequencia').value;
+                const inicio = document.getElementById('recorrenteInicio').value;
+                const valor = document.getElementById('recorrenteValor').value;
+
+                if (!descricao || !tipo || !categoria || !frequencia || !inicio || !valor) {
+                    alert('Preencha todos os campos!');
+                    return;
+                }
+
+                try {
+                    const recorrente = {
+                        id: Date.now(),
+                        descricao: descricao,
+                        tipo: tipo,
+                        categoria: categoria,
+                        frequencia: frequencia,
+                        valor: parseFloat(valor),
+                        proximaData: this.formatarDataParaISO(inicio),
+                        status: 'ativa'
+                    };
+
+                    this.recorrentes.push(recorrente);
+                    this.salvarDados();
+                    this.renderizarTabelas();
+
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('modalRecorrente'));
+                    if (modal) {
+                        modal.hide();
+                    }
+
+                    alert('Transação recorrente salva com sucesso!');
+                } catch (error) {
+                    console.error('Erro ao salvar recorrente:', error);
+                    alert('Erro ao salvar recorrente: ' + error.message);
+                }
+            }
+
+            quickAddEntrada() {
+                const valor = prompt('Valor da entrada:');
+                if (valor && parseFloat(valor) > 0) {
+                    const descricao = prompt('Descrição (opcional):') || 'Entrada rápida';
+                    const entrada = {
+                        id: Date.now(),
+                        data: new Date().toISOString().split('T')[0],
+                        descricao: descricao,
+                        categoria: 'outros',
+                        tipo: 'unica',
+                        valor: parseFloat(valor)
+                    };
+                    this.entradas.unshift(entrada);
+                    this.salvarDados();
+                    this.renderizarTabelas();
+                    this.atualizarDashboard();
+                    alert('Entrada rápida adicionada!');
+                }
+            }
+
+            quickAddSaida() {
+                const valor = prompt('Valor da saída:');
+                if (valor && parseFloat(valor) > 0) {
+                    const descricao = prompt('Descrição (opcional):') || 'Saída rápida';
+                    const saida = {
+                        id: Date.now(),
+                        data: new Date().toISOString().split('T')[0],
+                        descricao: descricao,
+                        categoria: 'outros',
+                        tipo: 'variavel',
+                        valor: parseFloat(valor)
+                    };
+                    this.saidas.unshift(saida);
+                    this.salvarDados();
+                    this.renderizarTabelas();
+                    this.atualizarDashboard();
+                    alert('Saída rápida adicionada!');
+                }
+            }
+
+            salvarDados() {
+                try {
+                    if (!Array.isArray(this.entradas)) {
+                        this.entradas = [];
+                    }
+                    if (!Array.isArray(this.saidas)) {
+                        this.saidas = [];
+                    }
+                    if (!Array.isArray(this.recorrentes)) {
+                        this.recorrentes = [];
+                    }
+
+                    localStorage.setItem('entradas', JSON.stringify(this.entradas));
+                    localStorage.setItem('saidas', JSON.stringify(this.saidas));
+                    localStorage.setItem('recorrentes', JSON.stringify(this.recorrentes));
+
+                    const entradasSalvas = JSON.parse(localStorage.getItem('entradas') || '[]');
+                    const saidasSalvas = JSON.parse(localStorage.getItem('saidas') || '[]');
+                    const recorrentesSalvas = JSON.parse(localStorage.getItem('recorrentes') || '[]');
+
+                    if (entradasSalvas.length !== this.entradas.length || 
+                        saidasSalvas.length !== this.saidas.length ||
+                        recorrentesSalvas.length !== this.recorrentes.length) {
+                        throw new Error('Erro na verificação dos dados salvos');
+                    }
+
+                    console.log('Dados salvos com sucesso:', {
+                        entradas: this.entradas.length,
+                        saidas: this.saidas.length,
+                        recorrentes: this.recorrentes.length
+                    });
+                } catch (error) {
+                    console.error('Erro ao salvar dados:', error);
+                    alert('Erro ao salvar dados: ' + error.message);
+                    throw error;
+                }
+            }
+
+            renderizarTabelas() {
+                this.renderizarEntradas();
+                this.renderizarSaidas();
+                this.renderizarRecorrentes();
+            }
+
+            renderizarEntradas() {
+                const tbody = document.getElementById('tabelaEntradas');
+                const entradasFiltradas = this.filtrarPorPeriodo(this.entradas);
+                
+                if (entradasFiltradas.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="7" class="text-center text-muted">
+                                <i class="fas fa-inbox fa-2x mb-2"></i>
+                                <p>Nenhuma entrada encontrada neste período</p>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                tbody.innerHTML = entradasFiltradas.map(entrada => `
+                    <tr>
+                        <td>${this.formatarData(entrada.data)}</td>
+                        <td>${entrada.descricao}</td>
+                        <td><span class="badge bg-success">${this.formatarCategoriaEntrada(entrada.categoria)}</span></td>
+                        <td><span class="badge ${this.getTipoBadgeClass(entrada.tipo)}">${entrada.tipo}</span></td>
+                        <td class="text-success fw-bold">+R$ ${this.formatarDinheiro(entrada.valor)}</td>
+                        <td><span class="badge bg-info">${entrada.tipo === 'recorrente' ? 'Sim' : 'Não'}</span></td>
+                        <td>
+                            <button class="btn btn-action btn-edit" onclick="fluxoCaixa.editarEntrada(${entrada.id})">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-action btn-delete" onclick="fluxoCaixa.excluirEntrada(${entrada.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            renderizarSaidas() {
+                const tbody = document.getElementById('tabelaSaidas');
+                const saidasFiltradas = this.filtrarPorPeriodo(this.saidas);
+                
+                if (saidasFiltradas.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="7" class="text-center text-muted">
+                                <i class="fas fa-inbox fa-2x mb-2"></i>
+                                <p>Nenhuma saída encontrada neste período</p>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                tbody.innerHTML = saidasFiltradas.map(saida => `
+                    <tr>
+                        <td>${this.formatarData(saida.data)}</td>
+                        <td>${saida.descricao}</td>
+                        <td><span class="badge bg-secondary">${this.formatarCategoriaSaida(saida.categoria)}</span></td>
+                        <td><span class="badge ${this.getTipoBadgeClass(saida.tipo)}">${saida.tipo}</span></td>
+                        <td class="text-danger fw-bold">-R$ ${this.formatarDinheiro(saida.valor)}</td>
+                        <td><span class="badge bg-info">${saida.tipo === 'recorrente' ? 'Sim' : 'Não'}</span></td>
+                        <td>
+                            <button class="btn btn-action btn-edit" onclick="fluxoCaixa.editarSaida(${saida.id})">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-action btn-delete" onclick="fluxoCaixa.excluirSaida(${saida.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            renderizarRecorrentes() {
+                const tbody = document.getElementById('tabelaRecorrentes');
+                
+                if (this.recorrentes.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="7" class="text-center text-muted">
+                                <i class="fas fa-sync fa-2x mb-2"></i>
+                                <p>Nenhuma transação recorrente encontrada</p>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                tbody.innerHTML = this.recorrentes.map(recorrente => `
+                    <tr>
+                        <td>${recorrente.descricao}</td>
+                        <td><span class="badge ${recorrente.tipo === 'entrada' ? 'bg-success' : 'bg-danger'}">${recorrente.tipo}</span></td>
+                        <td class="fw-bold">R$ ${this.formatarDinheiro(recorrente.valor)}</td>
+                        <td><span class="badge bg-info">${recorrente.frequencia}</span></td>
+                        <td>${this.formatarData(recorrente.proximaData)}</td>
+                        <td><span class="badge ${recorrente.status === 'ativa' ? 'bg-success' : 'bg-secondary'}">${recorrente.status}</span></td>
+                        <td>
+                            <button class="btn btn-action btn-edit" onclick="fluxoCaixa.editarRecorrente(${recorrente.id})">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-action btn-delete" onclick="fluxoCaixa.excluirRecorrente(${recorrente.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            atualizarDashboard() {
+                const entradasFiltradas = this.filtrarPorPeriodo(this.entradas);
+                const saidasFiltradas = this.filtrarPorPeriodo(this.saidas);
+                
+                const totalEntradas = entradasFiltradas.reduce((total, e) => total + e.valor, 0);
+                const totalSaidas = saidasFiltradas.reduce((total, s) => total + s.valor, 0);
+                const saldoFinal = totalEntradas - totalSaidas;
+                const percentualCrescimento = totalSaidas > 0 ? ((totalEntradas - totalSaidas) / totalSaidas * 100) : 0;
+
+                document.getElementById('totalEntradas').textContent = `R$ ${this.formatarDinheiro(totalEntradas)}`;
+                document.getElementById('totalSaidas').textContent = `R$ ${this.formatarDinheiro(totalSaidas)}`;
+                document.getElementById('saldoFinal').textContent = `R$ ${this.formatarDinheiro(saldoFinal)}`;
+                document.getElementById('percentualCrescimento').textContent = `${percentualCrescimento.toFixed(1)}%`;
+
+                // Atualizar período nos cards
+                const periodoText = this.getPeriodoText();
+                document.getElementById('periodoEntradas').textContent = periodoText;
+                document.getElementById('periodoSaidas').textContent = periodoText;
+                document.getElementById('periodoSaldo').textContent = periodoText;
+                document.getElementById('periodoCrescimento').textContent = 'vs período anterior';
+
+                // Atualizar título do gráfico
+                document.getElementById('chartPeriodTitle').textContent = this.getPeriodoText();
+
+                // Atualizar gráficos
+                this.atualizarGraficos();
+            }
+
+            getPeriodoText() {
+                switch (this.currentPeriod) {
+                    case 'daily': return 'Hoje';
+                    case 'weekly': return 'Esta semana';
+                    case 'monthly': return 'Este mês';
+                    case 'quarterly': return 'Este trimestre';
+                    case 'yearly': return 'Este ano';
+                    case 'custom': return 'Período personalizado';
+                    default: return 'Este período';
+                }
+            }
+
+            getTipoBadgeClass(tipo) {
+                switch (tipo) {
+                    case 'unica': return 'bg-primary';
+                    case 'fixo': return 'bg-warning';
+                    case 'variavel': return 'bg-info';
+                    case 'recorrente': return 'bg-success';
+                    default: return 'bg-secondary';
+                }
+            }
+
+            atualizarGraficos() {
+                this.criarGraficoPrincipal();
+                this.criarGraficoCategorias();
+                this.criarGraficoEvolucao();
+                this.criarGraficoComparacao();
+            }
+
+            criarGraficoPrincipal() {
+                const ctx = document.getElementById('mainChart');
+                if (!ctx) return;
+
+                const dadosMensais = this.agruparDadosPorPeriodo();
+                
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: dadosMensais.labels,
+                        datasets: [{
+                            label: 'Entradas',
+                            data: dadosMensais.entradas,
+                            backgroundColor: 'rgba(40, 167, 69, 0.8)',
+                            borderColor: 'rgba(40, 167, 69, 1)',
+                            borderWidth: 1
+                        }, {
+                            label: 'Saídas',
+                            data: dadosMensais.saidas,
+                            backgroundColor: 'rgba(220, 53, 69, 0.8)',
+                            borderColor: 'rgba(220, 53, 69, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            },
+                            title: {
+                                display: true,
+                                text: 'Fluxo Financeiro'
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return 'R$ ' + value.toFixed(2);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            criarGraficoCategorias() {
+                const ctx = document.getElementById('categoriaChart');
+                if (!ctx) return;
+
+                const dadosCategorias = this.agruparDadosPorCategoria();
+                
+                new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: dadosCategorias.labels,
+                        datasets: [{
+                            data: dadosCategorias.valores,
+                            backgroundColor: [
+                                'rgba(255, 99, 132, 0.8)',
+                                'rgba(54, 162, 235, 0.8)',
+                                'rgba(255, 206, 86, 0.8)',
+                                'rgba(75, 192, 192, 0.8)',
+                                'rgba(153, 102, 255, 0.8)',
+                                'rgba(255, 159, 64, 0.8)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                            },
+                            title: {
+                                display: true,
+                                text: 'Distribuição por Categoria'
+                            }
+                        }
+                    }
+                });
+            }
+
+            criarGraficoEvolucao() {
+                const ctx = document.getElementById('evolucaoChart');
+                if (!ctx) return;
+
+                const dadosEvolucao = this.agruparDadosEvolucao();
+                
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: dadosEvolucao.labels,
+                        datasets: [{
+                            label: 'Saldo Acumulado',
+                            data: dadosEvolucao.saldos,
+                            borderColor: 'rgba(23, 162, 184, 1)',
+                            backgroundColor: 'rgba(23, 162, 184, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            },
+                            title: {
+                                display: true,
+                                text: 'Evolução do Saldo'
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return 'R$ ' + value.toFixed(2);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            criarGraficoComparacao() {
+                const ctx = document.getElementById('comparacaoChart');
+                if (!ctx) return;
+
+                const dadosComparacao = this.obterDadosComparacao();
+                
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: dadosComparacao.labels,
+                        datasets: [{
+                            label: 'Entradas',
+                            data: dadosComparacao.entradas,
+                            backgroundColor: 'rgba(40, 167, 69, 0.8)',
+                            borderColor: 'rgba(40, 167, 69, 1)',
+                            borderWidth: 1
+                        }, {
+                            label: 'Saídas',
+                            data: dadosComparacao.saidas,
+                            backgroundColor: 'rgba(220, 53, 69, 0.8)',
+                            borderColor: 'rgba(220, 53, 69, 1)',
+                            borderWidth: 1
+                        }, {
+                            label: 'Saldo',
+                            data: dadosComparacao.saldos,
+                            backgroundColor: 'rgba(23, 162, 184, 0.8)',
+                            borderColor: 'rgba(23, 162, 184, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            },
+                            title: {
+                                display: true,
+                                text: 'Comparação de Períodos'
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return 'R$ ' + value.toFixed(2);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            agruparDadosPorPeriodo() {
+                const entradasFiltradas = this.filtrarPorPeriodo(this.entradas);
+                const saidasFiltradas = this.filtrarPorPeriodo(this.saidas);
+                
+                let labels = [];
+                let dadosEntradas = [];
+                let dadosSaidas = [];
+
+                switch (this.currentPeriod) {
+                    case 'daily':
+                        labels = ['00:00', '06:00', '12:00', '18:00', '23:59'];
+                        dadosEntradas = [0, 0, 0, 0, 0];
+                        dadosSaidas = [0, 0, 0, 0, 0];
+                        break;
+                    case 'weekly':
+                        labels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+                        dadosEntradas = [0, 0, 0, 0, 0, 0, 0];
+                        dadosSaidas = [0, 0, 0, 0, 0, 0, 0];
+                        break;
+                    case 'monthly':
+                        const diasNoMes = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
+                        labels = Array.from({length: Math.min(diasNoMes, 30)}, (_, i) => i + 1);
+                        dadosEntradas = new Array(labels.length).fill(0);
+                        dadosSaidas = new Array(labels.length).fill(0);
+                        break;
+                    case 'quarterly':
+                        labels = ['Mês 1', 'Mês 2', 'Mês 3'];
+                        dadosEntradas = [0, 0, 0];
+                        dadosSaidas = [0, 0, 0];
+                        break;
+                    case 'yearly':
+                        labels = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+                        dadosEntradas = new Array(12).fill(0);
+                        dadosSaidas = new Array(12).fill(0);
+                        break;
+                    default:
+                        labels = ['Período'];
+                        dadosEntradas = [entradasFiltradas.reduce((sum, e) => sum + e.valor, 0)];
+                        dadosSaidas = [saidasFiltradas.reduce((sum, s) => sum + s.valor, 0)];
+                }
+
+                // Preencher dados reais
+                entradasFiltradas.forEach(entrada => {
+                    const data = new Date(entrada.data);
+                    let index = 0;
+                    
+                    switch (this.currentPeriod) {
+                        case 'daily':
+                            index = Math.floor(data.getHours() / 6);
+                            break;
+                        case 'weekly':
+                            index = data.getDay();
+                            break;
+                        case 'monthly':
+                            index = data.getDate() - 1;
+                            break;
+                        case 'quarterly':
+                            index = data.getMonth() % 3;
+                            break;
+                        case 'yearly':
+                            index = data.getMonth();
+                            break;
+                    }
+                    
+                    if (index >= 0 && index < dadosEntradas.length) {
+                        dadosEntradas[index] += entrada.valor;
+                    }
+                });
+
+                saidasFiltradas.forEach(saida => {
+                    const data = new Date(saida.data);
+                    let index = 0;
+                    
+                    switch (this.currentPeriod) {
+                        case 'daily':
+                            index = Math.floor(data.getHours() / 6);
+                            break;
+                        case 'weekly':
+                            index = data.getDay();
+                            break;
+                        case 'monthly':
+                            index = data.getDate() - 1;
+                            break;
+                        case 'quarterly':
+                            index = data.getMonth() % 3;
+                            break;
+                        case 'yearly':
+                            index = data.getMonth();
+                            break;
+                    }
+                    
+                    if (index >= 0 && index < dadosSaidas.length) {
+                        dadosSaidas[index] += saida.valor;
+                    }
+                });
+
+                return {
+                    labels: labels,
+                    entradas: dadosEntradas,
+                    saidas: dadosSaidas
+                };
+            }
+
+            agruparDadosPorCategoria() {
+                const dadosCategorias = {};
+                const todasEntradas = this.filtrarPorPeriodo(this.entradas);
+                const todasSaidas = this.filtrarPorPeriodo(this.saidas);
+                
+                // Agrupar entradas por categoria
+                todasEntradas.forEach(entrada => {
+                    if (!dadosCategorias[entrada.categoria]) {
+                        dadosCategorias[entrada.categoria] = 0;
+                    }
+                    dadosCategorias[entrada.categoria] += entrada.valor;
+                });
+
+                // Agrupar saídas por categoria
+                todasSaidas.forEach(saida => {
+                    if (!dadosCategorias[saida.categoria]) {
+                        dadosCategorias[saida.categoria] = 0;
+                    }
+                    dadosCategorias[saida.categoria] += saida.valor;
+                });
+
+                return {
+                    labels: Object.keys(dadosCategorias),
+                    valores: Object.values(dadosCategorias)
+                };
+            }
+
+            agruparDadosEvolucao() {
+                const todasEntradas = this.filtrarPorPeriodo(this.entradas);
+                const todasSaidas = this.filtrarPorPeriodo(this.saidas);
+                
+                const dadosPorData = {};
+                
+                // Agrupar dados por data
+                todasEntradas.forEach(entrada => {
+                    const data = entrada.data.split('T')[0];
+                    if (!dadosPorData[data]) {
+                        dadosPorData[data] = { entradas: 0, saidas: 0 };
+                    }
+                    dadosPorData[data].entradas += entrada.valor;
+                });
+
+                todasSaidas.forEach(saida => {
+                    const data = saida.data.split('T')[0];
+                    if (!dadosPorData[data]) {
+                        dadosPorData[data] = { entradas: 0, saidas: 0 };
+                    }
+                    dadosPorData[data].saidas += saida.valor;
+                });
+
+                // Ordenar datas
+                const datasOrdenadas = Object.keys(dadosPorData).sort();
+                let saldoAcumulado = 0;
+                const saldos = [];
+
+                datasOrdenadas.forEach(data => {
+                    const dados = dadosPorData[data];
+                    saldoAcumulado += dados.entradas - dados.saidas;
+                    saldos.push(saldoAcumulado);
+                });
+
+                return {
+                    labels: datasOrdenadas,
+                    saldos: saldos
+                };
+            }
+
+            obterDadosComparacao() {
+                const periodos = ['Último mês', 'Mês atual', 'Próximo mês'];
+                const dados = {
+                    labels: periodos,
+                    entradas: [],
+                    saidas: [],
+                    saldos: []
+                };
+
+                // Simular dados para comparação
+                const entradasFiltradas = this.filtrarPorPeriodo(this.entradas);
+                const saidasFiltradas = this.filtrarPorPeriodo(this.saidas);
+                
+                const totalEntradas = entradasFiltradas.reduce((sum, e) => sum + e.valor, 0);
+                const totalSaidas = saidasFiltradas.reduce((sum, s) => sum + s.valor, 0);
+                const saldo = totalEntradas - totalSaidas;
+
+                // Dados simulados para demonstração
+                dados.entradas = [
+                    totalEntradas * 0.8,  // Último mês
+                    totalEntradas,       // Mês atual
+                    totalEntradas * 1.1  // Próximo mês (previsão)
+                ];
+                
+                dados.saidas = [
+                    totalSaidas * 0.9,   // Último mês
+                    totalSaidas,         // Mês atual
+                    totalSaidas * 1.05   // Próximo mês (previsão)
+                ];
+                
+                dados.saldos = [
+                    dados.entradas[0] - dados.saidas[0],
+                    dados.entradas[1] - dados.saidas[1],
+                    dados.entradas[2] - dados.saidas[2]
+                ];
+
+                return dados;
+            }
+
+            formatarData(dataString) {
+                const data = new Date(dataString);
+                return data.toLocaleDateString('pt-BR');
+            }
+
+            formatarDataParaISO(dataString) {
+                // Converte DD/MM/YYYY para YYYY-MM-DD
+                const partes = dataString.split('/');
+                if (partes.length === 3) {
+                    return `${partes[2]}-${partes[1].padStart(2, '0')}-${partes[0].padStart(2, '0')}`;
+                }
+                return dataString;
+            }
+
+            formatarDinheiro(valor) {
+                return new Intl.NumberFormat('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL'
+                }).format(valor);
+            }
+
+            formatarCategoriaEntrada(categoria) {
+                const categorias = {
+                    'lavagem': 'Lavagem',
+                    'estacionamento': 'Estacionamento',
+                    'servicos': 'Serviços',
+                    'outros': 'Outros'
+                };
+                return categorias[categoria] || categoria;
+            }
+
+            formatarCategoriaSaida(categoria) {
+                const categorias = {
+                    'aluguel': 'Aluguel',
+                    'salarios': 'Salários',
+                    'produtos': 'Produtos de Limpeza',
+                    'manutencao': 'Manutenção',
+                    'agua': 'Água',
+                    'luz': 'Luz',
+                    'telefone': 'Telefone/Internet',
+                    'impostos': 'Impostos',
+                    'outros': 'Outros'
+                };
+                return categorias[categoria] || categoria;
+            }
+
+            atualizarCategoriasRecorrente(tipo) {
+                const select = document.getElementById('recorrenteCategoria');
+                select.innerHTML = '<option value="">Selecione...</option>';
+                
+                if (tipo === 'entrada') {
+                    select.innerHTML += `
+                        <option value="lavagem">Lavagem</option>
+                        <option value="estacionamento">Estacionamento</option>
+                        <option value="servicos">Serviços Adicionais</option>
+                        <option value="outros">Outros</option>
+                    `;
+                } else {
+                    select.innerHTML += `
+                        <option value="aluguel">Aluguel</option>
+                        <option value="salarios">Salários</option>
+                        <option value="produtos">Produtos de Limpeza</option>
+                        <option value="manutencao">Manutenção</option>
+                        <option value="agua">Água</option>
+                        <option value="luz">Luz</option>
+                        <option value="telefone">Telefone/Internet</option>
+                        <option value="impostos">Impostos</option>
+                        <option value="outros">Outros</option>
+                    `;
+                }
+            }
+
+            editarEntrada(id) {
+                const entrada = this.entradas.find(e => e.id === id);
+                if (!entrada) return;
+
+                this.editingId = id;
+                document.getElementById('entradaId').value = entrada.id;
+                document.getElementById('entradaData').value = this.formatarData(entrada.data);
+                document.getElementById('entradaDescricao').value = entrada.descricao;
+                document.getElementById('entradaCategoria').value = entrada.categoria;
+                document.getElementById('entradaTipo').value = entrada.tipo;
+                document.getElementById('entradaValor').value = entrada.valor;
+
+                if (entrada.tipo === 'recorrente') {
+                    document.getElementById('entradaRecorrenteDiv').style.display = 'block';
+                }
+
+                const modal = new bootstrap.Modal(document.getElementById('modalEntrada'));
+                modal.show();
+            }
+
+            editarSaida(id) {
+                const saida = this.saidas.find(s => s.id === id);
+                if (!saida) return;
+
+                this.editingId = id;
+                document.getElementById('saidaId').value = saida.id;
+                document.getElementById('saidaData').value = this.formatarData(saida.data);
+                document.getElementById('saidaDescricao').value = saida.descricao;
+                document.getElementById('saidaCategoria').value = saida.categoria;
+                document.getElementById('saidaTipo').value = saida.tipo;
+                document.getElementById('saidaValor').value = saida.valor;
+
+                if (saida.tipo === 'recorrente') {
+                    document.getElementById('saidaRecorrenteDiv').style.display = 'block';
+                }
+
+                const modal = new bootstrap.Modal(document.getElementById('modalSaida'));
+                modal.show();
+            }
+
+            editarRecorrente(id) {
+                const recorrente = this.recorrentes.find(r => r.id === id);
+                if (!recorrente) return;
+
+                document.getElementById('recorrenteDescricao').value = recorrente.descricao;
+                document.getElementById('recorrenteTipo').value = recorrente.tipo;
+                this.atualizarCategoriasRecorrente(recorrente.tipo);
+                document.getElementById('recorrenteCategoria').value = recorrente.categoria;
+                document.getElementById('recorrenteFrequencia').value = recorrente.frequencia;
+                document.getElementById('recorrenteInicio').value = this.formatarData(recorrente.proximaData);
+                document.getElementById('recorrenteValor').value = recorrente.valor;
+
+                const modal = new bootstrap.Modal(document.getElementById('modalRecorrente'));
+                modal.show();
+            }
+
+            excluirEntrada(id) {
+                if (confirm('Tem certeza que deseja excluir esta entrada?')) {
+                    this.entradas = this.entradas.filter(e => e.id !== id);
+                    this.salvarDados();
+                    this.renderizarTabelas();
+                    this.atualizarDashboard();
+                    alert('Entrada excluída com sucesso!');
+                }
+            }
+
+            excluirSaida(id) {
+                if (confirm('Tem certeza que deseja excluir esta saída?')) {
+                    this.saidas = this.saidas.filter(s => s.id !== id);
+                    this.salvarDados();
+                    this.renderizarTabelas();
+                    this.atualizarDashboard();
+                    alert('Saída excluída com sucesso!');
+                }
+            }
+
+            excluirRecorrente(id) {
+                if (confirm('Tem certeza que deseja excluir esta transação recorrente?')) {
+                    this.recorrentes = this.recorrentes.filter(r => r.id !== id);
+                    this.salvarDados();
+                    this.renderizarTabelas();
+                    alert('Transação recorrente excluída com sucesso!');
+                }
+            }
+
+            aplicarFiltros() {
+                // Implementar filtros avançados
+                this.renderizarTabelas();
+                this.atualizarDashboard();
+            }
+
+            limparFiltros() {
+                // Limpar filtros
+                document.getElementById('filtroCategoria').value = '';
+                document.getElementById('filtroTipo').value = '';
+                document.getElementById('valorMinimo').value = '';
+                document.getElementById('valorMaximo').value = '';
+                
+                this.renderizarTabelas();
+                this.atualizarDashboard();
+            }
+
+            exportarFiltrados() {
+                // Implementar exportação de dados filtrados
+                alert('Função de exportação em desenvolvimento!');
+            }
+
+            gerarRelatorioPDF() {
+                const totalEntradas = this.entradas.reduce((total, e) => total + e.valor, 0);
+                const totalSaidas = this.saidas.reduce((total, s) => total + s.valor, 0);
+                const saldoFinal = totalEntradas - totalSaidas;
+
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                // Título
+                doc.setFontSize(20);
+                doc.setFont(undefined, 'bold');
+                doc.text('Fluxo de Caixa Avançado - Sa Lavagem e Estacionamento', 105, 20, { align: 'center' });
+                doc.setFontSize(12);
+                doc.setFont(undefined, 'normal');
+                doc.text('Data: ' + new Date().toLocaleDateString('pt-BR'), 20, 40);
+                doc.text('Período: ' + this.getPeriodoText(), 20, 50);
+                doc.text('================================================', 20, 65);
+                
+                // Resumo
+                doc.setFontSize(16);
+                doc.setFont(undefined, 'bold');
+                doc.text('RESUMO FINANCEIRO', 20, 80);
+                doc.setFontSize(12);
+                doc.setFont(undefined, 'normal');
+                doc.text('Total Entradas: R$ ' + this.formatarDinheiro(totalEntradas), 20, 95);
+                doc.text('Total Saídas: R$ ' + this.formatarDinheiro(totalSaidas), 20, 105);
+                doc.text('Saldo Final: R$ ' + this.formatarDinheiro(saldoFinal), 20, 115);
+                doc.text('================================================', 20, 130);
+                
+                // Salvar PDF
+                doc.save(`fluxo-caixa-avancado-${new Date().toISOString().split('T')[0]}.pdf`);
+                alert('Relatório PDF gerado com sucesso!');
+            }
+
+            gerarRelatorioExcel() {
+                alert('Função de exportação para Excel em desenvolvimento!');
+            }
+
+            gerarRelatorioCompleto() {
+                alert('Relatório completo em desenvolvimento!');
+            }
+        }
+
+        // Funções globais
+        function showLoginForm() {
+            document.getElementById('loginContainer').classList.remove('hidden');
+            document.getElementById('registerContainer').classList.add('hidden');
+        }
+
+        function showRegisterForm() {
+            document.getElementById('loginContainer').classList.add('hidden');
+            document.getElementById('registerContainer').classList.remove('hidden');
+        }
+
+        function logout() {
+            fluxoCaixa.fazerLogout();
+        }
+
+        function setPeriod(period) {
+            fluxoCaixa.setPeriod(period);
+        }
+
+        function applyCustomRange() {
+            fluxoCaixa.applyCustomRange();
+        }
+
+        function openModalEntrada() {
+            fluxoCaixa.openModalEntrada();
+        }
+
+        function openModalEntradaDiaria() {
+            fluxoCaixa.openModalEntradaDiaria();
+        }
+
+        function openModalEntradaMensal() {
+            fluxoCaixa.openModalEntradaMensal();
+        }
+
+        function openModalEntradaAnual() {
+            fluxoCaixa.openModalEntradaAnual();
+        }
+
+        function openModalSaida() {
+            fluxoCaixa.openModalSaida();
+        }
+
+        function openModalSaidaDiaria() {
+            fluxoCaixa.openModalSaidaDiaria();
+        }
+
+        function openModalSaidaMensal() {
+            fluxoCaixa.openModalSaidaMensal();
+        }
+
+        function openModalSaidaAnual() {
+            fluxoCaixa.openModalSaidaAnual();
+        }
+
+        function openModalRecorrente() {
+            fluxoCaixa.openModalRecorrente();
+        }
+
+        function salvarEntrada() {
+            fluxoCaixa.salvarEntrada();
+        }
+
+        function salvarSaida() {
+            fluxoCaixa.salvarSaida();
+        }
+
+        function salvarRecorrente() {
+            fluxoCaixa.salvarRecorrente();
+        }
+
+        function quickAddEntrada() {
+            fluxoCaixa.quickAddEntrada();
+        }
+
+        function quickAddSaida() {
+            fluxoCaixa.quickAddSaida();
+        }
+
+        function aplicarFiltros() {
+            fluxoCaixa.aplicarFiltros();
+        }
+
+        function limparFiltros() {
+            fluxoCaixa.limparFiltros();
+        }
+
+        function exportarFiltrados() {
+            fluxoCaixa.exportarFiltrados();
+        }
+
+        function gerarRelatorioPDF() {
+            fluxoCaixa.gerarRelatorioPDF();
+        }
+
+        function gerarRelatorioExcel() {
+            fluxoCaixa.gerarRelatorioExcel();
+        }
+
+        function gerarRelatorioCompleto() {
+            fluxoCaixa.gerarRelatorioCompleto();
+        }
+
+        // Inicializar sistema
+        const fluxoCaixa = new FluxoCaixaAvancado();
+    </script>
+</body>
+</html>

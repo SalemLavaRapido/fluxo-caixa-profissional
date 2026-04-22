@@ -1,0 +1,17 @@
+Este é um arquivo placeholder para um GIF.
+Para criar um GIF mostrando o processo de deploy:
+
+1. Grave sua tela fazendo:
+   - Login no Supabase
+   - Executando o script setup-supabase.sql
+   - Upload dos arquivos no Netlify
+   - Testando a aplicação online
+
+2. Use ferramentas como:
+   - LICEcap (Windows)
+   - ScreenToGif (Windows)
+   - OBS Studio + FFmpeg
+
+3. Salve como deploy-guia-rapido.gif
+
+O GIF deve mostrar o fluxo completo em ~30 segundos.

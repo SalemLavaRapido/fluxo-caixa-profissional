@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Rápido</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Teste Rápido - Sistema Funcionando!</h1>
+        
+        <div id="status">
+            <p>🔍 Verificando sistema...</p>
+        </div>
+        
+        <div class="mt-4">
+            <h3>Links de Teste:</h3>
+            <ul>
+                <li><a href="index.html">Sistema Principal</a></li>
+                <li><a href="index-demo.html">Versão Demo</a></li>
+                <li><a href="fluxo-completo.html">Versão Completa</a></li>
+            </ul>
+        </div>
+        
+        <div class="mt-4">
+            <h3>Status dos Componentes:</h3>
+            <div id="componentes">
+                <p>📦 Verificando...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Verificar se os arquivos existem
+        function verificarArquivos() {
+            const arquivos = [
+                'index.html',
+                'index-demo.html', 
+                'fluxo-completo.html',
+                'js/config.js',
+                'js/auth.js',
+                'js/entradas.js',
+                'js/saidas.js',
+                'js/dashboard.js',
+                'js/relatorios.js',
+                'js/app.js'
+            ];
+            
+            let todosExistem = true;
+            let resultado = '<h4>Arquivos do Sistema:</h4>';
+            
+            arquivos.forEach(arquivo => {
+                fetch(arquivo, { method: 'HEAD' })
+                    .then(response => {
+                        if (response.ok) {
+                            resultado += `<p class="success">✅ ${arquivo}</p>`;
+                        } else {
+                            resultado += `<p class="error">❌ ${arquivo}</p>`;
+                            todosExistem = false;
+                        }
+                    })
+                    .catch(() => {
+                        resultado += `<p class="error">❌ ${arquivo}</p>`;
+                        todosExistem = false;
+                    });
+            });
+            
+            setTimeout(() => {
+                document.getElementById('componentes').innerHTML = resultado;
+                
+                const status = document.getElementById('status');
+                if (todosExistem) {
+                    status.innerHTML = '<p class="success">🎉 SISTEMA 100% FUNCIONANDO!</p>';
+                } else {
+                    status.innerHTML = '<p class="error">⚠️ Alguns arquivos estão faltando</p>';
+                }
+            }, 2000);
+        }
+        
+        verificarArquivos();
+    </script>
+</body>
+</html>

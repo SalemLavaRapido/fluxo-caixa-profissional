@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fluxo de Caixa Profissional</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- jsPDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <style>
+        :root {
+            --primary-color: #007bff;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --info-color: #17a2b8;
+            --dark-color: #343a40;
+            --light-color: #f8f9fa;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .main-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            margin: 20px auto;
+            max-width: 1200px;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary-color), var(--info-color));
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-weight: 700;
+            font-size: 2.5rem;
+        }
+
+        .header p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+        }
+
+        .auth-container {
+            max-width: 400px;
+            margin: 50px auto;
+            padding: 40px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .auth-container h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: var(--dark-color);
+        }
+
+        .form-floating {
+            margin-bottom: 20px;
+        }
+
+        .btn-custom {
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary-custom {
+            background: linear-gradient(135deg, var(--primary-color), var(--info-color));
+            border: none;
+            color: white;
+        }
+
+        .btn-primary-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,123,255,0.3);
+        }
+
+        .dashboard-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            transition: transform 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .dashboard-card .card-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+
+        .dashboard-card.success .card-icon {
+            background: rgba(40, 167, 69, 0.1);
+            color: var(--success-color);
+        }
+
+        .dashboard-card.danger .card-icon {
+            background: rgba(220, 53, 69, 0.1);
+            color: var(--danger-color);
+        }
+
+        .dashboard-card.info .card-icon {
+            background: rgba(23, 162, 184, 0.1);
+            color: var(--info-color);
+        }
+
+        .dashboard-card.warning .card-icon {
+            background: rgba(255, 193, 7, 0.1);
+            color: var(--warning-color);
+        }
+
+        .dashboard-card h3 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .dashboard-card p {
+            color: #6c757d;
+            margin: 5px 0 0 0;
+        }
+
+        .nav-tabs .nav-link {
+            border-radius: 10px 10px 0 0;
+            font-weight: 600;
+            color: var(--dark-color);
+            transition: all 0.3s ease;
+        }
+
+        .nav-tabs .nav-link.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .table-custom {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        }
+
+        .table-custom thead {
+            background: var(--light-color);
+        }
+
+        .table-custom th {
+            border: none;
+            font-weight: 600;
+            color: var(--dark-color);
+            padding: 15px;
+        }
+
+        .table-custom td {
+            padding: 15px;
+            vertical-align: middle;
+        }
+
+        .badge-custom {
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+
+        .btn-action {
+            padding: 8px 15px;
+            border-radius: 8px;
+            border: none;
+            font-size: 14px;
+            margin: 0 2px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-edit {
+            background: var(--info-color);
+            color: white;
+        }
+
+        .btn-delete {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        .btn-action:hover {
+            transform: translateY(-2px);
+            opacity: 0.8;
+        }
+
+        .filter-section {
+            background: var(--light-color);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+
+        .form-control-custom {
+            border-radius: 10px;
+            border: 1px solid #dee2e6;
+            padding: 12px;
+        }
+
+        .form-control-custom:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
+        }
+
+        .modal-content {
+            border-radius: 15px;
+            border: none;
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--info-color));
+            color: white;
+            border-radius: 15px 15px 0 0;
+        }
+
+        .modal-header .btn-close {
+            filter: brightness(0) invert(1);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 20px 0;
+        }
+
+        .loading-spinner {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 9999;
+        }
+
+        .loading-spinner.show {
+            display: block;
+        }
+
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+            border-width: 0.3em;
+        }
+
+        .alert-custom {
+            border-radius: 10px;
+            border: none;
+            padding: 15px 20px;
+        }
+
+        .user-info {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                margin: 10px;
+                border-radius: 15px;
+            }
+
+            .header h1 {
+                font-size: 1.8rem;
+            }
+
+            .dashboard-card h3 {
+                font-size: 1.5rem;
+            }
+
+            .user-info {
+                position: static;
+                justify-content: center;
+                margin-top: 15px;
+            }
+
+            .table-custom {
+                font-size: 0.9rem;
+            }
+
+            .btn-action {
+                padding: 6px 10px;
+                font-size: 12px;
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .chart-wrapper {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Spinner -->
+    <div class="loading-spinner">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Carregando...</span>
+        </div>
+    </div>
+
+    <!-- Login Container -->
+    <div id="loginContainer" class="auth-container">
+        <div class="text-center mb-4">
+            <i class="fas fa-chart-line fa-3x text-primary mb-3"></i>
+            <h2>Fluxo de Caixa Profissional</h2>
+            <p class="text-muted">Gerencie suas finanças de forma simples e eficiente</p>
+        </div>
+
+        <!-- Login Form -->
+        <form id="loginForm">
+            <div class="form-floating mb-3">
+                <input type="email" class="form-control form-control-custom" id="loginEmail" placeholder="name@example.com" required>
+                <label for="loginEmail">Email</label>
+            </div>
+            <div class="form-floating mb-3">
+                <input type="password" class="form-control form-control-custom" id="loginPassword" placeholder="Senha" required>
+                <label for="loginPassword">Senha</label>
+            </div>
+            <button type="submit" class="btn btn-primary-custom btn-custom w-100 mb-3">
+                <i class="fas fa-sign-in-alt me-2"></i>Entrar
+            </button>
+        </form>
+
+        <div class="text-center">
+            <button class="btn btn-link text-primary" onclick="showRegisterForm()">
+                <i class="fas fa-user-plus me-2"></i>Não tem conta? Cadastre-se
+            </button>
+        </div>
+    </div>
+
+    <!-- Register Container -->
+    <div id="registerContainer" class="auth-container hidden">
+        <div class="text-center mb-4">
+            <i class="fas fa-user-plus fa-3x text-success mb-3"></i>
+            <h2>Criar Conta</h2>
+            <p class="text-muted">Preencha os dados para criar sua conta</p>
+        </div>
+
+        <!-- Register Form -->
+        <form id="registerForm">
+            <div class="form-floating mb-3">
+                <input type="text" class="form-control form-control-custom" id="registerName" placeholder="Seu nome" required>
+                <label for="registerName">Nome</label>
+            </div>
+            <div class="form-floating mb-3">
+                <input type="email" class="form-control form-control-custom" id="registerEmail" placeholder="name@example.com" required>
+                <label for="registerEmail">Email</label>
+            </div>
+            <div class="form-floating mb-3">
+                <input type="password" class="form-control form-control-custom" id="registerPassword" placeholder="Senha" required>
+                <label for="registerPassword">Senha</label>
+            </div>
+            <div class="form-floating mb-3">
+                <input type="password" class="form-control form-control-custom" id="registerConfirmPassword" placeholder="Confirmar senha" required>
+                <label for="registerConfirmPassword">Confirmar Senha</label>
+            </div>
+            <button type="submit" class="btn btn-success btn-custom w-100 mb-3">
+                <i class="fas fa-user-plus me-2"></i>Cadastrar
+            </button>
+        </form>
+
+        <div class="text-center">
+            <button class="btn btn-link text-primary" onclick="showLoginForm()">
+                <i class="fas fa-arrow-left me-2"></i>Já tem conta? Faça login
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div id="mainApp" class="main-container hidden">
+        <!-- Header -->
+        <div class="header">
+            <div class="user-info">
+                <div class="user-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div>
+                    <div id="userName">Usuário</div>
+                    <small id="userEmail">email@example.com</small>
+                </div>
+                <button class="btn btn-sm btn-light" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+            <h1>Fluxo de Caixa Profissional</h1>
+            <p>Controle financeiro inteligente para seu negócio</p>
+        </div>
+
+        <!-- Dashboard -->
+        <div class="p-4">
+            <!-- Alert Container -->
+            <div id="alertContainer"></div>
+
+            <!-- Cards Resumo -->
+            <div class="row mb-4">
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="dashboard-card success fade-in">
+                        <div class="card-icon">
+                            <i class="fas fa-arrow-up"></i>
+                        </div>
+                        <h3 id="totalEntradas">R$ 0,00</h3>
+                        <p>Total de Entradas</p>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="dashboard-card danger fade-in">
+                        <div class="card-icon">
+                            <i class="fas fa-arrow-down"></i>
+                        </div>
+                        <h3 id="totalSaidas">R$ 0,00</h3>
+                        <p>Total de Saídas</p>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="dashboard-card info fade-in">
+                        <div class="card-icon">
+                            <i class="fas fa-balance-scale"></i>
+                        </div>
+                        <h3 id="saldoFinal">R$ 0,00</h3>
+                        <p>Saldo Final</p>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="dashboard-card warning fade-in">
+                        <div class="card-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <h3 id="percentualCrescimento">0%</h3>
+                        <p>Crescimento</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gráfico -->
+            <div class="chart-wrapper fade-in">
+                <h5 class="mb-3">Visão Geral Mensal</h5>
+                <div class="chart-container">
+                    <canvas id="monthlyChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Filtros -->
+            <div class="filter-section fade-in">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Data Inicial</label>
+                        <input type="date" class="form-control form-control-custom" id="dataInicio">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Data Final</label>
+                        <input type="date" class="form-control form-control-custom" id="dataFim">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Categoria</label>
+                        <select class="form-control form-control-custom" id="filtroCategoria">
+                            <option value="">Todas</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">&nbsp;</label>
+                        <div class="d-grid">
+                            <button class="btn btn-primary" onclick="aplicarFiltros()">
+                                <i class="fas fa-filter me-2"></i>Aplicar Filtros
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="fade-in">
+                <ul class="nav nav-tabs" id="mainTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="entradas-tab" data-bs-toggle="tab" data-bs-target="#entradas" type="button" role="tab">
+                            <i class="fas fa-arrow-up me-2"></i>Entradas
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="saidas-tab" data-bs-toggle="tab" data-bs-target="#saidas" type="button" role="tab">
+                            <i class="fas fa-arrow-down me-2"></i>Saídas
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="relatorios-tab" data-bs-toggle="tab" data-bs-target="#relatorios" type="button" role="tab">
+                            <i class="fas fa-file-pdf me-2"></i>Relatórios
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="mainTabContent">
+                    <!-- Tab Entradas -->
+                    <div class="tab-pane fade show active" id="entradas" role="tabpanel">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5>Gerenciar Entradas</h5>
+                            <button class="btn btn-success" onclick="openModalEntrada()">
+                                <i class="fas fa-plus me-2"></i>Nova Entrada
+                            </button>
+                        </div>
+
+                        <div class="table-custom">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Data</th>
+                                        <th>Descrição</th>
+                                        <th>Categoria</th>
+                                        <th>Valor</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabelaEntradas">
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted">
+                                            <i class="fas fa-inbox fa-2x mb-2"></i>
+                                            <p>Nenhuma entrada encontrada</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Tab Saídas -->
+                    <div class="tab-pane fade" id="saidas" role="tabpanel">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5>Gerenciar Saídas</h5>
+                            <button class="btn btn-danger" onclick="openModalSaida()">
+                                <i class="fas fa-plus me-2"></i>Nova Saída
+                            </button>
+                        </div>
+
+                        <div class="table-custom">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Data</th>
+                                        <th>Descrição</th>
+                                        <th>Categoria</th>
+                                        <th>Tipo</th>
+                                        <th>Valor</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabelaSaidas">
+                                    <tr>
+                                        <td colspan="6" class="text-center text-muted">
+                                            <i class="fas fa-inbox fa-2x mb-2"></i>
+                                            <p>Nenhuma saída encontrada</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Tab Relatórios -->
+                    <div class="tab-pane fade" id="relatorios" role="tabpanel">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="chart-wrapper">
+                                    <h5>Distribuição por Categoria</h5>
+                                    <div class="chart-container">
+                                        <canvas id="categoriaChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="chart-wrapper">
+                                    <h5>Evolução Mensal</h5>
+                                    <div class="chart-container">
+                                        <canvas id="evolucaoChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-center mt-4">
+                            <button class="btn btn-primary btn-lg" onclick="gerarRelatorioPDF()">
+                                <i class="fas fa-file-pdf me-2"></i>Gerar Relatório PDF
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Entrada -->
+    <div class="modal fade" id="modalEntrada" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-arrow-up me-2"></i>Nova Entrada
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formEntrada">
+                        <input type="hidden" id="entradaId">
+                        <div class="form-floating mb-3">
+                            <input type="date" class="form-control form-control-custom" id="entradaData" required>
+                            <label for="entradaData">Data</label>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <input type="text" class="form-control form-control-custom" id="entradaDescricao" placeholder="Descrição" required>
+                            <label for="entradaDescricao">Descrição</label>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <select class="form-control form-control-custom" id="entradaCategoria" required>
+                                <option value="">Selecione...</option>
+                                <option value="vendas">Vendas</option>
+                                <option value="servicos">Serviços</option>
+                                <option value="aluguel">Aluguel</option>
+                                <option value="investimentos">Investimentos</option>
+                                <option value="outras">Outras</option>
+                            </select>
+                            <label for="entradaCategoria">Categoria</label>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <input type="number" class="form-control form-control-custom" id="entradaValor" step="0.01" min="0" placeholder="0,00" required>
+                            <label for="entradaValor">Valor (R$)</label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-success" onclick="salvarEntrada()">
+                        <i class="fas fa-save me-2"></i>Salvar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Saída -->
+    <div class="modal fade" id="modalSaida" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-arrow-down me-2"></i>Nova Saída
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formSaida">
+                        <input type="hidden" id="saidaId">
+                        <div class="form-floating mb-3">
+                            <input type="date" class="form-control form-control-custom" id="saidaData" required>
+                            <label for="saidaData">Data</label>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <input type="text" class="form-control form-control-custom" id="saidaDescricao" placeholder="Descrição" required>
+                            <label for="saidaDescricao">Descrição</label>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <select class="form-control form-control-custom" id="saidaCategoria" required>
+                                <option value="">Selecione...</option>
+                                <option value="aluguel">Aluguel</option>
+                                <option value="funcionarios">Funcionários</option>
+                                <option value="fornecedores">Fornecedores</option>
+                                <option value="impostos">Impostos</option>
+                                <option value="marketing">Marketing</option>
+                                <option value="transporte">Transporte</option>
+                                <option value="outras">Outras</option>
+                            </select>
+                            <label for="saidaCategoria">Categoria</label>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <select class="form-control form-control-custom" id="saidaTipo" required>
+                                <option value="">Selecione...</option>
+                                <option value="fixo">Fixo</option>
+                                <option value="variavel">Variável</option>
+                            </select>
+                            <label for="saidaTipo">Tipo</label>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <input type="number" class="form-control form-control-custom" id="saidaValor" step="0.01" min="0" placeholder="0,00" required>
+                            <label for="saidaValor">Valor (R$)</label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-danger" onclick="salvarSaida()">
+                        <i class="fas fa-save me-2"></i>Salvar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Scripts -->
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/entradas.js"></script>
+    <script src="js/saidas.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script src="js/relatorios.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificação de Dados - Fluxo de Caixa</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+        }
+        .main-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            margin: 0 auto;
+            max-width: 1200px;
+            padding: 30px;
+        }
+        .header {
+            background: linear-gradient(135deg, #007bff, #17a2b8);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .data-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #007bff;
+        }
+        .data-item {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border: 1px solid #dee2e6;
+        }
+        .btn-verify {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-weight: 600;
+            margin: 10px;
+        }
+        .btn-verify:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+        }
+        .status-badge {
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+        .status-success {
+            background: rgba(40, 167, 69, 0.1);
+            color: #28a745;
+        }
+        .status-error {
+            background: rgba(220, 53, 69, 0.1);
+            color: #dc3545;
+        }
+        .status-warning {
+            background: rgba(255, 193, 7, 0.1);
+            color: #ffc107;
+        }
+        .table-custom {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        }
+        .table-custom th {
+            background: #007bff;
+            color: white;
+            border: none;
+            font-weight: 600;
+            padding: 15px;
+        }
+        .table-custom td {
+            padding: 12px 15px;
+            vertical-align: middle;
+        }
+        .alert-custom {
+            border-radius: 10px;
+            border: none;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="header">
+            <h1><i class="fas fa-database me-2"></i>Verificação de Dados</h1>
+            <p>Sistema de Fluxo de Caixa - Sa Lavagem e Estacionamento</p>
+        </div>
+
+        <div id="alertContainer"></div>
+
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="data-card text-center">
+                    <h3 id="totalEntradas">0</h3>
+                    <p class="mb-0">Entradas</p>
+                    <span class="status-badge status-success" id="statusEntradas">OK</span>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="data-card text-center">
+                    <h3 id="totalSaidas">0</h3>
+                    <p class="mb-0">Saídas</p>
+                    <span class="status-badge status-success" id="statusSaidas">OK</span>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="data-card text-center">
+                    <h3 id="totalUsuarios">0</h3>
+                    <p class="mb-0">Usuários</p>
+                    <span class="status-badge status-success" id="statusUsuarios">OK</span>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="data-card text-center">
+                    <h3 id="usuarioAtual">-</h3>
+                    <p class="mb-0">Usuário Atual</p>
+                    <span class="status-badge status-warning" id="statusUsuarioAtual">Deslogado</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center mb-4">
+            <button class="btn-verify" onclick="verificarDados()">
+                <i class="fas fa-sync-alt me-2"></i>Verificar Dados
+            </button>
+            <button class="btn-verify" onclick="exportarDados()">
+                <i class="fas fa-download me-2"></i>Exportar Dados
+            </button>
+            <button class="btn-verify" onclick="limparDados()">
+                <i class="fas fa-trash me-2"></i>Limpar Dados
+            </button>
+        </div>
+
+        <!-- Tabela de Entradas -->
+        <div class="mb-4">
+            <h4><i class="fas fa-arrow-up text-success me-2"></i>Entradas</h4>
+            <div class="table-custom">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Data</th>
+                            <th>Descrição</th>
+                            <th>Categoria</th>
+                            <th>Valor</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelaEntradas">
+                        <tr>
+                            <td colspan="5" class="text-center text-muted">Nenhuma entrada encontrada</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tabela de Saídas -->
+        <div class="mb-4">
+            <h4><i class="fas fa-arrow-down text-danger me-2"></i>Saídas</h4>
+            <div class="table-custom">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Data</th>
+                            <th>Descrição</th>
+                            <th>Categoria</th>
+                            <th>Tipo</th>
+                            <th>Valor</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelaSaidas">
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">Nenhuma saída encontrada</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tabela de Usuários -->
+        <div class="mb-4">
+            <h4><i class="fas fa-users text-primary me-2"></i>Usuários</h4>
+            <div class="table-custom">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nome</th>
+                            <th>Email</th>
+                            <th>Data de Criação</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelaUsuarios">
+                        <tr>
+                            <td colspan="4" class="text-center text-muted">Nenhum usuário encontrado</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Informações do Storage -->
+        <div class="data-card">
+            <h5><i class="fas fa-info-circle me-2"></i>Informações do Storage</h5>
+            <div id="storageInfo">
+                <p><strong>Tipo:</strong> LocalStorage</p>
+                <p><strong>Status:</strong> <span class="status-badge status-success">Ativo</span></p>
+                <p><strong>Última verificação:</strong> <span id="ultimaVerificacao">-</span></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        class VerificadorDados {
+            constructor() {
+                this.entradas = [];
+                this.saidas = [];
+                this.usuarios = [];
+                this.usuario = null;
+                this.init();
+            }
+
+            init() {
+                this.verificarDados();
+            }
+
+            carregarDados() {
+                try {
+                    this.entradas = JSON.parse(localStorage.getItem('entradas') || '[]');
+                    this.saidas = JSON.parse(localStorage.getItem('saidas') || '[]');
+                    this.usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]');
+                    this.usuario = JSON.parse(localStorage.getItem('usuario') || 'null');
+                    
+                    // Validar arrays
+                    if (!Array.isArray(this.entradas)) this.entradas = [];
+                    if (!Array.isArray(this.saidas)) this.saidas = [];
+                    if (!Array.isArray(this.usuarios)) this.usuarios = [];
+                    
+                    console.log('Dados carregados:', {
+                        entradas: this.entradas.length,
+                        saidas: this.saidas.length,
+                        usuarios: this.usuarios.length,
+                        usuario: this.usuario ? 'logado' : 'deslogado'
+                    });
+                } catch (error) {
+                    console.error('Erro ao carregar dados:', error);
+                    this.mostrarAlerta('Erro ao carregar dados: ' + error.message, 'error');
+                    this.entradas = [];
+                    this.saidas = [];
+                    this.usuarios = [];
+                    this.usuario = null;
+                }
+            }
+
+            verificarDados() {
+                this.carregarDados();
+                this.atualizarCards();
+                this.renderizarTabelas();
+                this.atualizarStorageInfo();
+                this.mostrarAlerta('Dados verificados com sucesso!', 'success');
+            }
+
+            atualizarCards() {
+                // Atualizar contadores
+                document.getElementById('totalEntradas').textContent = this.entradas.length;
+                document.getElementById('totalSaidas').textContent = this.saidas.length;
+                document.getElementById('totalUsuarios').textContent = this.usuarios.length;
+                
+                // Atualizar status do usuário atual
+                const usuarioAtualEl = document.getElementById('usuarioAtual');
+                const statusUsuarioAtualEl = document.getElementById('statusUsuarioAtual');
+                
+                if (this.usuario) {
+                    usuarioAtualEl.textContent = this.usuario.nome || 'Usuário';
+                    statusUsuarioAtualEl.textContent = 'Logado';
+                    statusUsuarioAtualEl.className = 'status-badge status-success';
+                } else {
+                    usuarioAtualEl.textContent = '-';
+                    statusUsuarioAtualEl.textContent = 'Deslogado';
+                    statusUsuarioAtualEl.className = 'status-badge status-warning';
+                }
+                
+                // Atualizar status badges
+                this.atualizarStatusBadge('statusEntradas', this.entradas.length);
+                this.atualizarStatusBadge('statusSaidas', this.saidas.length);
+                this.atualizarStatusBadge('statusUsuarios', this.usuarios.length);
+            }
+
+            atualizarStatusBadge(elementId, count) {
+                const element = document.getElementById(elementId);
+                if (count === 0) {
+                    element.textContent = 'Vazio';
+                    element.className = 'status-badge status-warning';
+                } else if (count > 0) {
+                    element.textContent = 'OK';
+                    element.className = 'status-badge status-success';
+                }
+            }
+
+            renderizarTabelas() {
+                this.renderizarEntradas();
+                this.renderizarSaidas();
+                this.renderizarUsuarios();
+            }
+
+            renderizarEntradas() {
+                const tbody = document.getElementById('tabelaEntradas');
+                
+                if (this.entradas.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Nenhuma entrada encontrada</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = this.entradas.map(entrada => `
+                    <tr>
+                        <td>${entrada.id}</td>
+                        <td>${this.formatarData(entrada.data)}</td>
+                        <td>${entrada.descricao}</td>
+                        <td><span class="badge bg-success">${this.formatarCategoriaEntrada(entrada.categoria)}</span></td>
+                        <td class="text-success fw-bold">R$ ${this.formatarDinheiro(entrada.valor)}</td>
+                    </tr>
+                `).join('');
+            }
+
+            renderizarSaidas() {
+                const tbody = document.getElementById('tabelaSaidas');
+                
+                if (this.saidas.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Nenhuma saída encontrada</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = this.saidas.map(saida => `
+                    <tr>
+                        <td>${saida.id}</td>
+                        <td>${this.formatarData(saida.data)}</td>
+                        <td>${saida.descricao}</td>
+                        <td><span class="badge bg-secondary">${this.formatarCategoriaSaida(saida.categoria)}</span></td>
+                        <td><span class="badge ${saida.tipo === 'fixo' ? 'bg-warning' : 'bg-info'}">${saida.tipo}</span></td>
+                        <td class="text-danger fw-bold">R$ ${this.formatarDinheiro(saida.valor)}</td>
+                    </tr>
+                `).join('');
+            }
+
+            renderizarUsuarios() {
+                const tbody = document.getElementById('tabelaUsuarios');
+                
+                if (this.usuarios.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Nenhum usuário encontrado</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = this.usuarios.map(usuario => `
+                    <tr>
+                        <td>${usuario.id || 'N/A'}</td>
+                        <td>${usuario.nome}</td>
+                        <td>${usuario.email}</td>
+                        <td>${this.formatarData(usuario.createdAt || new Date().toISOString())}</td>
+                    </tr>
+                `).join('');
+            }
+
+            atualizarStorageInfo() {
+                document.getElementById('ultimaVerificacao').textContent = new Date().toLocaleString('pt-BR');
+            }
+
+            exportarDados() {
+                try {
+                    const dados = {
+                        entradas: this.entradas,
+                        saidas: this.saidas,
+                        usuarios: this.usuarios,
+                        usuarioAtual: this.usuario,
+                        dataExportacao: new Date().toISOString()
+                    };
+
+                    const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `fluxo-caixa-backup-${new Date().toISOString().split('T')[0]}.json`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+
+                    this.mostrarAlerta('Dados exportados com sucesso!', 'success');
+                } catch (error) {
+                    console.error('Erro ao exportar dados:', error);
+                    this.mostrarAlerta('Erro ao exportar dados: ' + error.message, 'error');
+                }
+            }
+
+            limparDados() {
+                if (!confirm('Tem certeza que deseja limpar todos os dados? Esta ação não pode ser desfeita!')) {
+                    return;
+                }
+
+                try {
+                    localStorage.removeItem('entradas');
+                    localStorage.removeItem('saidas');
+                    localStorage.removeItem('usuarios');
+                    localStorage.removeItem('usuario');
+
+                    this.entradas = [];
+                    this.saidas = [];
+                    this.usuarios = [];
+                    this.usuario = null;
+
+                    this.verificarDados();
+                    this.mostrarAlerta('Todos os dados foram limpos com sucesso!', 'success');
+                } catch (error) {
+                    console.error('Erro ao limpar dados:', error);
+                    this.mostrarAlerta('Erro ao limpar dados: ' + error.message, 'error');
+                }
+            }
+
+            mostrarAlerta(mensagem, tipo = 'info') {
+                const alertContainer = document.getElementById('alertContainer');
+                const alertClass = tipo === 'error' ? 'alert-danger' : tipo === 'success' ? 'alert-success' : 'alert-info';
+                const alertDiv = document.createElement('div');
+                alertDiv.className = `alert-custom ${alertClass}`;
+                alertDiv.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>${mensagem}</span>
+                        <button type="button" class="btn-close" onclick="this.parentElement.parentElement.remove()"></button>
+                    </div>
+                `;
+                alertContainer.appendChild(alertDiv);
+                
+                // Remover alerta após 5 segundos
+                setTimeout(() => {
+                    if (alertDiv.parentElement) {
+                        alertDiv.remove();
+                    }
+                }, 5000);
+            }
+
+            formatarData(dataString) {
+                try {
+                    const data = new Date(dataString);
+                    if (isNaN(data.getTime())) {
+                        return dataString;
+                    }
+                    return data.toLocaleDateString('pt-BR');
+                } catch (error) {
+                    return dataString;
+                }
+            }
+
+            formatarDinheiro(valor) {
+                try {
+                    return new Intl.NumberFormat('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL'
+                    }).format(valor);
+                } catch (error) {
+                    return 'R$ ' + valor.toFixed(2);
+                }
+            }
+
+            formatarCategoriaEntrada(categoria) {
+                const categorias = {
+                    'lavagem': 'Lavagem',
+                    'estacionamento': 'Estacionamento',
+                    'servicos': 'Serviços',
+                    'outros': 'Outros'
+                };
+                return categorias[categoria] || categoria;
+            }
+
+            formatarCategoriaSaida(categoria) {
+                const categorias = {
+                    'aluguel': 'Aluguel',
+                    'salarios': 'Salários',
+                    'produtos': 'Produtos de Limpeza',
+                    'manutencao': 'Manutenção',
+                    'agua': 'Água',
+                    'luz': 'Luz',
+                    'telefone': 'Telefone/Internet',
+                    'impostos': 'Impostos',
+                    'outros': 'Outros'
+                };
+                return categorias[categoria] || categoria;
+            }
+        }
+
+        // Funções globais
+        function verificarDados() {
+            verificador.verificarDados();
+        }
+
+        function exportarDados() {
+            verificador.exportarDados();
+        }
+
+        function limparDados() {
+            verificador.limparDados();
+        }
+
+        // Inicializar verificador
+        const verificador = new VerificadorDados();
+    </script>
+</body>
+</html>
