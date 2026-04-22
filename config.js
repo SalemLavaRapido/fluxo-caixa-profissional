@@ -6,12 +6,14 @@ const SUPABASE_CONFIG = {
 };
 
 // Inicialização do cliente Supabase
-let supabase = null;
+let supabaseClient = null;
 
 // Função para inicializar o Supabase
 function initSupabase() {
     try {
-        supabase = window.supabase.createClient(SUPABASE_CONFIG.URL, SUPABASE_CONFIG.ANON_KEY);
+        supabaseClient = window.supabase.createClient(SUPABASE_CONFIG.URL, SUPABASE_CONFIG.ANON_KEY);
+        // Definir globalmente para compatibilidade
+        window.supabase = supabaseClient;
         return true;
     } catch (error) {
         console.error('Erro ao inicializar Supabase:', error);
