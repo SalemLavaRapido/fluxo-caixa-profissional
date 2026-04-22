@@ -675,12 +675,22 @@
                         <div class="form-floating mb-3">
                             <select class="form-control form-control-custom" id="entradaCategoria" required>
                                 <option value="">Selecione...</option>
-                                <option value="lavagem_carro">Lavagem Carro</option>
-                                <option value="lavagem_moto">Lavagem Moto</option>
-                                <option value="lavagem_caminhonete">Lavagem Caminhonete</option>
-                                <option value="mensalista">Estacionamento Mensalista</option>
-                                <option value="avulso">Estacionamento Avulso</option>
-                                <option value="outros">Outros</option>
+                                <optgroup label="Lavagem">
+                                    <option value="lavagem_carro">Lavagem Carro</option>
+                                    <option value="lavagem_moto">Lavagem Moto</option>
+                                    <option value="lavagem_caminhonete">Lavagem Caminhonete</option>
+                                </optgroup>
+                                <optgroup label="Estacionamento">
+                                    <option value="mensalista">Estacionamento Mensalista</option>
+                                    <option value="avulso">Estacionamento Avulso</option>
+                                </optgroup>
+                                <optgroup label="Outras">
+                                    <option value="outros">Outros</option>
+                                    <option value="vendas">Vendas</option>
+                                    <option value="servicos">Serviços</option>
+                                    <option value="aluguel">Aluguel</option>
+                                    <option value="investimentos">Investimentos</option>
+                                </optgroup>
                             </select>
                             <label for="entradaCategoria">Categoria</label>
                         </div>

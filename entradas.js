@@ -1,7 +1,3 @@
-// Teste de carregamento
-console.log('entradas.js carregado!');
-alert('entradas.js carregado!');
-
 // Sistema de Entradas (Receitas)
 class EntradasSystem {
     constructor() {
@@ -196,12 +192,18 @@ class EntradasSystem {
     // Obter categorias
     getCategorias() {
         return [
+            // Novas categorias
             { value: 'lavagem_carro', label: 'Lavagem Carro' },
             { value: 'lavagem_moto', label: 'Lavagem Moto' },
             { value: 'lavagem_caminhonete', label: 'Lavagem Caminhonete' },
             { value: 'mensalista', label: 'Estacionamento Mensalista' },
             { value: 'avulso', label: 'Estacionamento Avulso' },
-            { value: 'outros', label: 'Outros' }
+            { value: 'outros', label: 'Outros' },
+            // Categorias antigas (para compatibilidade)
+            { value: 'vendas', label: 'Vendas' },
+            { value: 'servicos', label: 'Serviços' },
+            { value: 'aluguel', label: 'Aluguel' },
+            { value: 'investimentos', label: 'Investimentos' }
         ];
     }
 
@@ -256,14 +258,21 @@ class EntradasSystem {
     // Formatar categoria
     formatarCategoria(categoria) {
         const categorias = {
+            // Novas categorias
             'lavagem_carro': 'Lavagem Carro',
             'lavagem_moto': 'Lavagem Moto',
             'lavagem_caminhonete': 'Lavagem Caminhonete',
             'mensalista': 'Estacionamento Mensalista',
             'avulso': 'Estacionamento Avulso',
-            'outros': 'Outros'
+            'outros': 'Outros',
+            // Categorias antigas (para compatibilidade)
+            'vendas': 'Vendas',
+            'servicos': 'Serviços',
+            'aluguel': 'Aluguel',
+            'investimentos': 'Investimentos',
+            'outras': 'Outras'
         };
-        return categorias[categoria] || categoria;
+        return categorias[categoria] || categoria || 'Não categorizada';
     }
 }
 
@@ -290,7 +299,6 @@ function openModalEntrada() {
 }
 
 function salvarEntrada() {
-    alert('Função salvarEntrada foi chamada!');
     console.log('Iniciando salvamento...');
     
     const entrada = {
