@@ -712,7 +712,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-success" onclick="salvarEntradaSimples()">
+                    <button type="button" class="btn btn-success" onclick="testarSalvar()">
                         <i class="fas fa-save me-2"></i>Salvar
                     </button>
                 </div>
@@ -819,51 +819,112 @@
     <script src="relatorios.js"></script>
     <script src="app.js"></script>
     
-    <!-- Função salvar simples -->
+    <!-- Função de teste -->
     <script>
+    function testarSalvar() {
+        alert('Botão clicado! Função testarSalvar foi chamada.');
+        
+        // Verificar se os campos existem
+        const campos = ['entradaData', 'entradaDescricao', 'entradaCategoria', 'entradaFormaPagamento', 'entradaValor'];
+        let todosExistem = true;
+        let valores = {};
+        
+        campos.forEach(campo => {
+            const elemento = document.getElementById(campo);
+            if (!elemento) {
+                alert('Campo não encontrado: ' + campo);
+                todosExistem = false;
+            } else {
+                valores[campo] = elemento.value;
+            }
+        });
+        
+        if (!todosExistem) return;
+        
+        // Mostrar valores
+        alert('Valores dos campos:\n' + 
+              'Data: ' + valores.entradaData + '\n' +
+              'Descrição: ' + valores.entradaDescricao + '\n' +
+              'Categoria: ' + valores.entradaCategoria + '\n' +
+              'Forma Pagamento: ' + valores.entradaFormaPagamento + '\n' +
+              'Valor: ' + valores.entradaValor);
+        
+        // Verificar usuário
+        const userStr = localStorage.getItem('currentUser');
+        if (!userStr) {
+            alert('Usuário não encontrado no localStorage!');
+            return;
+        }
+        
+        const user = JSON.parse(userStr);
+        alert('Usuário encontrado: ' + JSON.stringify(user));
+        
+        // Verificar Supabase
+        if (typeof supabase === 'undefined') {
+            alert('Supabase não está definido!');
+            return;
+        }
+        
+        alert('Tudo OK! Vamos salvar...');
+        salvarEntradaSimples();
+    }
+    
     function salvarEntradaSimples() {
-        try {
-            // Obter user_id do localStorage
-            let currentUser;
-            try {
-                currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-            } catch (e) {
-                alert('Erro ao obter usuário!');
-                return;
-            }
-            
-            const userId = currentUser.id;
-            
-            if (!userId) {
-                alert('Usuário não logado! Faça login novamente.');
-                return;
-            }
-            
-            const entrada = {
-                data: document.getElementById('entradaData').value,
-                descricao: document.getElementById('entradaDescricao').value,
-                categoria: document.getElementById('entradaCategoria').value,
-                forma_pagamento: document.getElementById('entradaFormaPagamento').value,
-                valor: parseFloat(document.getElementById('entradaValor').value),
-                user_id: userId
-            };
-            
-            if (!entrada.data || !entrada.descricao || !entrada.categoria || !entrada.forma_pagamento || !entrada.valor) {
-                alert('Preencha todos os campos!');
-                return;
-            }
-            
-            supabase.from('entradas').insert([entrada]).then(result => {
-                if (result.error) {
-                    alert('Erro: ' + result.error.message);
+        // Obter valores diretos dos campos
+        const dados = {
+            data: document.getElementById('entradaData').value,
+            descricao: document.getElementById('entradaDescricao').value,
+            categoria: document.getElementById('entradaCategoria').value,
+            forma_pagamento: document.getElementById('entradaFormaPagamento').value,
+            valor: document.getElementById('entradaValor').value
+        };
+        
+        // Validação simples
+        if (!dados.data || !dados.descricao || !dados.categoria || !dados.forma_pagamento || !dados.valor) {
+            alert('Preencha todos os campos!');
+            return;
+        }
+        
+        // Obter user_id
+        const userStr = localStorage.getItem('currentUser');
+        if (!userStr) {
+            alert('Faça login primeiro!');
+            return;
+        }
+        
+        const user = JSON.parse(userStr);
+        if (!user.id) {
+            alert('Usuário inválido! Faça login novamente.');
+            return;
+        }
+        
+        // Montar objeto para salvar
+        const entrada = {
+            data: dados.data,
+            descricao: dados.descricao,
+            categoria: dados.categoria,
+            forma_pagamento: dados.forma_pagamento,
+            valor: parseFloat(dados.valor),
+            user_id: user.id
+        };
+        
+        // Salvar no Supabase
+        supabase
+            .from('entradas')
+            .insert([entrada])
+            .then(response => {
+                if (response.error) {
+                    console.error('Erro:', response.error);
+                    alert('Erro ao salvar: ' + response.error.message);
                 } else {
                     alert('Salvo com sucesso!');
                     location.reload();
                 }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                alert('Erro: ' + error.message);
             });
-        } catch (error) {
-            alert('Erro: ' + error.message);
-        }
     }
     </script>
     
