@@ -823,13 +823,29 @@
     <script>
     function salvarEntradaSimples() {
         try {
+            // Obter user_id do localStorage
+            let currentUser;
+            try {
+                currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+            } catch (e) {
+                alert('Erro ao obter usuário!');
+                return;
+            }
+            
+            const userId = currentUser.id;
+            
+            if (!userId) {
+                alert('Usuário não logado! Faça login novamente.');
+                return;
+            }
+            
             const entrada = {
                 data: document.getElementById('entradaData').value,
                 descricao: document.getElementById('entradaDescricao').value,
                 categoria: document.getElementById('entradaCategoria').value,
                 forma_pagamento: document.getElementById('entradaFormaPagamento').value,
                 valor: parseFloat(document.getElementById('entradaValor').value),
-                user_id: authSystem.getCurrentUserId()
+                user_id: userId
             };
             
             if (!entrada.data || !entrada.descricao || !entrada.categoria || !entrada.forma_pagamento || !entrada.valor) {
