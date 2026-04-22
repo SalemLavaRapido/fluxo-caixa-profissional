@@ -1,3 +1,7 @@
+// Teste de carregamento
+console.log('entradas.js carregado!');
+alert('entradas.js carregado!');
+
 // Sistema de Entradas (Receitas)
 class EntradasSystem {
     constructor() {
