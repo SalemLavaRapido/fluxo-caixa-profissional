@@ -286,6 +286,7 @@ function openModalEntrada() {
 }
 
 function salvarEntrada() {
+    alert('Função salvarEntrada foi chamada!');
     console.log('Iniciando salvamento...');
     
     const entrada = {
