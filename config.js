@@ -1,8 +1,8 @@
 // Configuração do Supabase
 const SUPABASE_CONFIG = {
-    // Substitua com suas credenciais do Supabase
+    // Credenciais do projeto Supabase
     URL: 'https://emkiewosmlnyjnpujbui.supabase.co',
-    ANON_KEY: 'sb_publishable_Bd982ryXG_esL01jPijc_A_2u3pY8vV'
+    ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNldW5vbmUiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTY3ODkwMTIzNCwiZXhwIjoxOTk0MjY1MjM0fQ.sb_publishable_Bd982ryXG_esL01jPijc_A_2u3pY8vV'
 };
 
 // Inicialização do cliente Supabase
