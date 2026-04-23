@@ -300,6 +300,14 @@
                     <input type="text" class="form-control form-control-custom" id="placaLavagem" 
                            placeholder="PLACA" maxlength="7" style="text-transform: uppercase;" required>
                 </div>
+                <div class="col-md-1">
+                    <input type="text" class="form-control form-control-custom" id="modeloLavagem" 
+                           placeholder="Modelo">
+                </div>
+                <div class="col-md-1">
+                    <input type="text" class="form-control form-control-custom" id="corLavagem" 
+                           placeholder="Cor">
+                </div>
                 <div class="col-md-2">
                     <select class="form-control form-control-custom" id="tipoLavagem">
                         <option value="simples">Simples</option>
@@ -314,9 +322,9 @@
                         <option value="mensalista">Mensalista</option>
                     </select>
                 </div>
-                <div class="col-md-2">
+                <div class="col-md-1">
                     <input type="number" class="form-control form-control-custom" id="valorLavagem" 
-                           placeholder="Valor R$" step="0.01" min="0">
+                           placeholder="R$" step="0.01" min="0">
                 </div>
                 <div class="col-md-2">
                     <select class="form-control form-control-custom" id="formaPagamento">
@@ -387,6 +395,8 @@
                             <thead>
                                 <tr>
                                     <th><i class="fas fa-car me-2"></i>Placa</th>
+                                    <th><i class="fas fa-car-side me-2"></i>Modelo</th>
+                                    <th><i class="fas fa-palette me-2"></i>Cor</th>
                                     <th><i class="fas fa-tag me-2"></i>Tipo Cliente</th>
                                     <th><i class="fas fa-shower me-2"></i>Tipo Lavagem</th>
                                     <th><i class="fas fa-calendar me-2"></i>Data/Hora</th>
@@ -396,7 +406,7 @@
                             </thead>
                             <tbody id="tabelaLavagens">
                                 <tr>
-                                    <td colspan="6" class="empty-state">
+                                    <td colspan="8" class="empty-state">
                                         <i class="fas fa-car-wash"></i>
                                         <p>Nenhuma lavagem registrada</p>
                                     </td>
@@ -463,6 +473,8 @@
         // Registrar lavagem
         async function registrarLavagem() {
             const placa = document.getElementById('placaLavagem').value.toUpperCase().trim();
+            const modelo = document.getElementById('modeloLavagem').value.trim();
+            const cor = document.getElementById('corLavagem').value.trim();
             const tipoLavagem = document.getElementById('tipoLavagem').value;
             const tipoCliente = document.getElementById('tipoCliente').value;
             const valor = parseFloat(document.getElementById('valorLavagem').value) || 0;
@@ -481,6 +493,8 @@
                 .insert([{
                     user_id: user.id,
                     placa: placa,
+                    modelo: modelo || null,
+                    cor: cor || null,
                     tipo_lavagem: tipoLavagem,
                     tipo_cliente: tipoCliente,
                     valor: valor,
@@ -579,7 +593,7 @@
             if (lavagens.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="6" class="empty-state">
+                        <td colspan="8" class="empty-state">
                             <i class="fas fa-car-wash"></i>
                             <p>Nenhuma lavagem encontrada</p>
                         </td>
@@ -591,6 +605,8 @@
             tbody.innerHTML = lavagens.map(l => `
                 <tr>
                     <td><span class="placa-badge">${l.placa}</span></td>
+                    <td>${l.modelo || '-'}</td>
+                    <td>${l.cor || '-'}</td>
                     <td>
                         <span class="badge-tipo ${l.tipo_cliente === 'mensalista' ? 'badge-mensalista' : 'badge-avulso'}">
                             ${l.tipo_cliente === 'mensalista' ? 'Mensalista' : 'Avulso'}
