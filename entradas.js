@@ -144,6 +144,7 @@ class EntradasSystem {
         document.getElementById('entradaId').value = entrada.id;
         document.getElementById('entradaData').value = entrada.data;
         document.getElementById('entradaDescricao').value = entrada.descricao;
+        document.getElementById('entradaPlaca').value = entrada.placa || '';
         document.getElementById('entradaCategoria').value = entrada.categoria;
         document.getElementById('entradaFormaPagamento').value = entrada.forma_pagamento;
         document.getElementById('entradaValor').value = entrada.valor;
@@ -174,6 +175,7 @@ class EntradasSystem {
             <tr>
                 <td>${this.formatarData(entrada.data)}</td>
                 <td>${entrada.descricao}</td>
+                <td><span class="badge bg-secondary">${entrada.placa || '-'}</span></td>
                 <td><span class="badge bg-success">${this.formatarCategoria(entrada.categoria)}</span></td>
                 <td><span class="badge bg-info">${this.formatarFormaPagamento(entrada.forma_pagamento)}</span></td>
                 <td class="text-success fw-bold">+${this.formatarDinheiro(entrada.valor)}</td>

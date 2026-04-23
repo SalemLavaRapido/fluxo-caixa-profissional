@@ -560,6 +560,7 @@
                                     <tr>
                                         <th>Data</th>
                                         <th>Descrição</th>
+                                        <th>Placa</th>
                                         <th>Categoria</th>
                                         <th>Forma Pagamento</th>
                                         <th>Valor</th>
@@ -568,7 +569,7 @@
                                 </thead>
                                 <tbody id="tabelaEntradas">
                                     <tr>
-                                        <td colspan="6" class="text-center text-muted">
+                                        <td colspan="7" class="text-center text-muted">
                                             <i class="fas fa-inbox fa-2x mb-2"></i>
                                             <p>Nenhuma entrada encontrada</p>
                                         </td>
@@ -671,6 +672,10 @@
                         <div class="form-floating mb-3">
                             <input type="text" class="form-control form-control-custom" id="entradaDescricao" placeholder="Descrição" required>
                             <label for="entradaDescricao">Descrição</label>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <input type="text" class="form-control form-control-custom" id="entradaPlaca" placeholder="Placa" style="text-transform: uppercase;">
+                            <label for="entradaPlaca">Placa do Veículo</label>
                         </div>
                         <div class="form-floating mb-3">
                             <select class="form-control form-control-custom" id="entradaCategoria" required>
@@ -824,14 +829,15 @@
             const dados = {
                 data: document.getElementById('entradaData').value,
                 descricao: document.getElementById('entradaDescricao').value,
+                placa: document.getElementById('entradaPlaca').value.toUpperCase(),
                 categoria: document.getElementById('entradaCategoria').value,
                 forma_pagamento: document.getElementById('entradaFormaPagamento').value,
                 valor: parseFloat(document.getElementById('entradaValor').value)
             };
             
-            // Validar
+            // Validar (placa é opcional)
             if (!dados.data || !dados.descricao || !dados.categoria || !dados.forma_pagamento || !dados.valor) {
-                alert('Preencha todos os campos!');
+                alert('Preencha todos os campos obrigatórios!');
                 return;
             }
             
