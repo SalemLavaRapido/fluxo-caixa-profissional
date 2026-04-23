@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estacionamento Avulso - Controle de Tempo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --success-gradient: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            --danger-gradient: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+            --warning-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #fff;
+        }
+        
+        .navbar-custom {
+            background: var(--primary-gradient);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        
+        .card-custom {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 15px;
+        }
+        
+        .card-entrada {
+            background: var(--success-gradient);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(17, 153, 142, 0.3);
+        }
+        
+        .btn-entrada {
+            background: #fff;
+            color: #11998e;
+            font-weight: bold;
+            padding: 12px 30px;
+            border-radius: 10px;
+            border: none;
+            transition: all 0.3s;
+        }
+        
+        .btn-entrada:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 20px rgba(255,255,255,0.3);
+        }
+        
+        .btn-saida {
+            background: var(--danger-gradient);
+            color: #fff;
+            font-weight: bold;
+            padding: 8px 20px;
+            border-radius: 8px;
+            border: none;
+            transition: all 0.3s;
+        }
+        
+        .btn-saida:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(235, 51, 73, 0.4);
+        }
+        
+        .btn-whatsapp {
+            background: #25D366;
+            color: #fff;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        
+        .btn-whatsapp:hover {
+            background: #128C7E;
+            color: #fff;
+            transform: translateY(-2px);
+        }
+        
+        .table-patio {
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            overflow: hidden;
+        }
+        
+        .table-patio th {
+            background: rgba(102, 126, 234, 0.3);
+            color: #fff;
+            font-weight: 600;
+            padding: 15px;
+            border: none;
+        }
+        
+        .table-patio td {
+            color: #fff;
+            padding: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            vertical-align: middle;
+        }
+        
+        .tempo-badge {
+            background: var(--warning-gradient);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        
+        .valor-badge {
+            background: var(--success-gradient);
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+        
+        .placa-badge {
+            background: rgba(255,255,255,0.2);
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1.1em;
+            letter-spacing: 2px;
+        }
+        
+        .form-control-custom {
+            background: rgba(255,255,255,0.9);
+            border: none;
+            border-radius: 10px;
+            padding: 12px 15px;
+            font-size: 1.1em;
+        }
+        
+        .form-control-custom:focus {
+            box-shadow: 0 0 0 3px rgba(255,255,255,0.3);
+        }
+        
+        .stats-card {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+        
+        .stats-number {
+            font-size: 2.5em;
+            font-weight: bold;
+        }
+        
+        .modal-custom .modal-content {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 20px;
+            color: #fff;
+        }
+        
+        .modal-custom .modal-header {
+            background: var(--danger-gradient);
+            border-radius: 20px 20px 0 0;
+            border: none;
+        }
+        
+        .resumo-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            font-size: 1.1em;
+        }
+        
+        .resumo-total {
+            background: var(--success-gradient);
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .resumo-total .valor {
+            font-size: 2.5em;
+            font-weight: bold;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: rgba(255,255,255,0.5);
+        }
+        
+        .empty-state i {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .btn-voltar {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 10px 20px;
+            border-radius: 10px;
+            transition: all 0.3s;
+        }
+        
+        .btn-voltar:hover {
+            background: rgba(255,255,255,0.2);
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-parking me-2"></i>Estacionamento Avulso
+            </a>
+            <div class="d-flex align-items-center">
+                <span class="me-3" id="userInfo"></span>
+                <a href="index.html" class="btn btn-voltar me-2">
+                    <i class="fas fa-arrow-left me-2"></i>Voltar ao Sistema
+                </a>
+                <button class="btn btn-outline-light" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Container Principal -->
+    <div class="container py-4">
+        <!-- Alertas -->
+        <div id="alertContainer"></div>
+        
+        <!-- Stats Cards -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="stats-card">
+                    <i class="fas fa-car fa-2x mb-2" style="color: #667eea;"></i>
+                    <div class="stats-number" id="totalPatio">0</div>
+                    <div>Veículos no Pátio</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stats-card">
+                    <i class="fas fa-clock fa-2x mb-2" style="color: #f5576c;"></i>
+                    <div class="stats-number" id="totalHoje">0</div>
+                    <div>Atendimentos Hoje</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stats-card">
+                    <i class="fas fa-dollar-sign fa-2x mb-2" style="color: #38ef7d;"></i>
+                    <div class="stats-number" id="faturamentoHoje">R$ 0</div>
+                    <div>Faturamento Hoje</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Card de Entrada -->
+        <div class="card-entrada mb-4">
+            <h4 class="mb-4">
+                <i class="fas fa-car-side me-2"></i>Registrar Entrada de Veículo
+            </h4>
+            <form id="formEntrada" class="row g-3">
+                <div class="col-md-3">
+                    <input type="text" class="form-control form-control-custom" id="placaEntrada" 
+                           placeholder="PLACA" maxlength="7" style="text-transform: uppercase;" required>
+                </div>
+                <div class="col-md-3">
+                    <input type="text" class="form-control form-control-custom" id="nomeCliente" 
+                           placeholder="Nome do Cliente (opcional)">
+                </div>
+                <div class="col-md-3">
+                    <input type="tel" class="form-control form-control-custom" id="telefoneCliente" 
+                           placeholder="Telefone (opcional)">
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-entrada w-100">
+                        <i class="fas fa-sign-in-alt me-2"></i>Registrar Entrada
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Tabela de Veículos no Pátio -->
+        <div class="card-custom p-4">
+            <h4 class="mb-4">
+                <i class="fas fa-parking me-2"></i>Veículos no Pátio
+                <span class="badge bg-primary ms-2" id="countPatio">0</span>
+            </h4>
+            
+            <div class="table-responsive table-patio">
+                <table class="table mb-0">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-car me-2"></i>Placa</th>
+                            <th><i class="fas fa-user me-2"></i>Cliente</th>
+                            <th><i class="fas fa-clock me-2"></i>Entrada</th>
+                            <th><i class="fas fa-hourglass-half me-2"></i>Tempo</th>
+                            <th><i class="fas fa-dollar-sign me-2"></i>Valor</th>
+                            <th><i class="fas fa-cogs me-2"></i>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelaPatio">
+                        <tr>
+                            <td colspan="6" class="empty-state">
+                                <i class="fas fa-parking"></i>
+                                <p>Nenhum veículo no pátio</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Saída -->
+    <div class="modal fade modal-custom" id="modalSaida" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-sign-out-alt me-2"></i>Registrar Saída
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="saidaId">
+                    
+                    <div class="text-center mb-4">
+                        <div class="placa-badge" id="saidaPlaca">ABC-1234</div>
+                    </div>
+                    
+                    <div class="resumo-item">
+                        <span><i class="fas fa-user me-2"></i>Cliente</span>
+                        <span id="saidaCliente">-</span>
+                    </div>
+                    
+                    <div class="resumo-item">
+                        <span><i class="fas fa-sign-in-alt me-2"></i>Entrada</span>
+                        <span id="saidaEntrada">-</span>
+                    </div>
+                    
+                    <div class="resumo-item">
+                        <span><i class="fas fa-sign-out-alt me-2"></i>Saída</span>
+                        <span id="saidaSaida">-</span>
+                    </div>
+                    
+                    <div class="resumo-item">
+                        <span><i class="fas fa-hourglass-half me-2"></i>Tempo Total</span>
+                        <span class="tempo-badge" id="saidaTempo">-</span>
+                    </div>
+                    
+                    <div class="resumo-item">
+                        <span><i class="fas fa-clock me-2"></i>Horas Cobradas</span>
+                        <span id="saidaHoras">-</span>
+                    </div>
+                    
+                    <div class="resumo-total">
+                        <div>VALOR TOTAL</div>
+                        <div class="valor" id="saidaValor">R$ 0,00</div>
+                        <small>R$ 8,00 por hora</small>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancelar
+                    </button>
+                    <button type="button" class="btn btn-success btn-lg" onclick="confirmarSaida()">
+                        <i class="fas fa-check me-2"></i>Confirmar Saída
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Configuração Supabase
+        const SUPABASE_URL = 'https://emkiewosmlnyjnpujbui.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVta2lld29zbWxueWpucHVqYnVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4MDMxOTIsImV4cCI6MjA5MjM3OTE5Mn0.ohXoyqFJfyJxlyS1Efpykr0l0zezC2MZjVJWf55NV0c';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        // Valor por hora
+        const VALOR_HORA = 8.00;
+        
+        // Variáveis globais
+        let veiculosPatio = [];
+        let intervaloAtualizacao = null;
+        
+        // Verificar login ao carregar
+        document.addEventListener('DOMContentLoaded', async () => {
+            const user = JSON.parse(localStorage.getItem('currentUser') || 'null');
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            document.getElementById('userInfo').textContent = user.email;
+            
+            await carregarVeiculosPatio();
+            await carregarEstatisticas();
+            
+            // Atualizar a cada 1 minuto
+            intervaloAtualizacao = setInterval(() => {
+                atualizarTemposValores();
+            }, 60000);
+        });
+        
+        // Formulário de entrada
+        document.getElementById('formEntrada').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await registrarEntrada();
+        });
+        
+        // Registrar entrada
+        async function registrarEntrada() {
+            const placa = document.getElementById('placaEntrada').value.toUpperCase().trim();
+            const nome = document.getElementById('nomeCliente').value.trim();
+            const telefone = document.getElementById('telefoneCliente').value.replace(/\D/g, '');
+            
+            if (!placa) {
+                showAlert('Informe a placa do veículo!', 'warning');
+                return;
+            }
+            
+            // Verificar se já existe entrada aberta para esta placa
+            const user = JSON.parse(localStorage.getItem('currentUser'));
+            
+            const { data: existente } = await supabase
+                .from('movimentacao_avulso')
+                .select('*')
+                .eq('user_id', user.id)
+                .eq('placa', placa)
+                .eq('status', 'aberto')
+                .single();
+            
+            if (existente) {
+                showAlert('Este veículo já está no pátio!', 'danger');
+                return;
+            }
+            
+            // Registrar entrada
+            const { data, error } = await supabase
+                .from('movimentacao_avulso')
+                .insert([{
+                    user_id: user.id,
+                    placa: placa,
+                    cliente_nome: nome || null,
+                    telefone: telefone || null,
+                    status: 'aberto'
+                }]);
+            
+            if (error) {
+                showAlert('Erro ao registrar entrada: ' + error.message, 'danger');
+                return;
+            }
+            
+            showAlert(`Entrada registrada: ${placa}`, 'success');
+            
+            // Limpar formulário
+            document.getElementById('formEntrada').reset();
+            
+            // Recarregar dados
+            await carregarVeiculosPatio();
+            await carregarEstatisticas();
+        }
+        
+        // Carregar veículos no pátio
+        async function carregarVeiculosPatio() {
+            const user = JSON.parse(localStorage.getItem('currentUser'));
+            if (!user) return;
+            
+            const { data, error } = await supabase
+                .from('movimentacao_avulso')
+                .select('*')
+                .eq('user_id', user.id)
+                .eq('status', 'aberto')
+                .order('data_entrada', { ascending: false });
+            
+            if (error) {
+                console.error('Erro ao carregar:', error);
+                return;
+            }
+            
+            veiculosPatio = data || [];
+            renderizarTabela();
+        }
+        
+        // Renderizar tabela
+        function renderizarTabela() {
+            const tbody = document.getElementById('tabelaPatio');
+            const count = document.getElementById('countPatio');
+            const totalPatio = document.getElementById('totalPatio');
+            
+            count.textContent = veiculosPatio.length;
+            totalPatio.textContent = veiculosPatio.length;
+            
+            if (veiculosPatio.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="empty-state">
+                            <i class="fas fa-parking"></i>
+                            <p>Nenhum veículo no pátio</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = veiculosPatio.map(v => {
+                const tempo = calcularTempo(v.data_entrada);
+                const valor = calcularValor(tempo.minutos);
+                
+                return `
+                    <tr>
+                        <td><span class="placa-badge">${v.placa}</span></td>
+                        <td>${v.cliente_nome || '-'}</td>
+                        <td>${formatarDataHora(v.data_entrada)}</td>
+                        <td><span class="tempo-badge pulse">${tempo.texto}</span></td>
+                        <td><span class="valor-badge">R$ ${valor.toFixed(2)}</span></td>
+                        <td>
+                            ${v.telefone ? `
+                                <button class="btn btn-whatsapp btn-sm me-2" onclick="abrirWhatsApp('${v.telefone}', 'Olá! Seu veículo ${v.placa} está estacionado conosco.')">
+                                    <i class="bi bi-whatsapp"></i>
+                                </button>
+                            ` : ''}
+                            <button class="btn btn-saida" onclick="abrirModalSaida('${v.id}')">
+                                <i class="fas fa-sign-out-alt me-2"></i>Saída
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+        
+        // Calcular tempo
+        function calcularTempo(dataEntrada) {
+            const entrada = new Date(dataEntrada);
+            const agora = new Date();
+            const diffMs = agora - entrada;
+            const diffMinutos = Math.floor(diffMs / 60000);
+            const horas = Math.floor(diffMinutos / 60);
+            const minutos = diffMinutos % 60;
+            
+            let texto = '';
+            if (horas > 0) {
+                texto = `${horas}h ${minutos}min`;
+            } else {
+                texto = `${minutos}min`;
+            }
+            
+            return { minutos: diffMinutos, horas, texto };
+        }
+        
+        // Calcular valor (hora cheia)
+        function calcularValor(minutos) {
+            const horas = Math.ceil(minutos / 60);
+            return horas * VALOR_HORA;
+        }
+        
+        // Atualizar tempos e valores
+        function atualizarTemposValores() {
+            renderizarTabela();
+        }
+        
+        // Abrir modal de saída
+        function abrirModalSaida(id) {
+            const veiculo = veiculosPatio.find(v => v.id === id);
+            if (!veiculo) return;
+            
+            const agora = new Date();
+            const tempo = calcularTempo(veiculo.data_entrada);
+            const horasCobradas = Math.ceil(tempo.minutos / 60);
+            const valor = horasCobradas * VALOR_HORA;
+            
+            document.getElementById('saidaId').value = id;
+            document.getElementById('saidaPlaca').textContent = veiculo.placa;
+            document.getElementById('saidaCliente').textContent = veiculo.cliente_nome || '-';
+            document.getElementById('saidaEntrada').textContent = formatarDataHora(veiculo.data_entrada);
+            document.getElementById('saidaSaida').textContent = formatarDataHora(agora);
+            document.getElementById('saidaTempo').textContent = tempo.texto;
+            document.getElementById('saidaHoras').textContent = `${horasCobradas} hora(s)`;
+            document.getElementById('saidaValor').textContent = `R$ ${valor.toFixed(2)}`;
+            
+            const modal = new bootstrap.Modal(document.getElementById('modalSaida'));
+            modal.show();
+        }
+        
+        // Confirmar saída
+        async function confirmarSaida() {
+            const id = document.getElementById('saidaId').value;
+            const veiculo = veiculosPatio.find(v => v.id === id);
+            if (!veiculo) return;
+            
+            const user = JSON.parse(localStorage.getItem('currentUser'));
+            const agora = new Date();
+            const tempo = calcularTempo(veiculo.data_entrada);
+            const horasCobradas = Math.ceil(tempo.minutos / 60);
+            const valor = horasCobradas * VALOR_HORA;
+            
+            // Atualizar registro de saída
+            const { error: errorSaida } = await supabase
+                .from('movimentacao_avulso')
+                .update({
+                    data_saida: agora.toISOString(),
+                    minutos: tempo.minutos,
+                    horas: horasCobradas,
+                    valor: valor,
+                    status: 'finalizado'
+                })
+                .eq('id', id);
+            
+            if (errorSaida) {
+                showAlert('Erro ao registrar saída: ' + errorSaida.message, 'danger');
+                return;
+            }
+            
+            // Registrar no fluxo de caixa (tabela entradas)
+            const { error: errorCaixa } = await supabase
+                .from('entradas')
+                .insert([{
+                    user_id: user.id,
+                    data: agora.toISOString().split('T')[0],
+                    descricao: `Estacionamento Avulso - ${veiculo.placa}${veiculo.cliente_nome ? ' - ' + veiculo.cliente_nome : ''}`,
+                    placa: veiculo.placa,
+                    categoria: 'avulso',
+                    forma_pagamento: 'dinheiro',
+                    valor: valor
+                }]);
+            
+            if (errorCaixa) {
+                console.error('Erro ao registrar no caixa:', errorCaixa);
+            }
+            
+            // Fechar modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('modalSaida'));
+            modal.hide();
+            
+            showAlert(`Saída registrada: ${veiculo.placa} - R$ ${valor.toFixed(2)}`, 'success');
+            
+            // Recarregar dados
+            await carregarVeiculosPatio();
+            await carregarEstatisticas();
+        }
+        
+        // Carregar estatísticas
+        async function carregarEstatisticas() {
+            const user = JSON.parse(localStorage.getItem('currentUser'));
+            if (!user) return;
+            
+            const hoje = new Date().toISOString().split('T')[0];
+            
+            // Atendimentos finalizados hoje
+            const { data: finalizados } = await supabase
+                .from('movimentacao_avulso')
+                .select('*')
+                .eq('user_id', user.id)
+                .eq('status', 'finalizado')
+                .gte('data_saida', hoje + 'T00:00:00')
+                .lte('data_saida', hoje + 'T23:59:59');
+            
+            const totalHoje = finalizados?.length || 0;
+            const faturamento = finalizados?.reduce((sum, v) => sum + parseFloat(v.valor || 0), 0) || 0;
+            
+            document.getElementById('totalHoje').textContent = totalHoje;
+            document.getElementById('faturamentoHoje').textContent = `R$ ${faturamento.toFixed(2)}`;
+        }
+        
+        // Formatar data/hora
+        function formatarDataHora(dataString) {
+            const data = new Date(dataString);
+            return data.toLocaleString('pt-BR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+        
+        // Abrir WhatsApp
+        function abrirWhatsApp(numero, mensagem) {
+            if (!numero) {
+                showAlert('Cliente sem telefone cadastrado!', 'warning');
+                return;
+            }
+            // Garantir formato correto
+            let tel = numero.replace(/\D/g, '');
+            if (!tel.startsWith('55')) {
+                tel = '55' + tel;
+            }
+            const url = `https://wa.me/${tel}?text=${encodeURIComponent(mensagem)}`;
+            window.open(url, '_blank');
+        }
+        
+        // Mostrar alerta
+        function showAlert(message, type) {
+            const container = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type} alert-dismissible fade show`;
+            alert.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            container.appendChild(alert);
+            
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+        
+        // Logout
+        function logout() {
+            localStorage.removeItem('currentUser');
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>
