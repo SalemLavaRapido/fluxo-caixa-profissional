@@ -764,7 +764,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-danger" onclick="salvarSaida()">
+                    <button type="button" class="btn btn-danger" onclick="salvarSaidaFinal()">
                         <i class="fas fa-save me-2"></i>Salvar
                     </button>
                 </div>
@@ -858,6 +858,59 @@
             } else {
                 // Fechar modal e recarregar direto (sem alerta)
                 const modal = bootstrap.Modal.getInstance(document.getElementById('modalEntrada'));
+                if (modal) modal.hide();
+                location.reload();
+            }
+            
+        } catch (err) {
+            alert('Erro: ' + err.message);
+        }
+    }
+    
+    // Função salvar SAÍDA
+    async function salvarSaidaFinal() {
+        try {
+            // Obter dados do formulário
+            const dados = {
+                data: document.getElementById('saidaData').value,
+                descricao: document.getElementById('saidaDescricao').value,
+                categoria: document.getElementById('saidaCategoria').value,
+                tipo: document.getElementById('saidaTipo').value,
+                valor: parseFloat(document.getElementById('saidaValor').value)
+            };
+            
+            // Validar
+            if (!dados.data || !dados.descricao || !dados.categoria || !dados.tipo || !dados.valor) {
+                alert('Preencha todos os campos!');
+                return;
+            }
+            
+            // Obter usuário
+            const userStr = localStorage.getItem('currentUser');
+            if (!userStr) {
+                alert('Faça login primeiro!');
+                return;
+            }
+            
+            const user = JSON.parse(userStr);
+            if (!user.id) {
+                alert('Usuário inválido!');
+                return;
+            }
+            
+            // Adicionar user_id
+            dados.user_id = user.id;
+            
+            // Salvar com await
+            const { data, error } = await supabase
+                .from('saidas')
+                .insert([dados]);
+                
+            if (error) {
+                alert('Erro ao salvar: ' + error.message);
+            } else {
+                // Fechar modal e recarregar direto (sem alerta)
+                const modal = bootstrap.Modal.getInstance(document.getElementById('modalSaida'));
                 if (modal) modal.hide();
                 location.reload();
             }
