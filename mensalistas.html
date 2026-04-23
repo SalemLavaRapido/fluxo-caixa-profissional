@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mensalistas - Controle Completo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --success-gradient: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            --danger-gradient: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+            --warning-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --info-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #fff;
+        }
+        
+        .navbar-custom {
+            background: var(--primary-gradient);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        
+        .card-cliente {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 20px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+        
+        .card-cliente:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+        
+        .card-cliente-header {
+            background: var(--primary-gradient);
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .card-cliente-body {
+            padding: 20px;
+        }
+        
+        .cliente-nome {
+            font-size: 1.4em;
+            font-weight: bold;
+            margin: 0;
+        }
+        
+        .cliente-info {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+        
+        .cliente-info-item {
+            background: rgba(255,255,255,0.1);
+            padding: 10px 15px;
+            border-radius: 10px;
+        }
+        
+        .cliente-info-item i {
+            margin-right: 8px;
+            color: #667eea;
+        }
+        
+        .veiculo-card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .veiculo-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .placa-badge {
+            background: rgba(255,255,255,0.2);
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1.1em;
+            letter-spacing: 2px;
+        }
+        
+        .lavagem-ok {
+            background: var(--success-gradient);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+        }
+        
+        .lavagem-alerta {
+            background: var(--danger-gradient);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
+        
+        .btn-whatsapp {
+            background: #25D366;
+            color: #fff;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        
+        .btn-whatsapp:hover {
+            background: #128C7E;
+            color: #fff;
+            transform: translateY(-2px);
+        }
+        
+        .btn-lavagem {
+            background: var(--info-gradient);
+            color: #fff;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 8px;
+        }
+        
+        .btn-pagamento {
+            background: var(--success-gradient);
+            color: #fff;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 8px;
+        }
+        
+        .btn-add-veiculo {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            border: 1px dashed rgba(255,255,255,0.3);
+            padding: 10px 20px;
+            border-radius: 10px;
+            width: 100%;
+            transition: all 0.3s;
+        }
+        
+        .btn-add-veiculo:hover {
+            background: rgba(255,255,255,0.2);
+            color: #fff;
+        }
+        
+        .card-novo-cliente {
+            background: var(--success-gradient);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(17, 153, 142, 0.3);
+        }
+        
+        .form-control-custom {
+            background: rgba(255,255,255,0.9);
+            border: none;
+            border-radius: 10px;
+            padding: 12px 15px;
+        }
+        
+        .form-control-custom:focus {
+            box-shadow: 0 0 0 3px rgba(255,255,255,0.3);
+        }
+        
+        .stats-card {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+        
+        .stats-number {
+            font-size: 2.5em;
+            font-weight: bold;
+        }
+        
+        .modal-custom .modal-content {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 20px;
+            color: #fff;
+        }
+        
+        .modal-custom .modal-header {
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .modal-header-lavagem {
+            background: var(--info-gradient);
+            border-radius: 20px 20px 0 0;
+        }
+        
+        .modal-header-pagamento {
+            background: var(--success-gradient);
+            border-radius: 20px 20px 0 0;
+        }
+        
+        .modal-header-veiculo {
+            background: var(--primary-gradient);
+            border-radius: 20px 20px 0 0;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: rgba(255,255,255,0.5);
+        }
+        
+        .empty-state i {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+        
+        .btn-voltar {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 10px 20px;
+            border-radius: 10px;
+        }
+        
+        .btn-voltar:hover {
+            background: rgba(255,255,255,0.2);
+            color: #fff;
+        }
+        
+        .status-pago {
+            background: var(--success-gradient);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+        }
+        
+        .status-pendente {
+            background: #ffc107;
+            color: #000;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+        }
+        
+        .status-atrasado {
+            background: var(--danger-gradient);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+        }
+        
+        .veiculos-section {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .veiculos-title {
+            font-size: 0.9em;
+            color: rgba(255,255,255,0.7);
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-users me-2"></i>Mensalistas
+            </a>
+            <div class="d-flex align-items-center">
+                <span class="me-3" id="userInfo"></span>
+                <a href="index.html" class="btn btn-voltar me-2">
+                    <i class="fas fa-arrow-left me-2"></i>Voltar
+                </a>
+                <button class="btn btn-outline-light" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Container Principal -->
+    <div class="container py-4">
+        <!-- Alertas -->
+        <div id="alertContainer"></div>
+        
+        <!-- Stats Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="stats-card">
+                    <i class="fas fa-users fa-2x mb-2" style="color: #667eea;"></i>
+                    <div class="stats-number" id="totalClientes">0</div>
+                    <div>Clientes Ativos</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card">
+                    <i class="fas fa-car fa-2x mb-2" style="color: #38ef7d;"></i>
+                    <div class="stats-number" id="totalVeiculos">0</div>
+                    <div>Veículos</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card">
+                    <i class="fas fa-exclamation-triangle fa-2x mb-2" style="color: #f45c43;"></i>
+                    <div class="stats-number" id="alertasLavagem">0</div>
+                    <div>Alertas Lavagem</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card">
+                    <i class="fas fa-dollar-sign fa-2x mb-2" style="color: #4facfe;"></i>
+                    <div class="stats-number" id="receitaMensal">R$ 0</div>
+                    <div>Receita Mensal</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Card Novo Cliente -->
+        <div class="card-novo-cliente">
+            <h4 class="mb-4">
+                <i class="fas fa-user-plus me-2"></i>Cadastrar Novo Mensalista
+            </h4>
+            <form id="formCliente" class="row g-3">
+                <div class="col-md-3">
+                    <input type="text" class="form-control form-control-custom" id="clienteNome" 
+                           placeholder="Nome do Cliente" required>
+                </div>
+                <div class="col-md-2">
+                    <input type="tel" class="form-control form-control-custom" id="clienteTelefone" 
+                           placeholder="Telefone" required>
+                </div>
+                <div class="col-md-2">
+                    <input type="number" class="form-control form-control-custom" id="clienteValor" 
+                           placeholder="Valor Mensal" step="0.01" min="0">
+                </div>
+                <div class="col-md-2">
+                    <input type="number" class="form-control form-control-custom" id="clienteVencimento" 
+                           placeholder="Dia Venc." min="1" max="31" value="10">
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-light w-100" style="font-weight: bold;">
+                        <i class="fas fa-plus me-2"></i>Cadastrar Cliente
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Lista de Clientes -->
+        <div id="listaClientes">
+            <div class="empty-state">
+                <i class="fas fa-users"></i>
+                <p>Nenhum cliente cadastrado</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Adicionar Veículo -->
+    <div class="modal fade modal-custom" id="modalVeiculo" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header modal-header-veiculo">
+                    <h5 class="modal-title">
+                        <i class="fas fa-car me-2"></i>Adicionar Veículo
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="veiculoClienteId">
+                    <div class="mb-3">
+                        <label class="form-label">Placa</label>
+                        <input type="text" class="form-control form-control-custom" id="veiculoPlaca" 
+                               maxlength="7" style="text-transform: uppercase;" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Modelo</label>
+                        <input type="text" class="form-control form-control-custom" id="veiculoModelo">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Cor</label>
+                        <input type="text" class="form-control form-control-custom" id="veiculoCor">
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="salvarVeiculo()">
+                        <i class="fas fa-save me-2"></i>Salvar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Registrar Lavagem -->
+    <div class="modal fade modal-custom" id="modalLavagem" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header modal-header-lavagem">
+                    <h5 class="modal-title">
+                        <i class="fas fa-soap me-2"></i>Registrar Lavagem
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="lavagemVeiculoId">
+                    <input type="hidden" id="lavagemClienteNome">
+                    
+                    <div class="text-center mb-4">
+                        <span class="placa-badge" id="lavagemPlaca">ABC-1234</span>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Tipo de Lavagem</label>
+                        <select class="form-control form-control-custom" id="lavagemTipo">
+                            <option value="simples">Lavagem Simples</option>
+                            <option value="completa">Lavagem Completa</option>
+                            <option value="polimento">Polimento</option>
+                            <option value="higienizacao">Higienização</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Valor (R$)</label>
+                        <input type="number" class="form-control form-control-custom" id="lavagemValor" 
+                               step="0.01" min="0" value="30">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Observação</label>
+                        <textarea class="form-control form-control-custom" id="lavagemObs" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-info" onclick="salvarLavagem()">
+                        <i class="fas fa-check me-2"></i>Confirmar Lavagem
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Registrar Pagamento -->
+    <div class="modal fade modal-custom" id="modalPagamento" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header modal-header-pagamento">
+                    <h5 class="modal-title">
+                        <i class="fas fa-dollar-sign me-2"></i>Registrar Pagamento
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="pagamentoClienteId">
+                    
+                    <div class="text-center mb-4">
+                        <h5 id="pagamentoClienteNome">Cliente</h5>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Mês Referência</label>
+                        <input type="month" class="form-control form-control-custom" id="pagamentoMes">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Valor (R$)</label>
+                        <input type="number" class="form-control form-control-custom" id="pagamentoValor" 
+                               step="0.01" min="0">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Forma de Pagamento</label>
+                        <select class="form-control form-control-custom" id="pagamentoForma">
+                            <option value="dinheiro">Dinheiro</option>
+                            <option value="pix">Pix</option>
+                            <option value="debito">Débito</option>
+                            <option value="credito">Crédito</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-success" onclick="salvarPagamento()">
+                        <i class="fas fa-check me-2"></i>Confirmar Pagamento
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Configuração Supabase
+        const SUPABASE_URL = 'https://emkiewosmlnyjnpujbui.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVta2lld29zbWxueWpucHVqYnVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4MDMxOTIsImV4cCI6MjA5MjM3OTE5Mn0.ohXoyqFJfyJxlyS1Efpykr0l0zezC2MZjVJWf55NV0c';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        // Variáveis globais
+        let clientes = [];
+        let veiculos = [];
+        let lavagens = [];
+        
+        // Verificar login ao carregar
+        document.addEventListener('DOMContentLoaded', async () => {
+            const user = JSON.parse(localStorage.getItem('currentUser') || 'null');
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            document.getElementById('userInfo').textContent = user.email;
+            
+            // Definir mês atual no campo de pagamento
+            const hoje = new Date();
+            document.getElementById('pagamentoMes').value = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`;
+            
+            await carregarDados();
+        });
+        
+        // Formulário de cliente
+        document.getElementById('formCliente').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await cadastrarCliente();
+        });
+        
+        // Cadastrar cliente
+        async function cadastrarCliente() {
+            const nome = document.getElementById('clienteNome').value.trim();
+            const telefone = document.getElementById('clienteTelefone').value.replace(/\D/g, '');
+            const valor = parseFloat(document.getElementById('clienteValor').value) || 0;
+            const vencimento = parseInt(document.getElementById('clienteVencimento').value) || 10;
+            
+            if (!nome || !telefone) {
+                showAlert('Preencha nome e telefone!', 'warning');
+                return;
+            }
+            
+            const user = JSON.parse(localStorage.getItem('currentUser'));
+            
+            const { data, error } = await supabase
+                .from('clientes_estacionamento')
+                .insert([{
+                    user_id: user.id,
+                    nome: nome,
+                    telefone: telefone,
+                    valor_mensal: valor,
+                    dia_vencimento: vencimento
+                }]);
+            
+            if (error) {
+                showAlert('Erro ao cadastrar: ' + error.message, 'danger');
+                return;
+            }
+            
+            showAlert(`Cliente ${nome} cadastrado com sucesso!`, 'success');
+            document.getElementById('formCliente').reset();
+            document.getElementById('clienteVencimento').value = '10';
+            
+            await carregarDados();
+        }
+        
+        // Carregar todos os dados
+        async function carregarDados() {
+            const user = JSON.parse(localStorage.getItem('currentUser'));
+            if (!user) return;
+            
+            // Carregar clientes
+            const { data: clientesData } = await supabase
+                .from('clientes_estacionamento')
+                .select('*')
+                .eq('user_id', user.id)
+                .eq('status', 'ativo')
+                .order('nome');
+            
+            clientes = clientesData || [];
+            
+            // Carregar veículos
+            const { data: veiculosData } = await supabase
+                .from('veiculos')
+                .select('*')
+                .eq('user_id', user.id);
+            
+            veiculos = veiculosData || [];
+            
+            // Carregar lavagens (últimos 60 dias)
+            const dataLimite = new Date();
+            dataLimite.setDate(dataLimite.getDate() - 60);
+            
+            const { data: lavagensData } = await supabase
+                .from('lavagens')
+                .select('*')
+                .eq('user_id', user.id)
+                .gte('data_lavagem', dataLimite.toISOString());
+            
+            lavagens = lavagensData || [];
+            
+            renderizarClientes();
+            atualizarEstatisticas();
+        }
+        
+        // Renderizar lista de clientes
+        function renderizarClientes() {
+            const container = document.getElementById('listaClientes');
+            
+            if (clientes.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-users"></i>
+                        <p>Nenhum cliente cadastrado</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = clientes.map(cliente => {
+                const veiculosCliente = veiculos.filter(v => v.cliente_id === cliente.id);
+                
+                return `
+                    <div class="card-cliente">
+                        <div class="card-cliente-header">
+                            <div>
+                                <h5 class="cliente-nome">${cliente.nome}</h5>
+                                <small><i class="fas fa-phone me-1"></i>${formatarTelefone(cliente.telefone)}</small>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-whatsapp btn-sm" onclick="abrirWhatsApp('${cliente.telefone}', 'Olá ${cliente.nome}! Estamos à disposição no estacionamento.')">
+                                    <i class="bi bi-whatsapp"></i>
+                                </button>
+                                <button class="btn btn-pagamento btn-sm" onclick="abrirModalPagamento('${cliente.id}', '${cliente.nome}', ${cliente.valor_mensal})">
+                                    <i class="fas fa-dollar-sign me-1"></i>Pagamento
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-cliente-body">
+                            <div class="cliente-info">
+                                <div class="cliente-info-item">
+                                    <i class="fas fa-dollar-sign"></i>
+                                    <strong>R$ ${(cliente.valor_mensal || 0).toFixed(2)}</strong>/mês
+                                </div>
+                                <div class="cliente-info-item">
+                                    <i class="fas fa-calendar"></i>
+                                    Venc. dia <strong>${cliente.dia_vencimento || 10}</strong>
+                                </div>
+                                <div class="cliente-info-item">
+                                    <i class="fas fa-car"></i>
+                                    <strong>${veiculosCliente.length}</strong> veículo(s)
+                                </div>
+                            </div>
+                            
+                            <div class="veiculos-section">
+                                <div class="veiculos-title">
+                                    <i class="fas fa-car me-2"></i>Veículos
+                                </div>
+                                
+                                ${veiculosCliente.map(v => {
+                                    const ultimaLavagem = getUltimaLavagem(v.id);
+                                    const diasSemLavar = ultimaLavagem ? calcularDiasSemLavar(ultimaLavagem.data_lavagem) : 999;
+                                    const alertaLavagem = diasSemLavar > 30;
+                                    
+                                    return `
+                                        <div class="veiculo-card">
+                                            <div class="veiculo-info">
+                                                <span class="placa-badge">${v.placa}</span>
+                                                <span>${v.modelo || ''} ${v.cor || ''}</span>
+                                                ${alertaLavagem ? 
+                                                    `<span class="lavagem-alerta"><i class="fas fa-exclamation-triangle me-1"></i>${diasSemLavar === 999 ? 'Nunca lavou' : diasSemLavar + ' dias'}</span>` :
+                                                    `<span class="lavagem-ok"><i class="fas fa-check me-1"></i>${diasSemLavar} dias</span>`
+                                                }
+                                            </div>
+                                            <div class="d-flex gap-2">
+                                                ${alertaLavagem && cliente.telefone ? `
+                                                    <button class="btn btn-whatsapp btn-sm" onclick="abrirWhatsApp('${cliente.telefone}', 'Olá ${cliente.nome}! Seu veículo ${v.placa} já faz mais de 30 dias sem lavagem. Temos promoção especial hoje 🚗✨')">
+                                                        <i class="bi bi-whatsapp"></i>
+                                                    </button>
+                                                ` : ''}
+                                                <button class="btn btn-lavagem btn-sm" onclick="abrirModalLavagem('${v.id}', '${v.placa}', '${cliente.nome}')">
+                                                    <i class="fas fa-soap me-1"></i>Lavagem
+                                                </button>
+                                            </div>
+                                        </div>
+                                    `;
+                                }).join('')}
+                                
+                                <button class="btn btn-add-veiculo mt-2" onclick="abrirModalVeiculo('${cliente.id}')">
+                                    <i class="fas fa-plus me-2"></i>Adicionar Veículo
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // Obter última lavagem de um veículo
+        function getUltimaLavagem(veiculoId) {
+            const lavagensVeiculo = lavagens.filter(l => l.veiculo_id === veiculoId);
+            if (lavagensVeiculo.length === 0) return null;
+            
+            return lavagensVeiculo.sort((a, b) => new Date(b.data_lavagem) - new Date(a.data_lavagem))[0];
+        }
+        
+        // Calcular dias sem lavar
+        function calcularDiasSemLavar(dataLavagem) {
+            const ultima = new Date(dataLavagem);
+            const hoje = new Date();
+            const diffMs = hoje - ultima;
+            return Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        }
+        
+        // Atualizar estatísticas
+        function atualizarEstatisticas() {
+            document.getElementById('totalClientes').textContent = clientes.length;
+            document.getElementById('totalVeiculos').textContent = veiculos.length;
+            
+            // Contar alertas de lavagem
+            let alertas = 0;
+            veiculos.forEach(v => {
+                const ultimaLavagem = getUltimaLavagem(v.id);
+                const dias = ultimaLavagem ? calcularDiasSemLavar(ultimaLavagem.data_lavagem) : 999;
+                if (dias > 30) alertas++;
+            });
+            document.getElementById('alertasLavagem').textContent = alertas;
+            
+            // Receita mensal esperada
+            const receita = clientes.reduce((sum, c) => sum + parseFloat(c.valor_mensal || 0), 0);
+            document.getElementById('receitaMensal').textContent = `R$ ${receita.toFixed(0)}`;
+        }
+        
+        // Abrir modal de veículo
+        function abrirModalVeiculo(clienteId) {
+            document.getElementById('veiculoClienteId').value = clienteId;
+            document.getElementById('veiculoPlaca').value = '';
+            document.getElementById('veiculoModelo').value = '';
+            document.getElementById('veiculoCor').value = '';
+            
+            const modal = new bootstrap.Modal(document.getElementById('modalVeiculo'));
+            modal.show();
+        }
+        
+        // Salvar veículo
+        async function salvarVeiculo() {
+            const clienteId = document.getElementById('veiculoClienteId').value;
+            const placa = document.getElementById('veiculoPlaca').value.toUpperCase().trim();
+            const modelo = document.getElementById('veiculoModelo').value.trim();
+            const cor = document.getElementById('veiculoCor').value.trim();
+            
+            if (!placa) {
+                showAlert('Informe a placa!', 'warning');
+                return;
+            }
+            
+            const user = JSON.parse(localStorage.getItem('currentUser'));
+            
+            // Verificar se placa já existe
+            const { data: existente } = await supabase
+                .from('veiculos')
+                .select('*')
+                .eq('user_id', user.id)
+                .eq('placa', placa)
+                .single();
+            
+            if (existente) {
+                showAlert('Esta placa já está cadastrada!', 'danger');
+                return;
+            }
+            
+            const { error } = await supabase
+                .from('veiculos')
+                .insert([{
+                    cliente_id: clienteId,
+                    user_id: user.id,
+                    placa: placa,
+                    modelo: modelo,
+                    cor: cor
+                }]);
+            
+            if (error) {
+                showAlert('Erro ao salvar: ' + error.message, 'danger');
+                return;
+            }
+            
+            bootstrap.Modal.getInstance(document.getElementById('modalVeiculo')).hide();
+            showAlert(`Veículo ${placa} cadastrado!`, 'success');
+            
+            await carregarDados();
+        }
+        
+        // Abrir modal de lavagem
+        function abrirModalLavagem(veiculoId, placa, clienteNome) {
+            document.getElementById('lavagemVeiculoId').value = veiculoId;
+            document.getElementById('lavagemClienteNome').value = clienteNome;
+            document.getElementById('lavagemPlaca').textContent = placa;
+            document.getElementById('lavagemTipo').value = 'simples';
+            document.getElementById('lavagemValor').value = '30';
+            document.getElementById('lavagemObs').value = '';
+            
+            const modal = new bootstrap.Modal(document.getElementById('modalLavagem'));
+            modal.show();
+        }
+        
+        // Salvar lavagem
+        async function salvarLavagem() {
+            const veiculoId = document.getElementById('lavagemVeiculoId').value;
+            const clienteNome = document.getElementById('lavagemClienteNome').value;
+            const placa = document.getElementById('lavagemPlaca').textContent;
+            const tipo = document.getElementById('lavagemTipo').value;
+            const valor = parseFloat(document.getElementById('lavagemValor').value) || 0;
+            const obs = document.getElementById('lavagemObs').value;
+            
+            const user = JSON.parse(localStorage.getItem('currentUser'));
+            
+            // Salvar lavagem
+            const { error: errorLavagem } = await supabase
+                .from('lavagens')
+                .insert([{
+                    veiculo_id: veiculoId,
+                    user_id: user.id,
+                    tipo_lavagem: tipo,
+                    valor: valor,
+                    observacao: obs
+                }]);
+            
+            if (errorLavagem) {
+                showAlert('Erro ao salvar: ' + errorLavagem.message, 'danger');
+                return;
+            }
+            
+            // Registrar no fluxo de caixa
+            if (valor > 0) {
+                // Determinar categoria baseada no tipo
+                let categoria = 'lavagem_carro';
+                
+                await supabase
+                    .from('entradas')
+                    .insert([{
+                        user_id: user.id,
+                        data: new Date().toISOString().split('T')[0],
+                        descricao: `Lavagem ${tipo} - ${placa} - ${clienteNome}`,
+                        placa: placa,
+                        categoria: categoria,
+                        forma_pagamento: 'dinheiro',
+                        valor: valor
+                    }]);
+            }
+            
+            bootstrap.Modal.getInstance(document.getElementById('modalLavagem')).hide();
+            showAlert(`Lavagem registrada: ${placa}`, 'success');
+            
+            await carregarDados();
+        }
+        
+        // Abrir modal de pagamento
+        function abrirModalPagamento(clienteId, nome, valorMensal) {
+            document.getElementById('pagamentoClienteId').value = clienteId;
+            document.getElementById('pagamentoClienteNome').textContent = nome;
+            document.getElementById('pagamentoValor').value = valorMensal || 0;
+            
+            const modal = new bootstrap.Modal(document.getElementById('modalPagamento'));
+            modal.show();
+        }
+        
+        // Salvar pagamento
+        async function salvarPagamento() {
+            const clienteId = document.getElementById('pagamentoClienteId').value;
+            const clienteNome = document.getElementById('pagamentoClienteNome').textContent;
+            const mes = document.getElementById('pagamentoMes').value;
+            const valor = parseFloat(document.getElementById('pagamentoValor').value) || 0;
+            const forma = document.getElementById('pagamentoForma').value;
+            
+            if (!mes || valor <= 0) {
+                showAlert('Preencha mês e valor!', 'warning');
+                return;
+            }
+            
+            const user = JSON.parse(localStorage.getItem('currentUser'));
+            
+            // Salvar pagamento
+            const { error: errorPag } = await supabase
+                .from('pagamentos_mensalidade')
+                .insert([{
+                    cliente_id: clienteId,
+                    user_id: user.id,
+                    mes_referencia: mes,
+                    valor: valor,
+                    forma_pagamento: forma
+                }]);
+            
+            if (errorPag) {
+                showAlert('Erro ao salvar: ' + errorPag.message, 'danger');
+                return;
+            }
+            
+            // Registrar no fluxo de caixa
+            await supabase
+                .from('entradas')
+                .insert([{
+                    user_id: user.id,
+                    data: new Date().toISOString().split('T')[0],
+                    descricao: `Mensalidade ${mes} - ${clienteNome}`,
+                    categoria: 'mensalista',
+                    forma_pagamento: forma,
+                    valor: valor
+                }]);
+            
+            bootstrap.Modal.getInstance(document.getElementById('modalPagamento')).hide();
+            showAlert(`Pagamento registrado: ${clienteNome} - R$ ${valor.toFixed(2)}`, 'success');
+            
+            await carregarDados();
+        }
+        
+        // Formatar telefone
+        function formatarTelefone(tel) {
+            if (!tel) return '-';
+            tel = tel.replace(/\D/g, '');
+            if (tel.length === 11) {
+                return `(${tel.slice(0,2)}) ${tel.slice(2,7)}-${tel.slice(7)}`;
+            }
+            return tel;
+        }
+        
+        // Abrir WhatsApp
+        function abrirWhatsApp(numero, mensagem) {
+            if (!numero) {
+                showAlert('Cliente sem telefone cadastrado!', 'warning');
+                return;
+            }
+            let tel = numero.replace(/\D/g, '');
+            if (!tel.startsWith('55')) {
+                tel = '55' + tel;
+            }
+            const url = `https://wa.me/${tel}?text=${encodeURIComponent(mensagem)}`;
+            window.open(url, '_blank');
+        }
+        
+        // Mostrar alerta
+        function showAlert(message, type) {
+            const container = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type} alert-dismissible fade show`;
+            alert.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            container.appendChild(alert);
+            
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+        
+        // Logout
+        function logout() {
+            localStorage.removeItem('currentUser');
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>
