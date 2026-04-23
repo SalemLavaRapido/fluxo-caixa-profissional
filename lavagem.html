@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lavagem - Controle Completo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --success-gradient: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            --danger-gradient: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+            --warning-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --info-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --lavagem-gradient: linear-gradient(135deg, #00c6fb 0%, #005bea 100%);
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #fff;
+        }
+        
+        .navbar-custom {
+            background: var(--lavagem-gradient);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        
+        .card-custom {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .stats-card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .stats-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #fff;
+        }
+        
+        .card-nova-lavagem {
+            background: var(--lavagem-gradient);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+        
+        .form-control-custom {
+            background: rgba(255,255,255,0.9);
+            border: none;
+            border-radius: 10px;
+            padding: 12px 15px;
+            color: #333;
+        }
+        
+        .form-control-custom:focus {
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(0,198,251,0.3);
+        }
+        
+        .btn-registrar {
+            background: #fff;
+            color: #005bea;
+            font-weight: bold;
+            padding: 12px 25px;
+            border-radius: 10px;
+            border: none;
+        }
+        
+        .btn-registrar:hover {
+            background: rgba(255,255,255,0.9);
+            color: #005bea;
+        }
+        
+        .btn-voltar {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 10px 20px;
+            border-radius: 10px;
+        }
+        
+        .btn-voltar:hover {
+            background: rgba(255,255,255,0.2);
+            color: #fff;
+        }
+        
+        .table-lavagens {
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            overflow: hidden;
+        }
+        
+        .table-lavagens th {
+            background: rgba(0, 198, 251, 0.3);
+            color: #fff;
+            font-weight: 600;
+            padding: 15px;
+            border: none;
+        }
+        
+        .table-lavagens td {
+            color: #333;
+            background: rgba(255,255,255,0.9);
+            padding: 12px 15px;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            vertical-align: middle;
+        }
+        
+        .badge-tipo {
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 0.85em;
+        }
+        
+        .badge-avulso {
+            background: var(--warning-gradient);
+            color: #fff;
+        }
+        
+        .badge-mensalista {
+            background: var(--success-gradient);
+            color: #fff;
+        }
+        
+        .placa-badge {
+            background: #005bea;
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+        
+        .btn-whatsapp {
+            background: #25D366;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 12px;
+        }
+        
+        .btn-whatsapp:hover {
+            background: #128C7E;
+            color: #fff;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: rgba(255,255,255,0.5);
+        }
+        
+        .empty-state i {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+        
+        .filtros-section {
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .nav-tabs-custom .nav-link {
+            color: rgba(255,255,255,0.7);
+            border: none;
+            padding: 12px 20px;
+            border-radius: 10px;
+            margin-right: 5px;
+        }
+        
+        .nav-tabs-custom .nav-link.active {
+            background: var(--lavagem-gradient);
+            color: #fff;
+        }
+        
+        .nav-tabs-custom .nav-link:hover:not(.active) {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+        }
+        
+        .mensalista-lavagens {
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .mensalista-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .dias-lavagem {
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.85em;
+        }
+        
+        .dias-ok {
+            background: var(--success-gradient);
+        }
+        
+        .dias-alerta {
+            background: #ffc107;
+            color: #000;
+        }
+        
+        .dias-urgente {
+            background: var(--danger-gradient);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-car-wash me-2"></i>Lavagem
+            </a>
+            <div class="d-flex align-items-center">
+                <span class="me-3" id="userInfo"></span>
+                <a href="index.html" class="btn btn-voltar me-2">
+                    <i class="fas fa-arrow-left me-2"></i>Voltar
+                </a>
+                <button class="btn btn-outline-light" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Container Principal -->
+    <div class="container py-4">
+        <!-- Alertas -->
+        <div id="alertContainer"></div>
+        
+        <!-- Stats Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="stats-card">
+                    <i class="fas fa-car-wash fa-2x mb-2" style="color: #00c6fb;"></i>
+                    <div class="stats-number" id="lavagensHoje">0</div>
+                    <div>Lavagens Hoje</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card">
+                    <i class="fas fa-calendar-week fa-2x mb-2" style="color: #38ef7d;"></i>
+                    <div class="stats-number" id="lavagensSemana">0</div>
+                    <div>Esta Semana</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card">
+                    <i class="fas fa-calendar-alt fa-2x mb-2" style="color: #f5576c;"></i>
+                    <div class="stats-number" id="lavagensMes">0</div>
+                    <div>Este Mês</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card">
+                    <i class="fas fa-dollar-sign fa-2x mb-2" style="color: #4facfe;"></i>
+                    <div class="stats-number" id="faturamentoMes">R$ 0</div>
+                    <div>Faturamento Mês</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Card Nova Lavagem -->
+        <div class="card-nova-lavagem">
+            <h4 class="mb-4">
+                <i class="fas fa-plus-circle me-2"></i>Registrar Nova Lavagem
+            </h4>
+            <form id="formLavagem" class="row g-3">
+                <div class="col-md-2">
+                    <input type="text" class="form-control form-control-custom" id="placaLavagem" 
+                           placeholder="PLACA" maxlength="7" style="text-transform: uppercase;" required>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-control form-control-custom" id="tipoLavagem">
+                        <option value="simples">Simples</option>
+                        <option value="completa">Completa</option>
+                        <option value="polimento">Polimento</option>
+                        <option value="higienizacao">Higienização</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-control form-control-custom" id="tipoCliente">
+                        <option value="avulso">Avulso</option>
+                        <option value="mensalista">Mensalista</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <input type="number" class="form-control form-control-custom" id="valorLavagem" 
+                           placeholder="Valor R$" step="0.01" min="0">
+                </div>
+                <div class="col-md-2">
+                    <select class="form-control form-control-custom" id="formaPagamento">
+                        <option value="dinheiro">Dinheiro</option>
+                        <option value="pix">Pix</option>
+                        <option value="debito">Débito</option>
+                        <option value="credito">Crédito</option>
+                        <option value="cortesia">Cortesia</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-registrar w-100">
+                        <i class="fas fa-check me-2"></i>Registrar
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Tabs -->
+        <ul class="nav nav-tabs nav-tabs-custom mb-4" id="tabsLavagem">
+            <li class="nav-item">
+                <a class="nav-link active" data-bs-toggle="tab" href="#tabHistorico">
+                    <i class="fas fa-history me-2"></i>Histórico de Lavagens
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#tabMensalistas">
+                    <i class="fas fa-users me-2"></i>Mensalistas - Última Lavagem
+                </a>
+            </li>
+        </ul>
+        
+        <div class="tab-content">
+            <!-- Tab Histórico -->
+            <div class="tab-pane fade show active" id="tabHistorico">
+                <!-- Filtros -->
+                <div class="filtros-section">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <input type="date" class="form-control form-control-custom" id="filtroDataInicio">
+                        </div>
+                        <div class="col-md-3">
+                            <input type="date" class="form-control form-control-custom" id="filtroDataFim">
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-control form-control-custom" id="filtroTipo">
+                                <option value="">Todos os Tipos</option>
+                                <option value="avulso">Avulso</option>
+                                <option value="mensalista">Mensalista</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-registrar w-100" onclick="aplicarFiltros()">
+                                <i class="fas fa-filter me-2"></i>Filtrar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tabela de Lavagens -->
+                <div class="card-custom p-4">
+                    <h5 class="mb-3">
+                        <i class="fas fa-list me-2"></i>Lavagens Realizadas
+                        <span class="badge bg-primary ms-2" id="totalLavagens">0</span>
+                    </h5>
+                    <div class="table-responsive table-lavagens">
+                        <table class="table mb-0">
+                            <thead>
+                                <tr>
+                                    <th><i class="fas fa-car me-2"></i>Placa</th>
+                                    <th><i class="fas fa-tag me-2"></i>Tipo Cliente</th>
+                                    <th><i class="fas fa-shower me-2"></i>Tipo Lavagem</th>
+                                    <th><i class="fas fa-calendar me-2"></i>Data/Hora</th>
+                                    <th><i class="fas fa-dollar-sign me-2"></i>Valor</th>
+                                    <th><i class="fas fa-credit-card me-2"></i>Pagamento</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelaLavagens">
+                                <tr>
+                                    <td colspan="6" class="empty-state">
+                                        <i class="fas fa-car-wash"></i>
+                                        <p>Nenhuma lavagem registrada</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tab Mensalistas -->
+            <div class="tab-pane fade" id="tabMensalistas">
+                <div class="card-custom p-4">
+                    <h5 class="mb-3">
+                        <i class="fas fa-users me-2"></i>Veículos de Mensalistas - Última Lavagem
+                    </h5>
+                    <div id="listaMensalistasLavagem">
+                        <div class="empty-state">
+                            <i class="fas fa-car"></i>
+                            <p>Nenhum veículo de mensalista cadastrado</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Configuração Supabase
+        const SUPABASE_URL = 'https://emkiewosmlnyjnpujbui.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVta2lld29zbWxueWpucHVqYnVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ1OTUyNzMsImV4cCI6MjA2MDE3MTI3M30.cVPvfXMFPaIFxPVCMvPLYWgPX1JqfpjHk8YLwCKzogs';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        let lavagens = [];
+        let veiculosMensalistas = [];
+        let clientes = [];
+        
+        // Verificar autenticação
+        document.addEventListener('DOMContentLoaded', async () => {
+            const user = JSON.parse(localStorage.getItem('currentUser'));
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            document.getElementById('userInfo').textContent = user.email;
+            
+            // Definir datas padrão dos filtros
+            const hoje = new Date();
+            const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+            document.getElementById('filtroDataInicio').value = inicioMes.toISOString().split('T')[0];
+            document.getElementById('filtroDataFim').value = hoje.toISOString().split('T')[0];
+            
+            await carregarDados();
+        });
+        
+        // Formulário de lavagem
+        document.getElementById('formLavagem').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await registrarLavagem();
+        });
+        
+        // Registrar lavagem
+        async function registrarLavagem() {
+            const placa = document.getElementById('placaLavagem').value.toUpperCase().trim();
+            const tipoLavagem = document.getElementById('tipoLavagem').value;
+            const tipoCliente = document.getElementById('tipoCliente').value;
+            const valor = parseFloat(document.getElementById('valorLavagem').value) || 0;
+            const formaPagamento = document.getElementById('formaPagamento').value;
+            
+            if (!placa) {
+                showAlert('Informe a placa do veículo!', 'warning');
+                return;
+            }
+            
+            const user = JSON.parse(localStorage.getItem('currentUser'));
+            
+            // Registrar lavagem
+            const { error } = await supabaseClient
+                .from('lavagens')
+                .insert([{
+                    user_id: user.id,
+                    placa: placa,
+                    tipo_lavagem: tipoLavagem,
+                    tipo_cliente: tipoCliente,
+                    valor: valor,
+                    forma_pagamento: formaPagamento,
+                    data_lavagem: new Date().toISOString()
+                }]);
+            
+            if (error) {
+                showAlert('Erro ao registrar: ' + error.message, 'danger');
+                return;
+            }
+            
+            // Se for avulso e tiver valor, registrar no fluxo de caixa
+            if (tipoCliente === 'avulso' && valor > 0 && formaPagamento !== 'cortesia') {
+                await supabaseClient
+                    .from('entradas')
+                    .insert([{
+                        user_id: user.id,
+                        data: new Date().toISOString().split('T')[0],
+                        descricao: `Lavagem ${tipoLavagem} - ${placa}`,
+                        categoria: 'lavagem',
+                        forma_pagamento: formaPagamento,
+                        valor: valor
+                    }]);
+            }
+            
+            showAlert(`Lavagem registrada: ${placa} - ${tipoLavagem}`, 'success');
+            document.getElementById('formLavagem').reset();
+            
+            await carregarDados();
+        }
+        
+        // Carregar dados
+        async function carregarDados() {
+            const user = JSON.parse(localStorage.getItem('currentUser'));
+            if (!user) return;
+            
+            // Carregar lavagens
+            const dataInicio = document.getElementById('filtroDataInicio').value;
+            const dataFim = document.getElementById('filtroDataFim').value;
+            const filtroTipo = document.getElementById('filtroTipo').value;
+            
+            let query = supabaseClient
+                .from('lavagens')
+                .select('*')
+                .eq('user_id', user.id)
+                .order('data_lavagem', { ascending: false });
+            
+            if (dataInicio) {
+                query = query.gte('data_lavagem', dataInicio + 'T00:00:00');
+            }
+            if (dataFim) {
+                query = query.lte('data_lavagem', dataFim + 'T23:59:59');
+            }
+            if (filtroTipo) {
+                query = query.eq('tipo_cliente', filtroTipo);
+            }
+            
+            const { data: lavagensData } = await query;
+            lavagens = lavagensData || [];
+            
+            // Carregar clientes mensalistas
+            const { data: clientesData } = await supabaseClient
+                .from('clientes_estacionamento')
+                .select('*')
+                .eq('user_id', user.id)
+                .eq('status', 'ativo');
+            
+            clientes = clientesData || [];
+            
+            // Carregar veículos de mensalistas
+            const { data: veiculosData } = await supabaseClient
+                .from('veiculos')
+                .select('*')
+                .eq('user_id', user.id);
+            
+            veiculosMensalistas = veiculosData || [];
+            
+            renderizarLavagens();
+            renderizarMensalistasLavagem();
+            atualizarEstatisticas();
+        }
+        
+        // Aplicar filtros
+        function aplicarFiltros() {
+            carregarDados();
+        }
+        
+        // Renderizar tabela de lavagens
+        function renderizarLavagens() {
+            const tbody = document.getElementById('tabelaLavagens');
+            const total = document.getElementById('totalLavagens');
+            
+            total.textContent = lavagens.length;
+            
+            if (lavagens.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="empty-state">
+                            <i class="fas fa-car-wash"></i>
+                            <p>Nenhuma lavagem encontrada</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = lavagens.map(l => `
+                <tr>
+                    <td><span class="placa-badge">${l.placa}</span></td>
+                    <td>
+                        <span class="badge-tipo ${l.tipo_cliente === 'mensalista' ? 'badge-mensalista' : 'badge-avulso'}">
+                            ${l.tipo_cliente === 'mensalista' ? 'Mensalista' : 'Avulso'}
+                        </span>
+                    </td>
+                    <td>${formatarTipoLavagem(l.tipo_lavagem)}</td>
+                    <td>${formatarDataHora(l.data_lavagem)}</td>
+                    <td><strong>R$ ${(l.valor || 0).toFixed(2)}</strong></td>
+                    <td>${formatarFormaPagamento(l.forma_pagamento)}</td>
+                </tr>
+            `).join('');
+        }
+        
+        // Renderizar mensalistas com última lavagem
+        function renderizarMensalistasLavagem() {
+            const container = document.getElementById('listaMensalistasLavagem');
+            
+            if (veiculosMensalistas.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-car"></i>
+                        <p>Nenhum veículo de mensalista cadastrado</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Para cada veículo, encontrar última lavagem
+            const veiculosComLavagem = veiculosMensalistas.map(v => {
+                const cliente = clientes.find(c => c.id === v.cliente_id);
+                const ultimaLavagem = lavagens.find(l => l.placa === v.placa);
+                
+                let diasDesdeUltimaLavagem = null;
+                let statusLavagem = 'nunca';
+                
+                if (ultimaLavagem) {
+                    const dataLavagem = new Date(ultimaLavagem.data_lavagem);
+                    const hoje = new Date();
+                    diasDesdeUltimaLavagem = Math.floor((hoje - dataLavagem) / (1000 * 60 * 60 * 24));
+                    
+                    if (diasDesdeUltimaLavagem <= 15) {
+                        statusLavagem = 'ok';
+                    } else if (diasDesdeUltimaLavagem <= 30) {
+                        statusLavagem = 'alerta';
+                    } else {
+                        statusLavagem = 'urgente';
+                    }
+                }
+                
+                return {
+                    ...v,
+                    clienteNome: cliente ? cliente.nome : 'Desconhecido',
+                    clienteTelefone: cliente ? cliente.telefone : null,
+                    ultimaLavagem: ultimaLavagem ? ultimaLavagem.data_lavagem : null,
+                    diasDesdeUltimaLavagem,
+                    statusLavagem
+                };
+            });
+            
+            // Ordenar por dias desde última lavagem (mais urgentes primeiro)
+            veiculosComLavagem.sort((a, b) => {
+                if (a.diasDesdeUltimaLavagem === null) return -1;
+                if (b.diasDesdeUltimaLavagem === null) return 1;
+                return b.diasDesdeUltimaLavagem - a.diasDesdeUltimaLavagem;
+            });
+            
+            container.innerHTML = veiculosComLavagem.map(v => `
+                <div class="mensalista-item">
+                    <div>
+                        <span class="placa-badge me-2">${v.placa}</span>
+                        <strong>${v.clienteNome}</strong>
+                        <br>
+                        <small class="text-muted">
+                            ${v.modelo || ''} ${v.cor || ''}
+                            ${v.ultimaLavagem ? ' | Última: ' + formatarData(v.ultimaLavagem) : ' | Nunca lavou'}
+                        </small>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        ${v.diasDesdeUltimaLavagem !== null ? `
+                            <span class="dias-lavagem ${v.statusLavagem === 'ok' ? 'dias-ok' : v.statusLavagem === 'alerta' ? 'dias-alerta' : 'dias-urgente'}">
+                                ${v.diasDesdeUltimaLavagem} dias
+                            </span>
+                        ` : `
+                            <span class="dias-lavagem dias-urgente">Nunca</span>
+                        `}
+                        ${v.clienteTelefone ? `
+                            <button class="btn btn-whatsapp btn-sm" onclick="abrirWhatsApp('${v.clienteTelefone}', 'Olá! Seu veículo ${v.placa} está disponível para lavagem. Quando podemos agendar?')">
+                                <i class="bi bi-whatsapp"></i>
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // Atualizar estatísticas
+        function atualizarEstatisticas() {
+            const hoje = new Date();
+            const inicioHoje = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+            const inicioSemana = new Date(hoje);
+            inicioSemana.setDate(hoje.getDate() - hoje.getDay());
+            const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+            
+            // Lavagens hoje
+            const lavagensHoje = lavagens.filter(l => new Date(l.data_lavagem) >= inicioHoje);
+            document.getElementById('lavagensHoje').textContent = lavagensHoje.length;
+            
+            // Lavagens semana
+            const lavagensSemana = lavagens.filter(l => new Date(l.data_lavagem) >= inicioSemana);
+            document.getElementById('lavagensSemana').textContent = lavagensSemana.length;
+            
+            // Lavagens mês
+            const lavagensMes = lavagens.filter(l => new Date(l.data_lavagem) >= inicioMes);
+            document.getElementById('lavagensMes').textContent = lavagensMes.length;
+            
+            // Faturamento mês (apenas avulsos)
+            const faturamento = lavagensMes
+                .filter(l => l.tipo_cliente === 'avulso' && l.forma_pagamento !== 'cortesia')
+                .reduce((sum, l) => sum + (l.valor || 0), 0);
+            document.getElementById('faturamentoMes').textContent = `R$ ${faturamento.toFixed(0)}`;
+        }
+        
+        // Formatar tipo de lavagem
+        function formatarTipoLavagem(tipo) {
+            const tipos = {
+                'simples': 'Simples',
+                'completa': 'Completa',
+                'polimento': 'Polimento',
+                'higienizacao': 'Higienização'
+            };
+            return tipos[tipo] || tipo;
+        }
+        
+        // Formatar forma de pagamento
+        function formatarFormaPagamento(forma) {
+            const formas = {
+                'dinheiro': 'Dinheiro',
+                'pix': 'Pix',
+                'debito': 'Débito',
+                'credito': 'Crédito',
+                'cortesia': 'Cortesia'
+            };
+            return formas[forma] || forma;
+        }
+        
+        // Formatar data/hora
+        function formatarDataHora(dataStr) {
+            if (!dataStr) return '-';
+            const data = new Date(dataStr);
+            return data.toLocaleString('pt-BR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+        
+        // Formatar data
+        function formatarData(dataStr) {
+            if (!dataStr) return '-';
+            const data = new Date(dataStr);
+            return data.toLocaleDateString('pt-BR');
+        }
+        
+        // Abrir WhatsApp
+        function abrirWhatsApp(numero, mensagem) {
+            if (!numero) {
+                showAlert('Cliente sem telefone cadastrado!', 'warning');
+                return;
+            }
+            let tel = numero.replace(/\D/g, '');
+            if (!tel.startsWith('55')) {
+                tel = '55' + tel;
+            }
+            const url = `https://wa.me/${tel}?text=${encodeURIComponent(mensagem)}`;
+            window.open(url, '_blank');
+        }
+        
+        // Mostrar alerta
+        function showAlert(message, type) {
+            const container = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type} alert-dismissible fade show`;
+            alert.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            container.appendChild(alert);
+            
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+        
+        // Logout
+        function logout() {
+            localStorage.removeItem('currentUser');
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>
