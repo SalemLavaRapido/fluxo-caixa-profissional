@@ -856,11 +856,9 @@
             if (error) {
                 alert('Erro ao salvar: ' + error.message);
             } else {
-                alert('Entrada salva com sucesso!');
-                // Fechar modal
+                // Fechar modal e recarregar direto (sem alerta)
                 const modal = bootstrap.Modal.getInstance(document.getElementById('modalEntrada'));
                 if (modal) modal.hide();
-                // Recarregar página
                 location.reload();
             }
             
