@@ -676,7 +676,7 @@
             }
             
             // Registrar entrada
-            const { data, error } = await supabaseClient
+            let { data, error } = await supabaseClient
                 .from('movimentacao_avulso')
                 .insert([{
                     user_id: user.id,
@@ -688,6 +688,22 @@
                     telefone: telefone || null,
                     status: 'aberto'
                 }]);
+            
+            // Se erro por coluna tipo_veiculo não existir, tenta sem ela
+            if (error && error.message.includes('tipo_veiculo')) {
+                const resultado = await supabaseClient
+                    .from('movimentacao_avulso')
+                    .insert([{
+                        user_id: user.id,
+                        placa: placa,
+                        modelo: modelo || null,
+                        cor: cor || null,
+                        cliente_nome: nome || null,
+                        telefone: telefone || null,
+                        status: 'aberto'
+                    }]);
+                error = resultado.error;
+            }
             
             if (error) {
                 showAlert('Erro ao registrar entrada: ' + error.message, 'danger');
