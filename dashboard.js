@@ -66,6 +66,11 @@ class DashboardSystem {
         const ctx = document.getElementById('monthlyChart');
         if (!ctx) return;
 
+        // Destruir gráfico existente se houver
+        if (this.chart) {
+            this.chart.destroy();
+        }
+
         // Obter dados dos últimos 6 meses
         const dados = await this.obterDadosMensais();
 
