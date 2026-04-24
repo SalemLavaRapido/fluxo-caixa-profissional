@@ -486,11 +486,12 @@
                             <th><i class="fas fa-clock me-2"></i>Tempo</th>
                             <th><i class="fas fa-dollar-sign me-2"></i>Valor</th>
                             <th><i class="fas fa-credit-card me-2"></i>Pagamento</th>
+                            <th><i class="fas fa-cogs me-2"></i>Ações</th>
                         </tr>
                     </thead>
                     <tbody id="tabelaHistorico">
                         <tr>
-                            <td colspan="8" class="empty-state">
+                            <td colspan="9" class="empty-state">
                                 <i class="fas fa-history"></i>
                                 <p>Nenhum registro no histórico</p>
                             </td>
@@ -1317,7 +1318,7 @@
             if (historicoFiltrado.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="7" class="empty-state">
+                        <td colspan="9" class="empty-state">
                             <i class="fas fa-history"></i>
                             <p>Nenhum registro no histórico</p>
                         </td>
@@ -1347,6 +1348,11 @@
                         <td><span class="tempo-badge">${tempoTexto}</span></td>
                         <td><strong>R$ ${valorFormatado}</strong></td>
                         <td class="text-center">${formatarFormaPagamento(h.forma_pagamento)}</td>
+                        <td class="text-center">
+                            <button class="btn btn-danger btn-sm" onclick="excluirHistorico('${h.id}', '${h.placa}', ${h.valor || 0})" title="Excluir">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
                     </tr>
                 `;
             }).join('');
@@ -1373,6 +1379,52 @@
                 return `(${tel.slice(0,2)}) ${tel.slice(2,6)}-${tel.slice(6)}`;
             }
             return telefone;
+        }
+        
+        // Excluir registro do histórico
+        async function excluirHistorico(id, placa, valor) {
+            if (!confirm(`Tem certeza que deseja excluir o registro do veículo ${placa}?\n\nIsso também removerá a entrada de R$ ${valor.toFixed(2)} do fluxo de caixa.`)) {
+                return;
+            }
+            
+            const user = JSON.parse(localStorage.getItem('currentUser'));
+            if (!user) return;
+            
+            try {
+                // Excluir do histórico (movimentacao_avulso)
+                const { error: errorHistorico } = await supabaseClient
+                    .from('movimentacao_avulso')
+                    .delete()
+                    .eq('id', id);
+                
+                if (errorHistorico) {
+                    showAlert('Erro ao excluir do histórico: ' + errorHistorico.message, 'danger');
+                    return;
+                }
+                
+                // Excluir do fluxo de caixa (entradas) - busca pela placa e valor
+                const { error: errorCaixa } = await supabaseClient
+                    .from('entradas')
+                    .delete()
+                    .eq('user_id', user.id)
+                    .eq('placa', placa)
+                    .eq('valor', valor)
+                    .eq('categoria', 'avulso');
+                
+                if (errorCaixa) {
+                    console.error('Erro ao excluir do caixa:', errorCaixa);
+                }
+                
+                showAlert(`Registro excluído: ${placa}`, 'success');
+                
+                // Recarregar dados
+                await carregarHistorico();
+                await carregarEstatisticas();
+                
+            } catch (error) {
+                console.error('Erro ao excluir:', error);
+                showAlert('Erro ao excluir registro', 'danger');
+            }
         }
         
         // ========== FUNÇÕES DE IMPRESSÃO ==========
