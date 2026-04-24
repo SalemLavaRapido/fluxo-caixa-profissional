@@ -371,23 +371,30 @@
                     <input type="text" class="form-control form-control-custom" id="placaEntrada" 
                            placeholder="PLACA" maxlength="7" style="text-transform: uppercase;" required>
                 </div>
-                <div class="col-md-2">
-                    <input type="text" class="form-control form-control-custom" id="modeloVeiculo" 
-                           placeholder="Modelo (ex: Gol)">
+                <div class="col">
+                    <select class="form-control form-control-custom" id="tipoVeiculo">
+                        <option value="carro">🚗 Carro - R$ 8,00/h</option>
+                        <option value="caminhonete">🛻 Caminhonete - R$ 10,00/h</option>
+                        <option value="moto">🏍️ Moto - R$ 5,00/h</option>
+                    </select>
                 </div>
-                <div class="col-md-2">
+                <div class="col">
+                    <input type="text" class="form-control form-control-custom" id="modeloVeiculo" 
+                           placeholder="Modelo">
+                </div>
+                <div class="col">
                     <input type="text" class="form-control form-control-custom" id="corVeiculo" 
                            placeholder="Cor">
                 </div>
-                <div class="col-md-2">
+                <div class="col">
                     <input type="text" class="form-control form-control-custom" id="nomeCliente" 
                            placeholder="Cliente">
                 </div>
-                <div class="col-md-2">
+                <div class="col">
                     <input type="tel" class="form-control form-control-custom" id="telefoneCliente" 
                            placeholder="Telefone">
                 </div>
-                <div class="col-md-2">
+                <div class="col">
                     <button type="submit" class="btn btn-entrada w-100">
                         <i class="fas fa-sign-in-alt me-2"></i>Entrada
                     </button>
@@ -593,8 +600,12 @@
         
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         
-        // Valor por hora
-        const VALOR_HORA = 8.00;
+        // Valores por hora por tipo de veículo
+        const VALORES_HORA = {
+            'carro': 8.00,
+            'caminhonete': 10.00,
+            'moto': 5.00
+        };
         
         // Variáveis globais
         let veiculosPatio = [];
@@ -637,6 +648,7 @@
         // Registrar entrada
         async function registrarEntrada() {
             const placa = document.getElementById('placaEntrada').value.toUpperCase().trim();
+            const tipoVeiculo = document.getElementById('tipoVeiculo').value;
             const modelo = document.getElementById('modeloVeiculo').value.trim();
             const cor = document.getElementById('corVeiculo').value.trim();
             const nome = document.getElementById('nomeCliente').value.trim();
@@ -669,6 +681,7 @@
                 .insert([{
                     user_id: user.id,
                     placa: placa,
+                    tipo_veiculo: tipoVeiculo,
                     modelo: modelo || null,
                     cor: cor || null,
                     cliente_nome: nome || null,
@@ -685,6 +698,8 @@
             imprimirCupomEntrada({
                 placa: placa,
                 cliente: nome,
+                tipoVeiculo: tipoVeiculo,
+                valorHora: VALORES_HORA[tipoVeiculo],
                 data: new Date().toLocaleString('pt-BR')
             });
             
@@ -744,11 +759,13 @@
             tbody.innerHTML = veiculosPatio.map(v => {
                 console.log('Veículo:', v);
                 const tempo = calcularTempo(v.data_entrada || new Date());
-                const valor = calcularValor(tempo.minutos);
+                const tipoVeiculo = v.tipo_veiculo || 'carro';
+                const valor = calcularValor(tempo.minutos, tipoVeiculo);
+                const iconeTipo = tipoVeiculo === 'moto' ? '🏍️' : tipoVeiculo === 'caminhonete' ? '🛻' : '🚗';
                 
                 return `
                     <tr>
-                        <td><span class="placa-badge">${v.placa || 'SEM PLACA'}</span></td>
+                        <td><span class="placa-badge">${iconeTipo} ${v.placa || 'SEM PLACA'}</span></td>
                         <td>${v.modelo || '-'}</td>
                         <td>${v.cor || '-'}</td>
                         <td>${v.cliente_nome || '-'}</td>
@@ -756,7 +773,7 @@
                         <td><span class="tempo-badge pulse">${tempo.texto}</span></td>
                         <td><span class="valor-badge">R$ ${valor.toFixed(2)}</span></td>
                         <td>
-                            <button class="btn btn-secondary btn-sm me-1" onclick="reimprimirCupom('${v.placa}', '${v.cliente_nome || ''}', '${v.data_entrada}')" title="Reimprimir">
+                            <button class="btn btn-secondary btn-sm me-1" onclick="reimprimirCupom('${v.placa}', '${v.cliente_nome || ''}', '${v.data_entrada}', '${tipoVeiculo}')" title="Reimprimir">
                                 <i class="fas fa-print"></i>
                             </button>
                             ${v.telefone ? `
@@ -792,10 +809,11 @@
             return { minutos: diffMinutos, horas, texto };
         }
         
-        // Calcular valor (hora cheia)
-        function calcularValor(minutos) {
+        // Calcular valor (hora cheia) baseado no tipo de veículo
+        function calcularValor(minutos, tipoVeiculo = 'carro') {
             const horas = Math.ceil(minutos / 60);
-            return horas * VALOR_HORA;
+            const valorHora = VALORES_HORA[tipoVeiculo] || VALORES_HORA['carro'];
+            return horas * valorHora;
         }
         
         // Atualizar tempos e valores
@@ -811,16 +829,23 @@
             const agora = new Date();
             const tempo = calcularTempo(veiculo.data_entrada);
             const horasCobradas = Math.ceil(tempo.minutos / 60);
-            const valor = horasCobradas * VALOR_HORA;
+            const tipoVeiculo = veiculo.tipo_veiculo || 'carro';
+            const valorHora = VALORES_HORA[tipoVeiculo] || VALORES_HORA['carro'];
+            const valor = horasCobradas * valorHora;
+            const iconeTipo = tipoVeiculo === 'moto' ? '🏍️' : tipoVeiculo === 'caminhonete' ? '🛻' : '🚗';
             
             document.getElementById('saidaId').value = id;
-            document.getElementById('saidaPlaca').textContent = veiculo.placa;
+            document.getElementById('saidaPlaca').textContent = `${iconeTipo} ${veiculo.placa}`;
             document.getElementById('saidaCliente').textContent = veiculo.cliente_nome || '-';
             document.getElementById('saidaEntrada').textContent = formatarDataHora(veiculo.data_entrada);
             document.getElementById('saidaSaida').textContent = formatarDataHora(agora);
             document.getElementById('saidaTempo').textContent = tempo.texto;
             document.getElementById('saidaHoras').textContent = `${horasCobradas} hora(s)`;
             document.getElementById('saidaValor').textContent = `R$ ${valor.toFixed(2)}`;
+            
+            // Atualizar texto do valor por hora
+            const infoValor = document.querySelector('.resumo-total small');
+            if (infoValor) infoValor.textContent = `R$ ${valorHora.toFixed(2)} por hora`;
             
             const modal = new bootstrap.Modal(document.getElementById('modalSaida'));
             modal.show();
@@ -836,7 +861,9 @@
             const agora = new Date();
             const tempo = calcularTempo(veiculo.data_entrada);
             const horasCobradas = Math.ceil(tempo.minutos / 60);
-            const valor = horasCobradas * VALOR_HORA;
+            const tipoVeiculo = veiculo.tipo_veiculo || 'carro';
+            const valorHora = VALORES_HORA[tipoVeiculo] || VALORES_HORA['carro'];
+            const valor = horasCobradas * valorHora;
             const formaPagamento = document.getElementById('saidaFormaPagamento').value;
             
             // Atualizar registro de saída
@@ -1247,6 +1274,10 @@
         
         // Imprimir cupom de entrada
         function imprimirCupomEntrada(dados) {
+            const tipoVeiculo = dados.tipoVeiculo || 'carro';
+            const valorHora = dados.valorHora || VALORES_HORA[tipoVeiculo] || 8.00;
+            const iconeTipo = tipoVeiculo === 'moto' ? '🏍️ MOTO' : tipoVeiculo === 'caminhonete' ? '🛻 CAMINHONETE' : '🚗 CARRO';
+            
             const conteudo = `
                 <!DOCTYPE html>
                 <html>
@@ -1265,6 +1296,7 @@
                         .info { font-size: 10px; margin-bottom: 2px; }
                         .linha { border-top: 1px dashed #000; margin: 5px 0; }
                         .destaque { font-size: 16px; font-weight: bold; margin: 5px 0; }
+                        .tipo { font-size: 12px; font-weight: bold; margin: 3px 0; }
                         .aviso { font-size: 9px; margin: 3px 0; }
                         .rodape { font-size: 10px; margin-top: 5px; }
                         @media print {
@@ -1285,6 +1317,7 @@
                     <div class="linha"></div>
                     
                     <div class="destaque">${dados.placa}</div>
+                    <div class="tipo">${iconeTipo} - R$ ${valorHora.toFixed(2)}/hora</div>
                     <div class="info"><strong>Cliente:</strong> ${dados.cliente || '---'}</div>
                     <div class="info"><strong>Entrada:</strong> ${dados.data}</div>
                     
@@ -1311,11 +1344,13 @@
         }
         
         // Reimprimir cupom
-        function reimprimirCupom(placa, cliente, dataEntrada) {
+        function reimprimirCupom(placa, cliente, dataEntrada, tipoVeiculo = 'carro') {
             const dataFormatada = new Date(dataEntrada).toLocaleString('pt-BR');
             imprimirCupomEntrada({
                 placa: placa,
                 cliente: cliente,
+                tipoVeiculo: tipoVeiculo,
+                valorHora: VALORES_HORA[tipoVeiculo],
                 data: dataFormatada
             });
         }
