@@ -837,6 +837,7 @@
                     minutos: tempo.minutos,
                     horas: horasCobradas,
                     valor: valor,
+                    forma_pagamento: formaPagamento,
                     status: 'finalizado'
                 })
                 .eq('id', id);
@@ -1194,12 +1195,9 @@
                         <td>${h.cliente_nome || '-'}</td>
                         <td class="text-center">
                             ${h.telefone ? `
-                                <div><small>${formatarTelefone(h.telefone)}</small></div>
-                                <div class="mt-1">
-                                    <button class="btn btn-whatsapp btn-sm" onclick="abrirWhatsApp('${h.telefone}', '${mensagemWhatsApp.replace(/'/g, "\\'")}')">
-                                        <i class="bi bi-whatsapp"></i>
-                                    </button>
-                                </div>
+                                <button class="btn btn-whatsapp btn-sm" onclick="abrirWhatsApp('${h.telefone}', '${mensagemWhatsApp.replace(/'/g, "\\'")}')">
+                                    <i class="bi bi-whatsapp"></i>
+                                </button>
                             ` : '-'}
                         </td>
                         <td>${h.data_entrada ? formatarDataHora(h.data_entrada) : '-'}</td>
