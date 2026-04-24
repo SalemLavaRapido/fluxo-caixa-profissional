@@ -681,6 +681,13 @@
                 return;
             }
             
+            // Imprimir cupom de entrada
+            imprimirCupomEntrada({
+                placa: placa,
+                cliente: nome,
+                data: new Date().toLocaleString('pt-BR')
+            });
+            
             showAlert(`Entrada registrada: ${placa}`, 'success');
             
             // Limpar formulário
@@ -749,8 +756,11 @@
                         <td><span class="tempo-badge pulse">${tempo.texto}</span></td>
                         <td><span class="valor-badge">R$ ${valor.toFixed(2)}</span></td>
                         <td>
+                            <button class="btn btn-secondary btn-sm me-1" onclick="reimprimirCupom('${v.placa}', '${v.cliente_nome || ''}', '${v.data_entrada}')" title="Reimprimir">
+                                <i class="fas fa-print"></i>
+                            </button>
                             ${v.telefone ? `
-                                <button class="btn btn-whatsapp btn-sm me-2" onclick="abrirWhatsApp('${v.telefone}', 'Olá! Seu veículo ${v.placa} está estacionado conosco.')">
+                                <button class="btn btn-whatsapp btn-sm me-1" onclick="abrirWhatsApp('${v.telefone}', 'Olá! Seu veículo ${v.placa} está estacionado conosco.')">
                                     <i class="bi bi-whatsapp"></i>
                                 </button>
                             ` : ''}
@@ -1231,6 +1241,83 @@
                 return `(${tel.slice(0,2)}) ${tel.slice(2,6)}-${tel.slice(6)}`;
             }
             return telefone;
+        }
+        
+        // ========== FUNÇÕES DE IMPRESSÃO ==========
+        
+        // Imprimir cupom de entrada
+        function imprimirCupomEntrada(dados) {
+            const conteudo = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Comprovante</title>
+                    <style>
+                        * { margin: 0; padding: 0; box-sizing: border-box; }
+                        body {
+                            font-family: 'Courier New', monospace;
+                            text-align: center;
+                            width: 58mm;
+                            padding: 5px;
+                            font-size: 12px;
+                        }
+                        .titulo { font-size: 14px; font-weight: bold; margin-bottom: 3px; }
+                        .info { font-size: 10px; margin-bottom: 2px; }
+                        .linha { border-top: 1px dashed #000; margin: 5px 0; }
+                        .destaque { font-size: 16px; font-weight: bold; margin: 5px 0; }
+                        .aviso { font-size: 9px; margin: 3px 0; }
+                        .rodape { font-size: 10px; margin-top: 5px; }
+                        @media print {
+                            body { width: 58mm; }
+                            @page { margin: 0; size: 58mm auto; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="titulo">SALEM ESTACIONAMENTO</div>
+                    <div class="info">Rua Mariana Junqueira, 1024</div>
+                    <div class="info">Centro - RP</div>
+                    <div class="info">Tel: (16) 99395-3720</div>
+                    <div class="info">CNPJ: 63.992.071/0001-38</div>
+                    
+                    <div class="linha"></div>
+                    <div class="destaque">COMPROVANTE DE ENTRADA</div>
+                    <div class="linha"></div>
+                    
+                    <div class="destaque">${dados.placa}</div>
+                    <div class="info"><strong>Cliente:</strong> ${dados.cliente || '---'}</div>
+                    <div class="info"><strong>Entrada:</strong> ${dados.data}</div>
+                    
+                    <div class="linha"></div>
+                    
+                    <div class="aviso"><strong>GUARDE ESTE COMPROVANTE</strong></div>
+                    <div class="aviso">Não nos responsabilizamos por objetos no veículo.</div>
+                    <div class="aviso">Perda do ticket: exigidos documentos do veículo e do condutor.</div>
+                    
+                    <div class="linha"></div>
+                    
+                    <div class="rodape">Obrigado pela preferência!</div>
+                </body>
+                </html>
+            `;
+            
+            const janela = window.open('', '', 'width=250,height=400');
+            janela.document.write(conteudo);
+            janela.document.close();
+            setTimeout(() => {
+                janela.print();
+                janela.close();
+            }, 300);
+        }
+        
+        // Reimprimir cupom
+        function reimprimirCupom(placa, cliente, dataEntrada) {
+            const dataFormatada = new Date(dataEntrada).toLocaleString('pt-BR');
+            imprimirCupomEntrada({
+                placa: placa,
+                cliente: cliente,
+                data: dataFormatada
+            });
         }
     </script>
 </body>
