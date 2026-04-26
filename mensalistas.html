@@ -442,6 +442,35 @@
             <div id="listaAlertas"></div>
         </div>
         
+        <!-- Buscador de Clientes -->
+        <div class="card-novo-cliente mb-3" style="background: rgba(255,255,255,0.05);">
+            <div class="row g-2 align-items-center">
+                <div class="col-md-5">
+                    <div class="input-group">
+                        <span class="input-group-text" style="background: rgba(102, 126, 234, 0.3); border-color: rgba(102, 126, 234, 0.3); color: #fff;">
+                            <i class="fas fa-search"></i>
+                        </span>
+                        <input type="text" class="form-control form-control-custom" id="buscaCliente" 
+                               placeholder="Buscar por nome..." onkeyup="filtrarClientes()">
+                    </div>
+                </div>
+                <div class="col-md-5">
+                    <div class="input-group">
+                        <span class="input-group-text" style="background: rgba(102, 126, 234, 0.3); border-color: rgba(102, 126, 234, 0.3); color: #fff;">
+                            <i class="fas fa-car"></i>
+                        </span>
+                        <input type="text" class="form-control form-control-custom" id="buscaPlaca" 
+                               placeholder="Buscar por placa..." style="text-transform: uppercase;" onkeyup="filtrarClientes()">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-outline-light w-100" onclick="limparBusca()">
+                        <i class="fas fa-times me-1"></i>Limpar
+                    </button>
+                </div>
+            </div>
+        </div>
+        
         <!-- Lista de Clientes -->
         <div id="listaClientes">
             <div class="empty-state">
@@ -593,6 +622,8 @@
         let clientes = [];
         let veiculos = [];
         let lavagens = [];
+        let pagamentos = [];
+        let filtroAtual = '';
         
         // Verificar login ao carregar
         document.addEventListener('DOMContentLoaded', async () => {
@@ -690,30 +721,87 @@
             
             lavagens = lavagensData || [];
             
+            // Carregar pagamentos (últimos 12 meses)
+            const dataLimitePag = new Date();
+            dataLimitePag.setMonth(dataLimitePag.getMonth() - 12);
+            
+            const { data: pagamentosData } = await supabaseClient
+                .from('pagamentos_mensalidade')
+                .select('*')
+                .eq('user_id', user.id)
+                .gte('data_pagamento', dataLimitePag.toISOString());
+            
+            pagamentos = pagamentosData || [];
+            
             renderizarClientes();
             atualizarEstatisticas();
             verificarAlertasPagamento();
         }
         
+        // Filtrar clientes por nome ou placa
+        function filtrarClientes() {
+            const buscaNome = document.getElementById('buscaCliente').value.toLowerCase().trim();
+            const buscaPlaca = document.getElementById('buscaPlaca').value.toUpperCase().trim();
+            
+            filtroAtual = buscaNome || buscaPlaca;
+            renderizarClientes();
+        }
+        
+        // Limpar busca
+        function limparBusca() {
+            document.getElementById('buscaCliente').value = '';
+            document.getElementById('buscaPlaca').value = '';
+            filtroAtual = '';
+            renderizarClientes();
+        }
+        
+        // Obter pagamentos de um cliente
+        function getPagamentosCliente(clienteId) {
+            return pagamentos
+                .filter(p => p.cliente_id === clienteId)
+                .sort((a, b) => new Date(b.data_pagamento) - new Date(a.data_pagamento));
+        }
+        
         // Renderizar lista de clientes
         function renderizarClientes() {
             const container = document.getElementById('listaClientes');
+            const buscaNome = document.getElementById('buscaCliente')?.value?.toLowerCase().trim() || '';
+            const buscaPlaca = document.getElementById('buscaPlaca')?.value?.toUpperCase().trim() || '';
             
-            if (clientes.length === 0) {
+            // Filtrar clientes
+            let clientesFiltrados = clientes;
+            
+            if (buscaNome) {
+                clientesFiltrados = clientesFiltrados.filter(c => 
+                    c.nome.toLowerCase().includes(buscaNome)
+                );
+            }
+            
+            if (buscaPlaca) {
+                // Buscar clientes que têm veículos com essa placa
+                const clientesComPlaca = veiculos
+                    .filter(v => v.placa.includes(buscaPlaca))
+                    .map(v => v.cliente_id);
+                clientesFiltrados = clientesFiltrados.filter(c => clientesComPlaca.includes(c.id));
+            }
+            
+            if (clientesFiltrados.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
                         <i class="fas fa-users"></i>
-                        <p>Nenhum cliente cadastrado</p>
+                        <p>${buscaNome || buscaPlaca ? 'Nenhum cliente encontrado' : 'Nenhum cliente cadastrado'}</p>
                     </div>
                 `;
                 return;
             }
             
-            container.innerHTML = clientes.map(cliente => {
+            container.innerHTML = clientesFiltrados.map(cliente => {
                 const veiculosCliente = veiculos.filter(v => v.cliente_id === cliente.id);
                 const lavagensCliente = getLavagensCliente(veiculosCliente);
                 const totalLavagens = lavagensCliente.reduce((sum, l) => sum + (l.valor || 0), 0);
+                const pagamentosCliente = getPagamentosCliente(cliente.id);
                 const obsEscapada = (cliente.observacao || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                const dataInicio = cliente.created_at ? formatarData(cliente.created_at) : '-';
                 
                 return `
                     <div class="card-cliente">
@@ -721,6 +809,7 @@
                             <div>
                                 <h5 class="cliente-nome">${cliente.nome}</h5>
                                 <small><i class="fas fa-phone me-1"></i>${formatarTelefone(cliente.telefone)}</small>
+                                <small class="ms-3"><i class="fas fa-calendar-plus me-1"></i>Cliente desde: ${dataInicio}</small>
                             </div>
                             <div class="d-flex gap-2">
                                 <button class="btn btn-whatsapp btn-sm" onclick="abrirWhatsApp('${cliente.telefone}', 'Olá ${cliente.nome}! Estamos à disposição no estacionamento.')">
@@ -852,6 +941,37 @@
                                     ${lavagensCliente.length > 5 ? `<small class="text-muted">+ ${lavagensCliente.length - 5} lavagens anteriores</small>` : ''}
                                 </div>
                             ` : ''}
+                            
+                            ${pagamentosCliente.length > 0 ? `
+                                <div class="veiculos-section mt-3">
+                                    <div class="veiculos-title">
+                                        <i class="fas fa-receipt me-2"></i>Histórico de Pagamentos (últimos 12 meses)
+                                    </div>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-dark mb-0" style="font-size: 0.85em;">
+                                            <thead>
+                                                <tr>
+                                                    <th>Data</th>
+                                                    <th>Mês Ref.</th>
+                                                    <th>Valor</th>
+                                                    <th>Forma</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                ${pagamentosCliente.slice(0, 6).map(p => `
+                                                    <tr>
+                                                        <td>${formatarData(p.data_pagamento)}</td>
+                                                        <td><span class="badge bg-primary">${formatarMesReferencia(p.mes_referencia)}</span></td>
+                                                        <td><strong class="text-success">R$ ${(p.valor || 0).toFixed(2)}</strong></td>
+                                                        <td>${formatarFormaPagamento(p.forma_pagamento)}</td>
+                                                    </tr>
+                                                `).join('')}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    ${pagamentosCliente.length > 6 ? `<small class="text-muted">+ ${pagamentosCliente.length - 6} pagamentos anteriores</small>` : ''}
+                                </div>
+                            ` : ''}
                         </div>
                     </div>
                 `;
@@ -897,6 +1017,25 @@
                 'higienizacao': 'Higienização'
             };
             return tipos[tipo] || tipo || '-';
+        }
+        
+        // Formatar mês de referência (YYYY-MM para Mês/Ano)
+        function formatarMesReferencia(mesRef) {
+            if (!mesRef) return '-';
+            const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+            const [ano, mes] = mesRef.split('-');
+            return `${meses[parseInt(mes) - 1]}/${ano}`;
+        }
+        
+        // Formatar forma de pagamento
+        function formatarFormaPagamento(forma) {
+            const formas = {
+                'dinheiro': '<i class="fas fa-money-bill-wave text-success"></i>',
+                'pix': '<i class="fas fa-qrcode text-primary"></i>',
+                'debito': '<i class="fas fa-credit-card text-info"></i>',
+                'credito': '<i class="fas fa-credit-card text-warning"></i>'
+            };
+            return formas[forma] || forma || '-';
         }
         
         // Salvar observação do cliente
@@ -1282,13 +1421,16 @@
             secao.style.display = 'block';
             total.textContent = alertas.length;
             
+            const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+            const mesNome = meses[mesAtual];
+            
             lista.innerHTML = alertas.map(a => `
                 <div class="alerta-item ${a.classe}">
                     <div>
                         <strong>${a.cliente.nome}</strong>
                         <span class="badge ${a.badge} ms-2">${a.mensagem}</span>
                         <br>
-                        <small>Valor: R$ ${(a.cliente.valor_mensal || 0).toFixed(2)} | Venc. dia ${a.cliente.dia_vencimento || 10}</small>
+                        <small>Valor: R$ ${(a.cliente.valor_mensal || 0).toFixed(2)} | Venc. dia <strong>${a.cliente.dia_vencimento || 10}/${mesNome}</strong></small>
                     </div>
                     <button class="btn btn-whatsapp btn-sm" onclick="abrirWhatsApp('${a.cliente.telefone}', '${a.textoWhats.replace(/'/g, "\\'")}')">
                         <i class="bi bi-whatsapp me-1"></i>Enviar
