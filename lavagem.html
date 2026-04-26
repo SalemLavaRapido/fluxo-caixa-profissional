@@ -402,14 +402,15 @@
                                     <th><i class="fas fa-calendar me-2"></i>Data/Hora</th>
                                     <th><i class="fas fa-dollar-sign me-2"></i>Valor</th>
                                     <th><i class="fas fa-credit-card me-2"></i>Pagamento</th>
+                                    <th><i class="fas fa-cog me-2"></i>Ações</th>
                                 </tr>
                             </thead>
                             <tbody id="tabelaLavagens">
                                 <tr>
-                                    <td colspan="8" class="empty-state">
-                                        <i class="fas fa-car-wash"></i>
-                                        <p>Nenhuma lavagem registrada</p>
-                                    </td>
+                                    <td colspan="9" class="empty-state">
+                                            <i class="fas fa-car-wash"></i>
+                                            <p>Nenhuma lavagem registrada</p>
+                                        </td>
                                 </tr>
                             </tbody>
                         </table>
@@ -429,6 +430,78 @@
                             <p>Nenhum veículo de mensalista cadastrado</p>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Editar Lavagem -->
+    <div class="modal fade" id="modalEditarLavagem" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content" style="background: #1a1a2e; color: #fff;">
+                <div class="modal-header" style="background: linear-gradient(135deg, #00c6fb, #005bea); border: none;">
+                    <h5 class="modal-title">
+                        <i class="fas fa-edit me-2"></i>Editar Lavagem
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="editarLavagemId">
+                    <div class="mb-3">
+                        <label class="form-label">Placa</label>
+                        <input type="text" class="form-control form-control-custom" id="editarLavagemPlaca" 
+                               maxlength="7" style="text-transform: uppercase;">
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Modelo</label>
+                            <input type="text" class="form-control form-control-custom" id="editarLavagemModelo">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Cor</label>
+                            <input type="text" class="form-control form-control-custom" id="editarLavagemCor">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Tipo Lavagem</label>
+                            <select class="form-control form-control-custom" id="editarLavagemTipo">
+                                <option value="simples">Simples</option>
+                                <option value="completa">Completa</option>
+                                <option value="polimento">Polimento</option>
+                                <option value="higienizacao">Higienização</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Tipo Cliente</label>
+                            <select class="form-control form-control-custom" id="editarLavagemTipoCliente">
+                                <option value="avulso">Avulso</option>
+                                <option value="mensalista">Mensalista</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Valor (R$)</label>
+                            <input type="number" class="form-control form-control-custom" id="editarLavagemValor" step="0.01" min="0">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Forma Pagamento</label>
+                            <select class="form-control form-control-custom" id="editarLavagemPagamento">
+                                <option value="dinheiro">Dinheiro</option>
+                                <option value="pix">Pix</option>
+                                <option value="debito">Débito</option>
+                                <option value="credito">Crédito</option>
+                                <option value="cortesia">Cortesia</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="salvarEdicaoLavagem()">
+                        <i class="fas fa-save me-2"></i>Salvar
+                    </button>
                 </div>
             </div>
         </div>
@@ -593,7 +666,7 @@
             if (lavagens.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="8" class="empty-state">
+                        <td colspan="9" class="empty-state">
                             <i class="fas fa-car-wash"></i>
                             <p>Nenhuma lavagem encontrada</p>
                         </td>
@@ -616,6 +689,14 @@
                     <td>${formatarDataHora(l.data_lavagem)}</td>
                     <td><strong>R$ ${(l.valor || 0).toFixed(2)}</strong></td>
                     <td>${formatarFormaPagamento(l.forma_pagamento)}</td>
+                    <td>
+                        <button class="btn btn-warning btn-sm me-1" onclick="abrirModalEditarLavagem('${l.id}')" title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-danger btn-sm" onclick="excluirLavagem('${l.id}', '${l.placa}')" title="Excluir">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
                 </tr>
             `).join('');
         }
@@ -784,6 +865,83 @@
             }
             const url = `https://wa.me/${tel}?text=${encodeURIComponent(mensagem)}`;
             window.open(url, '_blank');
+        }
+        
+        // Abrir modal de edição de lavagem
+        function abrirModalEditarLavagem(lavagemId) {
+            const lavagem = lavagens.find(l => l.id === lavagemId);
+            if (!lavagem) return;
+            
+            document.getElementById('editarLavagemId').value = lavagem.id;
+            document.getElementById('editarLavagemPlaca').value = lavagem.placa || '';
+            document.getElementById('editarLavagemModelo').value = lavagem.modelo || '';
+            document.getElementById('editarLavagemCor').value = lavagem.cor || '';
+            document.getElementById('editarLavagemTipo').value = lavagem.tipo_lavagem || 'simples';
+            document.getElementById('editarLavagemTipoCliente').value = lavagem.tipo_cliente || 'avulso';
+            document.getElementById('editarLavagemValor').value = lavagem.valor || 0;
+            document.getElementById('editarLavagemPagamento').value = lavagem.forma_pagamento || 'dinheiro';
+            
+            const modal = new bootstrap.Modal(document.getElementById('modalEditarLavagem'));
+            modal.show();
+        }
+        
+        // Salvar edição de lavagem
+        async function salvarEdicaoLavagem() {
+            const lavagemId = document.getElementById('editarLavagemId').value;
+            const placa = document.getElementById('editarLavagemPlaca').value.toUpperCase().trim();
+            const modelo = document.getElementById('editarLavagemModelo').value.trim();
+            const cor = document.getElementById('editarLavagemCor').value.trim();
+            const tipoLavagem = document.getElementById('editarLavagemTipo').value;
+            const tipoCliente = document.getElementById('editarLavagemTipoCliente').value;
+            const valor = parseFloat(document.getElementById('editarLavagemValor').value) || 0;
+            const formaPagamento = document.getElementById('editarLavagemPagamento').value;
+            
+            if (!placa) {
+                showAlert('Informe a placa!', 'warning');
+                return;
+            }
+            
+            const { error } = await supabaseClient
+                .from('lavagens')
+                .update({
+                    placa: placa,
+                    modelo: modelo,
+                    cor: cor,
+                    tipo_lavagem: tipoLavagem,
+                    tipo_cliente: tipoCliente,
+                    valor: valor,
+                    forma_pagamento: formaPagamento
+                })
+                .eq('id', lavagemId);
+            
+            if (error) {
+                showAlert('Erro ao salvar: ' + error.message, 'danger');
+                return;
+            }
+            
+            bootstrap.Modal.getInstance(document.getElementById('modalEditarLavagem')).hide();
+            showAlert('Lavagem atualizada com sucesso!', 'success');
+            await carregarDados();
+        }
+        
+        // Excluir lavagem
+        async function excluirLavagem(lavagemId, placa) {
+            if (!confirm(`Tem certeza que deseja excluir a lavagem do veículo "${placa}"?`)) {
+                return;
+            }
+            
+            const { error } = await supabaseClient
+                .from('lavagens')
+                .delete()
+                .eq('id', lavagemId);
+            
+            if (error) {
+                showAlert('Erro ao excluir: ' + error.message, 'danger');
+                return;
+            }
+            
+            showAlert('Lavagem excluída com sucesso!', 'success');
+            await carregarDados();
         }
         
         // Mostrar alerta
