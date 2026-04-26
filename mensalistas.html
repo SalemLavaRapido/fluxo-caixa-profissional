@@ -609,6 +609,46 @@
         </div>
     </div>
 
+    <!-- Modal Histórico de Lavagens -->
+    <div class="modal fade modal-custom" id="modalHistoricoLavagens" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header" style="background: linear-gradient(135deg, #17a2b8, #138496);">
+                    <h5 class="modal-title">
+                        <i class="fas fa-soap me-2"></i>Histórico de Lavagens - <span id="historicoLavagensNome"></span>
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" style="max-height: 60vh; overflow-y: auto;">
+                    <div id="tabelaHistoricoLavagens"></div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Histórico de Pagamentos -->
+    <div class="modal fade modal-custom" id="modalHistoricoPagamentos" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header" style="background: linear-gradient(135deg, #28a745, #1e7e34);">
+                    <h5 class="modal-title">
+                        <i class="fas fa-receipt me-2"></i>Histórico de Pagamentos - <span id="historicoPagamentosNome"></span>
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" style="max-height: 60vh; overflow-y: auto;">
+                    <div id="tabelaHistoricoPagamentos"></div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
@@ -902,76 +942,16 @@
                                 </button>
                             </div>
                             
-                            ${lavagensCliente.length > 0 ? `
-                                <div class="veiculos-section mt-3">
-                                    <div class="veiculos-title">
-                                        <i class="fas fa-soap me-2"></i>Histórico de Lavagens (últimos 60 dias)
-                                    </div>
-                                    <div class="table-responsive">
-                                        <table class="table table-sm table-dark mb-0" style="font-size: 0.85em;">
-                                            <thead>
-                                                <tr>
-                                                    <th>Data</th>
-                                                    <th>Placa</th>
-                                                    <th>Tipo</th>
-                                                    <th>Valor</th>
-                                                    <th>Ação</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                ${lavagensCliente.slice(0, 5).map(l => {
-                                                    const veiculoLavagem = veiculos.find(v => v.id === l.veiculo_id);
-                                                    return `
-                                                        <tr>
-                                                            <td>${formatarData(l.data_lavagem)}</td>
-                                                            <td><span class="badge bg-secondary">${veiculoLavagem?.placa || '-'}</span></td>
-                                                            <td>${formatarTipoLavagem(l.tipo)}</td>
-                                                            <td><strong>R$ ${(l.valor || 0).toFixed(2)}</strong></td>
-                                                            <td>
-                                                                <button class="btn btn-danger btn-sm py-0 px-1" onclick="excluirLavagem('${l.id}', '${veiculoLavagem?.placa || ''}')" title="Excluir">
-                                                                    <i class="fas fa-trash" style="font-size: 0.7em;"></i>
-                                                                </button>
-                                                            </td>
-                                                        </tr>
-                                                    `;
-                                                }).join('')}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                    ${lavagensCliente.length > 5 ? `<small class="text-muted">+ ${lavagensCliente.length - 5} lavagens anteriores</small>` : ''}
-                                </div>
-                            ` : ''}
-                            
-                            ${pagamentosCliente.length > 0 ? `
-                                <div class="veiculos-section mt-3">
-                                    <div class="veiculos-title">
-                                        <i class="fas fa-receipt me-2"></i>Histórico de Pagamentos (últimos 12 meses)
-                                    </div>
-                                    <div class="table-responsive">
-                                        <table class="table table-sm table-dark mb-0" style="font-size: 0.85em;">
-                                            <thead>
-                                                <tr>
-                                                    <th>Data</th>
-                                                    <th>Mês Ref.</th>
-                                                    <th>Valor</th>
-                                                    <th>Forma</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                ${pagamentosCliente.slice(0, 6).map(p => `
-                                                    <tr>
-                                                        <td>${formatarData(p.data_pagamento)}</td>
-                                                        <td><span class="badge bg-primary">${formatarMesReferencia(p.mes_referencia)}</span></td>
-                                                        <td><strong class="text-success">R$ ${(p.valor || 0).toFixed(2)}</strong></td>
-                                                        <td>${formatarFormaPagamento(p.forma_pagamento)}</td>
-                                                    </tr>
-                                                `).join('')}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                    ${pagamentosCliente.length > 6 ? `<small class="text-muted">+ ${pagamentosCliente.length - 6} pagamentos anteriores</small>` : ''}
-                                </div>
-                            ` : ''}
+                            <div class="d-flex gap-2 mt-3">
+                                <button class="btn btn-outline-info btn-sm flex-fill" onclick="abrirHistoricoLavagens('${cliente.id}', '${cliente.nome}')">
+                                    <i class="fas fa-soap me-1"></i>Histórico Lavagens
+                                    <span class="badge bg-info ms-1">${lavagensCliente.length}</span>
+                                </button>
+                                <button class="btn btn-outline-success btn-sm flex-fill" onclick="abrirHistoricoPagamentos('${cliente.id}', '${cliente.nome}')">
+                                    <i class="fas fa-receipt me-1"></i>Histórico Pagamentos
+                                    <span class="badge bg-success ms-1">${pagamentosCliente.length}</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -1102,6 +1082,116 @@
                 console.error('Erro ao excluir cliente:', error);
                 showAlert('Erro ao excluir cliente', 'danger');
             }
+        }
+        
+        // Abrir modal de histórico de lavagens
+        function abrirHistoricoLavagens(clienteId, nomeCliente) {
+            document.getElementById('historicoLavagensNome').textContent = nomeCliente;
+            
+            const veiculosCliente = veiculos.filter(v => v.cliente_id === clienteId);
+            const lavagensCliente = getLavagensCliente(veiculosCliente);
+            
+            const container = document.getElementById('tabelaHistoricoLavagens');
+            
+            if (lavagensCliente.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-4">
+                        <i class="fas fa-soap fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">Nenhuma lavagem registrada</p>
+                    </div>
+                `;
+            } else {
+                const totalValor = lavagensCliente.reduce((sum, l) => sum + (l.valor || 0), 0);
+                container.innerHTML = `
+                    <div class="alert alert-info mb-3">
+                        <strong>Total:</strong> ${lavagensCliente.length} lavagem(ns) - <strong>R$ ${totalValor.toFixed(2)}</strong>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-dark table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Placa</th>
+                                    <th>Tipo</th>
+                                    <th>Valor</th>
+                                    <th>Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${lavagensCliente.map(l => {
+                                    const veiculoLavagem = veiculos.find(v => v.id === l.veiculo_id);
+                                    return `
+                                        <tr>
+                                            <td>${formatarData(l.data_lavagem)}</td>
+                                            <td><span class="badge bg-secondary">${veiculoLavagem?.placa || '-'}</span></td>
+                                            <td>${formatarTipoLavagem(l.tipo)}</td>
+                                            <td><strong>R$ ${(l.valor || 0).toFixed(2)}</strong></td>
+                                            <td>
+                                                <button class="btn btn-danger btn-sm py-0 px-2" onclick="excluirLavagem('${l.id}', '${veiculoLavagem?.placa || ''}')" title="Excluir">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+            
+            const modal = new bootstrap.Modal(document.getElementById('modalHistoricoLavagens'));
+            modal.show();
+        }
+        
+        // Abrir modal de histórico de pagamentos
+        function abrirHistoricoPagamentos(clienteId, nomeCliente) {
+            document.getElementById('historicoPagamentosNome').textContent = nomeCliente;
+            
+            const pagamentosCliente = getPagamentosCliente(clienteId);
+            
+            const container = document.getElementById('tabelaHistoricoPagamentos');
+            
+            if (pagamentosCliente.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-4">
+                        <i class="fas fa-receipt fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">Nenhum pagamento registrado</p>
+                    </div>
+                `;
+            } else {
+                const totalValor = pagamentosCliente.reduce((sum, p) => sum + (p.valor || 0), 0);
+                container.innerHTML = `
+                    <div class="alert alert-success mb-3">
+                        <strong>Total:</strong> ${pagamentosCliente.length} pagamento(s) - <strong>R$ ${totalValor.toFixed(2)}</strong>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-dark table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Mês Ref.</th>
+                                    <th>Valor</th>
+                                    <th>Forma</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${pagamentosCliente.map(p => `
+                                    <tr>
+                                        <td>${formatarData(p.data_pagamento)}</td>
+                                        <td><span class="badge bg-primary">${formatarMesReferencia(p.mes_referencia)}</span></td>
+                                        <td><strong class="text-success">R$ ${(p.valor || 0).toFixed(2)}</strong></td>
+                                        <td>${formatarFormaPagamento(p.forma_pagamento)}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+            
+            const modal = new bootstrap.Modal(document.getElementById('modalHistoricoPagamentos'));
+            modal.show();
         }
         
         // Excluir veículo
