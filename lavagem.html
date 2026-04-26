@@ -327,6 +327,10 @@
                            placeholder="R$" step="0.01" min="0">
                 </div>
                 <div class="col">
+                    <input type="text" class="form-control form-control-custom" id="celularLavagem" 
+                           placeholder="Celular">
+                </div>
+                <div class="col-md-2">
                     <input type="text" class="form-control form-control-custom" id="obsLavagem" 
                            placeholder="Observação">
                 </div>
@@ -432,13 +436,14 @@
                                     <th><i class="fas fa-tag me-2"></i>Cliente</th>
                                     <th><i class="fas fa-shower me-2"></i>Lavagem</th>
                                     <th><i class="fas fa-dollar-sign me-2"></i>Valor</th>
+                                    <th><i class="fas fa-phone me-2"></i>Celular</th>
                                     <th><i class="fas fa-comment me-2"></i>Observação</th>
                                     <th><i class="fas fa-cog me-2"></i>Ações</th>
                                 </tr>
                             </thead>
                             <tbody id="tabelaFila">
                                 <tr>
-                                    <td colspan="9" class="empty-state">
+                                    <td colspan="10" class="empty-state">
                                         <i class="fas fa-car-wash"></i>
                                         <p>Nenhum veículo na fila</p>
                                     </td>
@@ -516,6 +521,77 @@
                 <div class="modal-footer border-0">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                     <button type="button" class="btn btn-primary" onclick="salvarEdicaoLavagem()">
+                        <i class="fas fa-save me-2"></i>Salvar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Editar Fila -->
+    <div class="modal fade" id="modalEditarFila" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content" style="background: #1a1a2e; color: #fff;">
+                <div class="modal-header" style="background: linear-gradient(135deg, #f093fb, #f5576c); border: none;">
+                    <h5 class="modal-title">
+                        <i class="fas fa-edit me-2"></i>Editar Veículo na Fila
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="editarFilaId">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Placa</label>
+                            <input type="text" class="form-control form-control-custom" id="editarFilaPlaca" 
+                                   maxlength="7" style="text-transform: uppercase;">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Modelo</label>
+                            <input type="text" class="form-control form-control-custom" id="editarFilaModelo">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Cor</label>
+                            <input type="text" class="form-control form-control-custom" id="editarFilaCor">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Tipo Lavagem</label>
+                            <select class="form-control form-control-custom" id="editarFilaTipoLavagem">
+                                <option value="simples">Simples</option>
+                                <option value="completa">Completa</option>
+                                <option value="polimento">Polimento</option>
+                                <option value="higienizacao">Higienização</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Tipo Cliente</label>
+                            <select class="form-control form-control-custom" id="editarFilaTipoCliente">
+                                <option value="avulso">Avulso</option>
+                                <option value="mensalista">Mensalista</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Valor (R$)</label>
+                            <input type="number" class="form-control form-control-custom" id="editarFilaValor" step="0.01" min="0">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Celular</label>
+                        <input type="text" class="form-control form-control-custom" id="editarFilaCelular" placeholder="(00) 00000-0000">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Observação</label>
+                        <textarea class="form-control form-control-custom" id="editarFilaObs" rows="3" 
+                                  style="background: #fff; color: #000;"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="salvarEdicaoFila()">
                         <i class="fas fa-save me-2"></i>Salvar
                     </button>
                 </div>
@@ -609,6 +685,7 @@
             const tipoLavagem = document.getElementById('tipoLavagem').value;
             const tipoCliente = document.getElementById('tipoCliente').value;
             const valor = parseFloat(document.getElementById('valorLavagem').value) || 0;
+            const celular = document.getElementById('celularLavagem').value.replace(/\D/g, '');
             const observacao = document.getElementById('obsLavagem').value.trim();
             
             if (!placa) {
@@ -629,6 +706,7 @@
                     tipo_lavagem: tipoLavagem,
                     tipo_cliente: tipoCliente,
                     valor: valor,
+                    celular: celular || null,
                     observacao: observacao || null
                 }]);
             
@@ -763,7 +841,7 @@
             if (filaLavagem.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="9" class="empty-state">
+                        <td colspan="10" class="empty-state">
                             <i class="fas fa-car-wash"></i>
                             <p>Nenhum veículo na fila</p>
                         </td>
@@ -773,8 +851,8 @@
             }
             
             tbody.innerHTML = filaLavagem.map((f, index) => `
-                <tr>
-                    <td><span class="badge bg-warning text-dark">${index + 1}</span></td>
+                <tr class="${f.lavado ? 'table-success' : ''}">
+                    <td><span class="badge ${f.lavado ? 'bg-success' : 'bg-warning text-dark'}">${index + 1}</span></td>
                     <td><span class="placa-badge">${f.placa}</span></td>
                     <td>${f.modelo || '-'}</td>
                     <td>${f.cor || '-'}</td>
@@ -786,14 +864,28 @@
                     <td>${formatarTipoLavagem(f.tipo_lavagem)}</td>
                     <td><strong>R$ ${(f.valor || 0).toFixed(2)}</strong></td>
                     <td>
+                        ${f.celular ? `
+                            <button class="btn btn-success btn-sm" onclick="abrirWhatsApp('${f.celular}', 'Olá! Seu veículo ${f.placa} está pronto!')" title="WhatsApp">
+                                <i class="fab fa-whatsapp"></i>
+                            </button>
+                            <small class="ms-1">${f.celular}</small>
+                        ` : '-'}
+                    </td>
+                    <td>
                         <input type="text" class="form-control form-control-sm" 
                                value="${f.observacao || ''}" 
                                onchange="atualizarObsFila('${f.id}', this.value)"
-                               style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; min-width: 100px;">
+                               style="background: #fff; border: 1px solid #ccc; color: #000; min-width: 180px; font-weight: 500;">
                     </td>
                     <td>
+                        <button class="btn btn-warning btn-sm me-1" onclick="abrirModalEditarFila('${f.id}')" title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn ${f.lavado ? 'btn-secondary' : 'btn-info'} btn-sm me-1" onclick="marcarLavado('${f.id}')" title="${f.lavado ? 'Desmarcar Lavado' : 'Marcar como Lavado'}">
+                            <i class="fas fa-car-wash"></i>
+                        </button>
                         <button class="btn btn-success btn-sm me-1" onclick="abrirModalPagamentoFila('${f.id}')" title="Finalizar e Pagar">
-                            <i class="fas fa-check"></i>
+                            <i class="fas fa-dollar-sign"></i>
                         </button>
                         <button class="btn btn-danger btn-sm" onclick="removerDaFila('${f.id}')" title="Remover">
                             <i class="fas fa-times"></i>
@@ -809,6 +901,87 @@
                 .from('fila_lavagem')
                 .update({ observacao: observacao })
                 .eq('id', filaId);
+        }
+        
+        // Marcar como lavado
+        async function marcarLavado(filaId) {
+            const item = filaLavagem.find(f => f.id === filaId);
+            if (!item) return;
+            
+            const novoStatus = !item.lavado;
+            
+            const { error } = await supabaseClient
+                .from('fila_lavagem')
+                .update({ lavado: novoStatus })
+                .eq('id', filaId);
+            
+            if (error) {
+                showAlert('Erro ao atualizar: ' + error.message, 'danger');
+                return;
+            }
+            
+            showAlert(novoStatus ? 'Marcado como lavado!' : 'Desmarcado!', 'success');
+            await carregarDados();
+        }
+        
+        // Abrir modal de edição da fila
+        function abrirModalEditarFila(filaId) {
+            const item = filaLavagem.find(f => f.id === filaId);
+            if (!item) return;
+            
+            document.getElementById('editarFilaId').value = item.id;
+            document.getElementById('editarFilaPlaca').value = item.placa || '';
+            document.getElementById('editarFilaModelo').value = item.modelo || '';
+            document.getElementById('editarFilaCor').value = item.cor || '';
+            document.getElementById('editarFilaTipoLavagem').value = item.tipo_lavagem || 'simples';
+            document.getElementById('editarFilaTipoCliente').value = item.tipo_cliente || 'avulso';
+            document.getElementById('editarFilaValor').value = item.valor || 0;
+            document.getElementById('editarFilaCelular').value = item.celular || '';
+            document.getElementById('editarFilaObs').value = item.observacao || '';
+            
+            const modal = new bootstrap.Modal(document.getElementById('modalEditarFila'));
+            modal.show();
+        }
+        
+        // Salvar edição da fila
+        async function salvarEdicaoFila() {
+            const filaId = document.getElementById('editarFilaId').value;
+            const placa = document.getElementById('editarFilaPlaca').value.toUpperCase().trim();
+            const modelo = document.getElementById('editarFilaModelo').value.trim();
+            const cor = document.getElementById('editarFilaCor').value.trim();
+            const tipoLavagem = document.getElementById('editarFilaTipoLavagem').value;
+            const tipoCliente = document.getElementById('editarFilaTipoCliente').value;
+            const valor = parseFloat(document.getElementById('editarFilaValor').value) || 0;
+            const celular = document.getElementById('editarFilaCelular').value.replace(/\D/g, '');
+            const observacao = document.getElementById('editarFilaObs').value.trim();
+            
+            if (!placa) {
+                showAlert('Informe a placa!', 'warning');
+                return;
+            }
+            
+            const { error } = await supabaseClient
+                .from('fila_lavagem')
+                .update({
+                    placa: placa,
+                    modelo: modelo || null,
+                    cor: cor || null,
+                    tipo_lavagem: tipoLavagem,
+                    tipo_cliente: tipoCliente,
+                    valor: valor,
+                    celular: celular || null,
+                    observacao: observacao || null
+                })
+                .eq('id', filaId);
+            
+            if (error) {
+                showAlert('Erro ao salvar: ' + error.message, 'danger');
+                return;
+            }
+            
+            bootstrap.Modal.getInstance(document.getElementById('modalEditarFila')).hide();
+            showAlert('Atualizado com sucesso!', 'success');
+            await carregarDados();
         }
         
         // Remover da fila
