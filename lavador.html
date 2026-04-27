@@ -143,11 +143,57 @@
             from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
         }
+        
+        .login-container {
+            max-width: 400px;
+            margin: 100px auto;
+            padding: 40px;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 20px;
+        }
+        
+        .login-container h2 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
     </style>
 </head>
 <body>
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom">
+    <!-- Tela de Login -->
+    <div id="loginContainer" class="login-container">
+        <div class="text-center mb-4">
+            <i class="fas fa-car-wash fa-4x mb-3" style="color: #38ef7d;"></i>
+            <h2>Área do Lavador</h2>
+            <p class="text-muted" style="color: rgba(255,255,255,0.7) !important;">Acesso restrito para funcionários</p>
+        </div>
+        
+        <form id="loginForm">
+            <div class="mb-3">
+                <label class="form-label">Usuário</label>
+                <input type="text" class="form-control form-control-custom" id="loginUsuario" placeholder="Digite seu usuário" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Senha</label>
+                <input type="password" class="form-control form-control-custom" id="loginSenha" placeholder="Digite sua senha" required>
+            </div>
+            <button type="submit" class="btn w-100" style="background: var(--success-gradient); color: #fff; padding: 12px; border-radius: 10px; font-weight: bold;">
+                <i class="fas fa-sign-in-alt me-2"></i>Entrar
+            </button>
+        </form>
+        
+        <div id="loginError" class="alert alert-danger mt-3 hidden"></div>
+    </div>
+
+    <!-- Conteúdo Principal (escondido até fazer login) -->
+    <div id="mainContent" class="hidden">
+        <!-- Navbar -->
+        <nav class="navbar navbar-expand-lg navbar-dark navbar-custom">
         <div class="container">
             <a class="navbar-brand" href="#">
                 <i class="fas fa-car-wash me-2"></i>Fila de Lavagem - Lavador
@@ -226,6 +272,7 @@
             </div>
         </div>
     </div>
+    </div> <!-- Fecha mainContent -->
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
@@ -235,22 +282,72 @@
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         
         let filaLavagem = [];
+        let currentUser = null;
         
-        // Verificar autenticação
+        // Credenciais do lavador (você pode alterar)
+        const LAVADOR_USUARIO = 'lavador';
+        const LAVADOR_SENHA = '123456';
+        
+        // Verificar se já está logado
         document.addEventListener('DOMContentLoaded', async () => {
-            const user = JSON.parse(localStorage.getItem('currentUser'));
-            if (!user) {
-                window.location.href = 'index.html';
-                return;
+            const lavadorLogado = localStorage.getItem('lavadorLogado');
+            const adminUser = JSON.parse(localStorage.getItem('currentUser'));
+            
+            if (lavadorLogado === 'true' && adminUser) {
+                currentUser = adminUser;
+                mostrarConteudo();
+                await carregarDados();
+                setInterval(carregarDados, 30000);
             }
-            
-            document.getElementById('userInfo').textContent = user.email;
-            
-            await carregarDados();
-            
-            // Auto-refresh a cada 30 segundos
-            setInterval(carregarDados, 30000);
         });
+        
+        // Login do lavador
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const usuario = document.getElementById('loginUsuario').value.trim();
+            const senha = document.getElementById('loginSenha').value;
+            
+            // Verificar credenciais do lavador
+            if (usuario === LAVADOR_USUARIO && senha === LAVADOR_SENHA) {
+                // Buscar o usuário admin para usar o user_id
+                const adminUser = JSON.parse(localStorage.getItem('currentUser'));
+                
+                if (!adminUser) {
+                    // Se não tem admin logado, fazer login com credenciais padrão
+                    const { data, error } = await supabaseClient.auth.signInWithPassword({
+                        email: 'admin@salemlavarapido.com',
+                        password: 'admin123'
+                    });
+                    
+                    if (error) {
+                        document.getElementById('loginError').textContent = 'Erro de conexão. Tente novamente.';
+                        document.getElementById('loginError').classList.remove('hidden');
+                        return;
+                    }
+                    
+                    currentUser = { id: data.user.id, email: data.user.email };
+                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                } else {
+                    currentUser = adminUser;
+                }
+                
+                localStorage.setItem('lavadorLogado', 'true');
+                mostrarConteudo();
+                await carregarDados();
+                setInterval(carregarDados, 30000);
+            } else {
+                document.getElementById('loginError').textContent = 'Usuário ou senha incorretos!';
+                document.getElementById('loginError').classList.remove('hidden');
+            }
+        });
+        
+        // Mostrar conteúdo principal
+        function mostrarConteudo() {
+            document.getElementById('loginContainer').classList.add('hidden');
+            document.getElementById('mainContent').classList.remove('hidden');
+            document.getElementById('userInfo').textContent = 'Lavador';
+        }
         
         // Carregar dados
         async function carregarDados() {
@@ -408,8 +505,8 @@
         
         // Logout
         function logout() {
-            localStorage.removeItem('currentUser');
-            window.location.href = 'index.html';
+            localStorage.removeItem('lavadorLogado');
+            window.location.reload();
         }
     </script>
 </body>
