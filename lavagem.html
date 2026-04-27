@@ -858,20 +858,22 @@
                 return;
             }
             
-            tbody.innerHTML = filaLavagem.map((f, index) => `
-                <tr style="${f.lavado ? 'background: #000000 !important;' : ''}">
-                    <td><span class="badge ${f.lavado ? 'bg-primary' : 'bg-warning text-dark'}">${index + 1}</span></td>
-                    <td><span class="placa-badge">${f.placa}</span></td>
-                    <td>${f.modelo || '-'}</td>
-                    <td>${f.cor || '-'}</td>
-                    <td>
+            tbody.innerHTML = filaLavagem.map((f, index) => {
+                const bgLavado = f.lavado ? 'background: #00a651 !important; color: #fff !important;' : '';
+                return `
+                <tr>
+                    <td style="${bgLavado}"><span class="badge ${f.lavado ? 'bg-light text-success' : 'bg-warning text-dark'}">${index + 1}</span></td>
+                    <td style="${bgLavado}"><span class="placa-badge">${f.placa}</span></td>
+                    <td style="${bgLavado}">${f.modelo || '-'}</td>
+                    <td style="${bgLavado}">${f.cor || '-'}</td>
+                    <td style="${bgLavado}">
                         <span class="badge-tipo ${f.tipo_cliente === 'mensalista' ? 'badge-mensalista' : 'badge-avulso'}">
                             ${f.tipo_cliente === 'mensalista' ? 'Mensalista' : 'Avulso'}
                         </span>
                     </td>
-                    <td>${formatarTipoLavagem(f.tipo_lavagem)}</td>
-                    <td><strong>R$ ${(f.valor || 0).toFixed(2)}</strong></td>
-                    <td>
+                    <td style="${bgLavado}">${formatarTipoLavagem(f.tipo_lavagem)}</td>
+                    <td style="${bgLavado}"><strong>R$ ${(f.valor || 0).toFixed(2)}</strong></td>
+                    <td style="${bgLavado}">
                         ${f.celular ? `
                             <button class="btn btn-success btn-sm" onclick="abrirWhatsApp('${f.celular}', 'Olá! Seu veículo ${f.placa} está pronto!')" title="WhatsApp">
                                 <i class="fab fa-whatsapp"></i>
@@ -879,11 +881,11 @@
                             <small class="ms-1">${f.celular}</small>
                         ` : '-'}
                     </td>
-                    <td>
+                    <td style="${bgLavado}">
                         <input type="text" class="form-control form-control-sm" 
                                value="${f.observacao || ''}" 
                                onchange="atualizarObsFila('${f.id}', this.value)"
-                               style="background: #fff; border: 1px solid #ccc; color: #000; min-width: 180px; font-weight: 500;">
+                               style="background: ${f.lavado ? '#00a651' : '#fff'}; border: 1px solid #ccc; color: ${f.lavado ? '#fff' : '#000'}; min-width: 180px; font-weight: 500;">
                     </td>
                     <td>
                         <button class="btn btn-warning btn-sm me-1" onclick="abrirModalEditarFila('${f.id}')" title="Editar">
@@ -900,7 +902,7 @@
                         </button>
                     </td>
                 </tr>
-            `).join('');
+            `}).join('');
         }
         
         // Atualizar observação da fila
