@@ -310,28 +310,6 @@
             
             // Verificar credenciais do lavador
             if (usuario === LAVADOR_USUARIO && senha === LAVADOR_SENHA) {
-                // Buscar o usuário admin para usar o user_id
-                const adminUser = JSON.parse(localStorage.getItem('currentUser'));
-                
-                if (!adminUser) {
-                    // Se não tem admin logado, fazer login com credenciais padrão
-                    const { data, error } = await supabaseClient.auth.signInWithPassword({
-                        email: 'admin@salemlavarapido.com',
-                        password: 'admin123'
-                    });
-                    
-                    if (error) {
-                        document.getElementById('loginError').textContent = 'Erro de conexão. Tente novamente.';
-                        document.getElementById('loginError').classList.remove('hidden');
-                        return;
-                    }
-                    
-                    currentUser = { id: data.user.id, email: data.user.email };
-                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
-                } else {
-                    currentUser = adminUser;
-                }
-                
                 localStorage.setItem('lavadorLogado', 'true');
                 mostrarConteudo();
                 await carregarDados();
@@ -351,14 +329,10 @@
         
         // Carregar dados
         async function carregarDados() {
-            const user = JSON.parse(localStorage.getItem('currentUser'));
-            if (!user) return;
-            
-            // Carregar fila de lavagem
+            // Carregar fila de lavagem (toda a fila, sem filtro de user_id)
             const { data: fila, error } = await supabaseClient
                 .from('fila_lavagem')
                 .select('*')
-                .eq('user_id', user.id)
                 .order('created_at', { ascending: true });
             
             if (!error) {
