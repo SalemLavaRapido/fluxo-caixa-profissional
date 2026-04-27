@@ -1067,7 +1067,8 @@
                     .insert([{
                         user_id: user.id,
                         data: new Date().toISOString().split('T')[0],
-                        descricao: `Lavagem ${item.tipo_lavagem} - ${item.placa}`,
+                        descricao: `Lavagem ${item.tipo_lavagem}`,
+                        placa: item.placa,
                         valor: valor,
                         categoria: 'lavagem_carro',
                         forma_pagamento: formaPagamento

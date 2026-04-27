@@ -245,30 +245,34 @@
                     <i class="fas fa-sync-alt"></i> Atualizar
                 </button>
             </h5>
-            <div class="table-responsive table-lavagens">
-                <table class="table mb-0">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th><i class="fas fa-car me-2"></i>Placa</th>
-                            <th><i class="fas fa-car-side me-2"></i>Modelo</th>
-                            <th><i class="fas fa-palette me-2"></i>Cor</th>
-                            <th><i class="fas fa-tag me-2"></i>Cliente</th>
-                            <th><i class="fas fa-shower me-2"></i>Lavagem</th>
-                            <th><i class="fas fa-phone me-2"></i>Celular</th>
-                            <th><i class="fas fa-comment me-2"></i>Observação</th>
-                            <th><i class="fas fa-cog me-2"></i>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabelaFila">
-                        <tr>
-                            <td colspan="9" class="empty-state">
-                                <i class="fas fa-car-wash"></i>
-                                <p>Nenhum veículo na fila</p>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+            <div class="row" id="cardsContainer">
+                <div class="col-12 text-center py-5">
+                    <i class="fas fa-car-wash fa-4x mb-3" style="color: rgba(255,255,255,0.3);"></i>
+                    <p style="color: rgba(255,255,255,0.5);">Nenhum veículo na fila</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal Observação -->
+    <div class="modal fade" id="modalObservacao" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content" style="background: #1a1a2e; color: #fff;">
+                <div class="modal-header" style="border-bottom: 1px solid rgba(255,255,255,0.2);">
+                    <h5 class="modal-title"><i class="fas fa-comment me-2"></i>Observação - <span id="obsPlaca"></span></h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <textarea id="obsTexto" class="form-control" rows="6" 
+                        style="background: #fff; color: #000; font-size: 18px; padding: 15px;"
+                        placeholder="Digite a observação..."></textarea>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid rgba(255,255,255,0.2);">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-success" onclick="salvarObservacao()">
+                        <i class="fas fa-save me-2"></i>Salvar
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -353,57 +357,97 @@
             document.getElementById('totalPendentes').textContent = pendentes;
         }
         
-        // Renderizar fila de lavagem
+        // Renderizar fila de lavagem com cards
         function renderizarFila() {
-            const tbody = document.getElementById('tabelaFila');
+            const container = document.getElementById('cardsContainer');
             
             if (filaLavagem.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="9" class="empty-state">
-                            <i class="fas fa-car-wash"></i>
-                            <p>Nenhum veículo na fila</p>
-                        </td>
-                    </tr>
+                container.innerHTML = `
+                    <div class="col-12 text-center py-5">
+                        <i class="fas fa-car-wash fa-4x mb-3" style="color: rgba(255,255,255,0.3);"></i>
+                        <p style="color: rgba(255,255,255,0.5);">Nenhum veículo na fila</p>
+                    </div>
                 `;
                 return;
             }
             
-            tbody.innerHTML = filaLavagem.map((f, index) => `
-                <tr style="${f.lavado ? 'background: linear-gradient(135deg, #11998e, #38ef7d) !important;' : ''}">
-                    <td><span class="badge ${f.lavado ? 'bg-success' : 'bg-warning text-dark'}">${index + 1}</span></td>
-                    <td><span class="placa-badge">${f.placa}</span></td>
-                    <td>${f.modelo || '-'}</td>
-                    <td>${f.cor || '-'}</td>
-                    <td>
-                        <span class="badge-tipo ${f.tipo_cliente === 'mensalista' ? 'badge-mensalista' : 'badge-avulso'}">
-                            ${f.tipo_cliente === 'mensalista' ? 'Mensalista' : 'Avulso'}
-                        </span>
-                    </td>
-                    <td>${formatarTipoLavagem(f.tipo_lavagem)}</td>
-                    <td>
-                        ${f.celular ? `
-                            <button class="btn btn-success btn-sm" onclick="abrirWhatsApp('${f.celular}', 'Olá! Seu veículo ${f.placa} está pronto!')" title="WhatsApp">
-                                <i class="fab fa-whatsapp"></i>
+            container.innerHTML = filaLavagem.map((f, index) => `
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100" style="background: ${f.lavado ? '#00a651' : 'rgba(255,255,255,0.95)'}; border-radius: 15px; overflow: hidden;">
+                        <div class="card-header d-flex justify-content-between align-items-center" style="background: ${f.lavado ? '#008c44' : '#005bea'}; color: #fff; padding: 15px;">
+                            <div>
+                                <span class="badge bg-light text-dark me-2" style="font-size: 1.1em;">#${index + 1}</span>
+                                <span style="font-size: 1.3em; font-weight: bold; letter-spacing: 2px;">${f.placa}</span>
+                            </div>
+                            <span class="badge ${f.lavado ? 'bg-light text-success' : 'bg-warning text-dark'}" style="font-size: 0.9em;">
+                                ${f.lavado ? '✓ LAVADO' : 'PENDENTE'}
+                            </span>
+                        </div>
+                        <div class="card-body" style="color: ${f.lavado ? '#fff' : '#333'}; padding: 20px;">
+                            <div class="row mb-3">
+                                <div class="col-6">
+                                    <small style="opacity: 0.7;"><i class="fas fa-car me-1"></i>Modelo</small>
+                                    <div style="font-size: 1.1em; font-weight: 600;">${f.modelo || '-'}</div>
+                                </div>
+                                <div class="col-6">
+                                    <small style="opacity: 0.7;"><i class="fas fa-palette me-1"></i>Cor</small>
+                                    <div style="font-size: 1.1em; font-weight: 600;">${f.cor || '-'}</div>
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-6">
+                                    <small style="opacity: 0.7;"><i class="fas fa-tag me-1"></i>Cliente</small>
+                                    <div><span class="badge ${f.tipo_cliente === 'mensalista' ? 'bg-success' : 'bg-warning text-dark'}">${f.tipo_cliente === 'mensalista' ? 'Mensalista' : 'Avulso'}</span></div>
+                                </div>
+                                <div class="col-6">
+                                    <small style="opacity: 0.7;"><i class="fas fa-shower me-1"></i>Lavagem</small>
+                                    <div style="font-size: 1.1em; font-weight: 600;">${formatarTipoLavagem(f.tipo_lavagem)}</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Observação clicável -->
+                            <div class="mb-3" onclick="abrirModalObs('${f.id}', '${f.placa}', '${(f.observacao || '').replace(/'/g, "\\'")}')" style="cursor: pointer; background: ${f.lavado ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.05)'}; border-radius: 10px; padding: 15px; min-height: 80px;">
+                                <small style="opacity: 0.7;"><i class="fas fa-comment me-1"></i>Observação <i class="fas fa-edit ms-1" style="font-size: 0.8em;"></i></small>
+                                <div style="font-size: 1.1em; margin-top: 5px; word-wrap: break-word;">${f.observacao || '<span style="opacity:0.5;">Clique para adicionar...</span>'}</div>
+                            </div>
+                            
+                            ${f.celular ? `
+                            <div class="mb-3">
+                                <button class="btn btn-success w-100" onclick="abrirWhatsApp('${f.celular}', 'Olá! Seu veículo ${f.placa} está pronto!')" style="padding: 12px; font-size: 1.1em;">
+                                    <i class="fab fa-whatsapp me-2"></i>WhatsApp: ${f.celular}
+                                </button>
+                            </div>
+                            ` : ''}
+                        </div>
+                        <div class="card-footer" style="background: ${f.lavado ? '#007a3d' : '#f8f9fa'}; padding: 15px;">
+                            <button class="btn ${f.lavado ? 'btn-light text-success' : 'btn-primary'} w-100" onclick="marcarLavado('${f.id}')" style="padding: 15px; font-size: 1.2em; font-weight: bold;">
+                                <i class="fas fa-car-wash me-2"></i>
+                                ${f.lavado ? '✓ LAVADO - Clique para desmarcar' : 'MARCAR COMO LAVADO'}
                             </button>
-                            <small class="ms-1">${f.celular}</small>
-                        ` : '-'}
-                    </td>
-                    <td>
-                        <input type="text" class="form-control form-control-sm" 
-                               value="${f.observacao || ''}" 
-                               onchange="atualizarObsFila('${f.id}', this.value)"
-                               placeholder="Adicionar observação..."
-                               style="background: #fff; border: 1px solid #ccc; color: #000; min-width: 200px; font-weight: 500;">
-                    </td>
-                    <td>
-                        <button class="btn ${f.lavado ? 'btn-secondary' : 'btn-info'} btn-sm" onclick="marcarLavado('${f.id}')" title="${f.lavado ? 'Desmarcar' : 'Marcar como Pronto'}">
-                            <i class="fas fa-car-wash me-1"></i>
-                            ${f.lavado ? 'Pronto' : 'Lavar'}
-                        </button>
-                    </td>
-                </tr>
+                        </div>
+                    </div>
+                </div>
             `).join('');
+        }
+        
+        // Variável para guardar ID atual
+        let obsIdAtual = null;
+        
+        // Abrir modal de observação
+        function abrirModalObs(id, placa, obs) {
+            obsIdAtual = id;
+            document.getElementById('obsPlaca').textContent = placa;
+            document.getElementById('obsTexto').value = obs || '';
+            new bootstrap.Modal(document.getElementById('modalObservacao')).show();
+        }
+        
+        // Salvar observação
+        async function salvarObservacao() {
+            const obs = document.getElementById('obsTexto').value;
+            await atualizarObsFila(obsIdAtual, obs);
+            bootstrap.Modal.getInstance(document.getElementById('modalObservacao')).hide();
+            await carregarDados();
+            showAlert('Observação salva!', 'success');
         }
         
         // Formatar tipo de lavagem
