@@ -1147,14 +1147,14 @@
                 return;
             }
             
-            // Registrar no fluxo de caixa se for avulso e tiver valor
-            if (item.tipo_cliente === 'avulso' && valor > 0 && formaPagamento !== 'cortesia') {
+            // Registrar no fluxo de caixa (mensalista e avulso)
+            if (valor > 0 && formaPagamento !== 'cortesia') {
                 await supabaseClient
                     .from('entradas')
                     .insert([{
                         user_id: user.id,
                         data: new Date().toISOString().split('T')[0],
-                        descricao: `Lavagem ${item.tipo_lavagem}`,
+                        descricao: `Lavagem ${item.tipo_lavagem} (${item.tipo_cliente})`,
                         placa: item.placa,
                         valor: valor,
                         categoria: 'lavagem_carro',
