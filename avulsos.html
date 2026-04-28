@@ -21,6 +21,12 @@
             min-height: 100vh;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             color: #fff;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        
+        body.loaded {
+            opacity: 1;
         }
         
         .navbar-custom {
@@ -635,6 +641,7 @@
                 return;
             }
             
+            document.body.classList.add('loaded');
             document.getElementById('userInfo').textContent = user.email;
             
             // Configurar datas padrão dos filtros

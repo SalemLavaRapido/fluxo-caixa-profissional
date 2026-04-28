@@ -29,6 +29,12 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        
+        body.loaded {
+            opacity: 1;
         }
 
         .main-container {
@@ -1023,6 +1029,9 @@
     
     <!-- Funções de UI -->
     <script>
+        // Mostrar página imediatamente
+        document.body.classList.add('loaded');
+        
         function showRegisterForm() {
             document.getElementById('loginContainer').classList.add('hidden');
             document.getElementById('registerContainer').classList.remove('hidden');
