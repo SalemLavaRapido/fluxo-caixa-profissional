@@ -23,6 +23,12 @@
             min-height: 100vh;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             color: #fff;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        
+        body.loaded {
+            opacity: 1;
         }
         
         .navbar-custom {
@@ -232,6 +238,52 @@
         .dias-urgente {
             background: var(--danger-gradient);
         }
+        
+        .secao-alertas-lavagem {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .alerta-lavagem-item {
+            background: rgba(255,255,255,0.15);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .alerta-lavagem-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .btn-whatsapp-lavagem {
+            background: #25D366;
+            color: #fff;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+        
+        .btn-whatsapp-lavagem:hover {
+            background: #128C7E;
+            color: #fff;
+        }
+        
+        .badge-dias-sem-lavar {
+            background: rgba(0,0,0,0.3);
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.85em;
+        }
     </style>
 </head>
 <body>
@@ -288,6 +340,15 @@
                     <div>Faturamento Mês</div>
                 </div>
             </div>
+        </div>
+        
+        <!-- Seção Alertas - Carros sem lavar há mais de 30 dias -->
+        <div class="secao-alertas-lavagem" id="secaoAlertasLavagem" style="display: none;">
+            <h5 class="mb-3">
+                <i class="fas fa-exclamation-triangle me-2"></i>Carros sem Lavar há mais de 30 dias
+                <span class="badge bg-dark ms-2" id="totalAlertasLavagem">0</span>
+            </h5>
+            <div id="listaAlertasLavagem"></div>
         </div>
         
         <!-- Card Nova Lavagem -->
@@ -661,6 +722,7 @@
                 return;
             }
             
+            document.body.classList.add('loaded');
             document.getElementById('userInfo').textContent = user.email;
             
             // Definir datas padrão dos filtros
@@ -780,6 +842,7 @@
             renderizarLavagens();
             renderizarFila();
             atualizarEstatisticas();
+            verificarAlertasLavagem();
         }
         
         // Aplicar filtros
@@ -1261,6 +1324,104 @@
             setTimeout(() => {
                 alert.remove();
             }, 5000);
+        }
+        
+        // Verificar alertas de carros sem lavar há mais de 30 dias
+        async function verificarAlertasLavagem() {
+            const user = JSON.parse(localStorage.getItem('currentUser'));
+            if (!user) return;
+            
+            const hoje = new Date();
+            const alertas = [];
+            
+            // Buscar todas as lavagens para calcular última lavagem por placa
+            const { data: todasLavagens } = await supabaseClient
+                .from('lavagens')
+                .select('*')
+                .eq('user_id', user.id)
+                .order('data_lavagem', { ascending: false });
+            
+            // Agrupar por placa e pegar a última lavagem de cada
+            const ultimaLavagemPorPlaca = {};
+            (todasLavagens || []).forEach(l => {
+                const placa = l.placa?.toUpperCase();
+                if (placa && !ultimaLavagemPorPlaca[placa]) {
+                    ultimaLavagemPorPlaca[placa] = l;
+                }
+            });
+            
+            // Verificar veículos de mensalistas
+            veiculosMensalistas.forEach(veiculo => {
+                const placa = veiculo.placa?.toUpperCase();
+                if (!placa) return;
+                
+                const cliente = clientes.find(c => c.id === veiculo.cliente_id);
+                if (!cliente) return;
+                
+                const ultimaLavagem = ultimaLavagemPorPlaca[placa];
+                let diasSemLavar = 999;
+                
+                if (ultimaLavagem) {
+                    const dataUltimaLavagem = new Date(ultimaLavagem.data_lavagem);
+                    diasSemLavar = Math.floor((hoje - dataUltimaLavagem) / (1000 * 60 * 60 * 24));
+                }
+                
+                // Alertar se mais de 30 dias sem lavar
+                if (diasSemLavar > 30) {
+                    alertas.push({
+                        placa: placa,
+                        modelo: veiculo.modelo || '-',
+                        cor: veiculo.cor || '-',
+                        cliente: cliente.nome,
+                        telefone: cliente.telefone,
+                        diasSemLavar: diasSemLavar,
+                        ultimaLavagem: ultimaLavagem ? new Date(ultimaLavagem.data_lavagem).toLocaleDateString('pt-BR') : 'Nunca'
+                    });
+                }
+            });
+            
+            // Renderizar alertas
+            const secao = document.getElementById('secaoAlertasLavagem');
+            const lista = document.getElementById('listaAlertasLavagem');
+            const total = document.getElementById('totalAlertasLavagem');
+            
+            if (alertas.length === 0) {
+                secao.style.display = 'none';
+                return;
+            }
+            
+            secao.style.display = 'block';
+            total.textContent = alertas.length;
+            
+            lista.innerHTML = alertas.map(a => `
+                <div class="alerta-lavagem-item">
+                    <div class="alerta-lavagem-info">
+                        <div>
+                            <strong style="font-size: 1.1em;">${a.placa}</strong>
+                            <span class="badge-dias-sem-lavar ms-2">${a.diasSemLavar === 999 ? 'Nunca lavou' : a.diasSemLavar + ' dias'}</span>
+                            <br>
+                            <small>${a.modelo} - ${a.cor} | Cliente: ${a.cliente}</small>
+                            <br>
+                            <small>Última lavagem: ${a.ultimaLavagem}</small>
+                        </div>
+                    </div>
+                    ${a.telefone ? `
+                        <button class="btn btn-whatsapp-lavagem" onclick="abrirWhatsAppLavagem('${a.telefone}', '${a.cliente}', '${a.placa}', ${a.diasSemLavar})">
+                            <i class="bi bi-whatsapp me-1"></i>WhatsApp
+                        </button>
+                    ` : ''}
+                </div>
+            `).join('');
+        }
+        
+        // Abrir WhatsApp para lembrete de lavagem
+        function abrirWhatsAppLavagem(telefone, cliente, placa, dias) {
+            const mensagem = dias === 999 
+                ? `Olá ${cliente}! Notamos que seu veículo ${placa} ainda não foi lavado conosco. Que tal agendar uma lavagem? Temos promoções especiais! 🚗✨`
+                : `Olá ${cliente}! Seu veículo ${placa} está há ${dias} dias sem lavagem. Que tal dar aquele trato no seu carro? Temos promoções especiais hoje! 🚗✨`;
+            
+            const url = `https://wa.me/55${telefone}?text=${encodeURIComponent(mensagem)}`;
+            window.open(url, '_blank');
         }
         
         // Logout
