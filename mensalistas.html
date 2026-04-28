@@ -520,53 +520,6 @@
         </div>
     </div>
 
-    <!-- Modal Registrar Lavagem -->
-    <div class="modal fade modal-custom" id="modalLavagem" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header modal-header-lavagem">
-                    <h5 class="modal-title">
-                        <i class="fas fa-soap me-2"></i>Registrar Lavagem
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <input type="hidden" id="lavagemVeiculoId">
-                    <input type="hidden" id="lavagemClienteNome">
-                    
-                    <div class="text-center mb-4">
-                        <span class="placa-badge" id="lavagemPlaca">ABC-1234</span>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Tipo de Lavagem</label>
-                        <select class="form-control form-control-custom" id="lavagemTipo">
-                            <option value="simples">Lavagem Simples</option>
-                            <option value="completa">Lavagem Completa</option>
-                            <option value="polimento">Polimento</option>
-                            <option value="higienizacao">Higienização</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Valor (R$)</label>
-                        <input type="number" class="form-control form-control-custom" id="lavagemValor" 
-                               step="0.01" min="0" value="30">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Observação</label>
-                        <textarea class="form-control form-control-custom" id="lavagemObs" rows="2"></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer border-0">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-info" onclick="salvarLavagem()">
-                        <i class="fas fa-check me-2"></i>Confirmar Lavagem
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Modal Registrar Pagamento -->
     <div class="modal fade modal-custom" id="modalPagamento" tabindex="-1">
         <div class="modal-dialog">
@@ -985,9 +938,6 @@
                                                         <i class="bi bi-whatsapp"></i>
                                                     </button>
                                                 ` : ''}
-                                                <button class="btn btn-lavagem btn-sm" onclick="abrirModalLavagem('${v.id}', '${v.placa}', '${cliente.nome}')">
-                                                    <i class="fas fa-soap me-1"></i>Lavagem
-                                                </button>
                                                 <button class="btn btn-danger btn-sm" onclick="excluirVeiculo('${v.id}', '${v.placa}')" title="Excluir Veículo">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
@@ -1033,11 +983,15 @@
             return Math.floor(diffMs / (1000 * 60 * 60 * 24));
         }
         
-        // Obter lavagens de todos os veículos de um cliente
+        // Obter lavagens de todos os veículos de um cliente (busca por placa)
         function getLavagensCliente(veiculosCliente) {
-            const idsVeiculos = veiculosCliente.map(v => v.id);
+            const placasCliente = veiculosCliente.map(v => v.placa.toUpperCase());
             return lavagens
-                .filter(l => idsVeiculos.includes(l.veiculo_id))
+                .filter(l => {
+                    // Busca por placa (da fila de lavagem) ou por veiculo_id (legado)
+                    const placaLavagem = (l.placa || '').toUpperCase();
+                    return placasCliente.includes(placaLavagem) || veiculosCliente.some(v => v.id === l.veiculo_id);
+                })
                 .sort((a, b) => new Date(b.data_lavagem) - new Date(a.data_lavagem));
         }
         
@@ -1233,14 +1187,15 @@
                             <tbody>
                                 ${lavagensCliente.map(l => {
                                     const veiculoLavagem = veiculos.find(v => v.id === l.veiculo_id);
+                                    const placaExibir = l.placa || veiculoLavagem?.placa || '-';
                                     return `
                                         <tr>
                                             <td>${formatarData(l.data_lavagem)}</td>
-                                            <td><span class="badge bg-secondary">${veiculoLavagem?.placa || '-'}</span></td>
+                                            <td><span class="badge bg-secondary">${placaExibir}</span></td>
                                             <td>${formatarTipoLavagem(l.tipo_lavagem)}</td>
                                             <td><strong>R$ ${(l.valor || 0).toFixed(2)}</strong></td>
                                             <td>
-                                                <button class="btn btn-danger btn-sm py-0 px-2" onclick="excluirLavagem('${l.id}', '${veiculoLavagem?.placa || ''}')" title="Excluir">
+                                                <button class="btn btn-danger btn-sm py-0 px-2" onclick="excluirLavagem('${l.id}', '${placaExibir}')" title="Excluir">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
                                             </td>
@@ -1440,70 +1395,6 @@
             
             bootstrap.Modal.getInstance(document.getElementById('modalVeiculo')).hide();
             showAlert(`Veículo ${placa} cadastrado!`, 'success');
-            
-            await carregarDados();
-        }
-        
-        // Abrir modal de lavagem
-        function abrirModalLavagem(veiculoId, placa, clienteNome) {
-            document.getElementById('lavagemVeiculoId').value = veiculoId;
-            document.getElementById('lavagemClienteNome').value = clienteNome;
-            document.getElementById('lavagemPlaca').textContent = placa;
-            document.getElementById('lavagemTipo').value = 'simples';
-            document.getElementById('lavagemValor').value = '30';
-            document.getElementById('lavagemObs').value = '';
-            
-            const modal = new bootstrap.Modal(document.getElementById('modalLavagem'));
-            modal.show();
-        }
-        
-        // Salvar lavagem
-        async function salvarLavagem() {
-            const veiculoId = document.getElementById('lavagemVeiculoId').value;
-            const clienteNome = document.getElementById('lavagemClienteNome').value;
-            const placa = document.getElementById('lavagemPlaca').textContent;
-            const tipo = document.getElementById('lavagemTipo').value;
-            const valor = parseFloat(document.getElementById('lavagemValor').value) || 0;
-            const obs = document.getElementById('lavagemObs').value;
-            
-            const user = JSON.parse(localStorage.getItem('currentUser'));
-            
-            // Salvar lavagem
-            const { error: errorLavagem } = await supabaseClient
-                .from('lavagens')
-                .insert([{
-                    veiculo_id: veiculoId,
-                    user_id: user.id,
-                    tipo_lavagem: tipo,
-                    valor: valor,
-                    observacao: obs
-                }]);
-            
-            if (errorLavagem) {
-                showAlert('Erro ao salvar: ' + errorLavagem.message, 'danger');
-                return;
-            }
-            
-            // Registrar no fluxo de caixa
-            if (valor > 0) {
-                // Determinar categoria baseada no tipo
-                let categoria = 'lavagem_carro';
-                
-                await supabaseClient
-                    .from('entradas')
-                    .insert([{
-                        user_id: user.id,
-                        data: new Date().toISOString().split('T')[0],
-                        descricao: `Lavagem ${tipo} - ${placa} - ${clienteNome}`,
-                        placa: placa,
-                        categoria: categoria,
-                        forma_pagamento: 'dinheiro',
-                        valor: valor
-                    }]);
-            }
-            
-            bootstrap.Modal.getInstance(document.getElementById('modalLavagem')).hide();
-            showAlert(`Lavagem registrada: ${placa}`, 'success');
             
             await carregarDados();
         }
