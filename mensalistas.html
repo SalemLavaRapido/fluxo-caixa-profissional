@@ -906,7 +906,7 @@
                                 </div>
                                 <div class="cliente-info-item">
                                     <i class="fas fa-calendar"></i>
-                                    Venc. <strong>${cliente.data_vencimento ? new Date(cliente.data_vencimento + 'T00:00:00').toLocaleDateString('pt-BR') : 'Não definido'}</strong>
+                                    Venc. <strong>${cliente.data_vencimento ? new Date(cliente.data_vencimento + 'T00:00:00').toLocaleDateString('pt-BR') : (cliente.dia_vencimento ? 'Dia ' + cliente.dia_vencimento : 'Não definido')}</strong>
                                 </div>
                                 <div class="cliente-info-item">
                                     <i class="fas fa-car"></i>
@@ -1113,6 +1113,7 @@
             document.getElementById('editarClienteTelefone').value = cliente.telefone || '';
             document.getElementById('editarClienteEmpresa').value = cliente.empresa || '';
             document.getElementById('editarClienteValor').value = cliente.valor_mensal || 0;
+            // Se tem data_vencimento usa ela, senão deixa vazio para o usuário preencher
             document.getElementById('editarClienteVencimento').value = cliente.data_vencimento || '';
             document.getElementById('editarClienteObservacao').value = cliente.observacao || '';
             
@@ -1474,12 +1475,20 @@
             const alertas = [];
             
             clientes.forEach(cliente => {
-                // Se não tem data de vencimento, pula
-                if (!cliente.data_vencimento) return;
+                let dataVencimento;
+                let dataFormatada;
                 
-                // Usar a data de vencimento completa
-                const dataVencimento = new Date(cliente.data_vencimento + 'T00:00:00');
-                const dataFormatada = dataVencimento.toLocaleDateString('pt-BR');
+                // Verificar se tem data_vencimento (novo) ou dia_vencimento (antigo)
+                if (cliente.data_vencimento) {
+                    dataVencimento = new Date(cliente.data_vencimento + 'T00:00:00');
+                    dataFormatada = dataVencimento.toLocaleDateString('pt-BR');
+                } else if (cliente.dia_vencimento) {
+                    // Usar dia_vencimento no mês atual
+                    dataVencimento = new Date(anoAtual, mesAtual, cliente.dia_vencimento);
+                    dataFormatada = `Dia ${cliente.dia_vencimento}`;
+                } else {
+                    return; // Sem vencimento definido
+                }
                 
                 // Diferença em dias
                 const diffDias = Math.floor((dataVencimento - hoje) / (1000 * 60 * 60 * 24));
