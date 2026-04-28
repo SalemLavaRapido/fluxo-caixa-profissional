@@ -427,9 +427,9 @@
                     <input type="number" class="form-control form-control-custom" id="clienteValor" 
                            placeholder="Valor" step="0.01" min="0">
                 </div>
-                <div class="col-md-1">
-                    <input type="number" class="form-control form-control-custom" id="clienteVencimento" 
-                           placeholder="Venc." min="1" max="31" value="10">
+                <div class="col-md-2">
+                    <input type="date" class="form-control form-control-custom" id="clienteVencimento" 
+                           placeholder="Vencimento">
                 </div>
                 <div class="col-md-2">
                     <input type="text" class="form-control form-control-custom" id="clienteObservacao" 
@@ -602,8 +602,8 @@
                             <input type="number" class="form-control form-control-custom" id="editarClienteValor" step="0.01" min="0">
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Dia Vencimento</label>
-                            <input type="number" class="form-control form-control-custom" id="editarClienteVencimento" min="1" max="31">
+                            <label class="form-label">Data Vencimento</label>
+                            <input type="date" class="form-control form-control-custom" id="editarClienteVencimento">
                         </div>
                     </div>
                     <div class="mb-3">
@@ -707,7 +707,7 @@
             const telefone = document.getElementById('clienteTelefone').value.replace(/\D/g, '');
             const empresa = document.getElementById('clienteEmpresa').value.trim();
             const valor = parseFloat(document.getElementById('clienteValor').value) || 0;
-            const vencimento = parseInt(document.getElementById('clienteVencimento').value) || 10;
+            const dataVencimento = document.getElementById('clienteVencimento').value;
             const observacao = document.getElementById('clienteObservacao').value.trim();
             
             if (!nome || !telefone) {
@@ -725,7 +725,7 @@
                     telefone: telefone,
                     empresa: empresa,
                     valor_mensal: valor,
-                    dia_vencimento: vencimento,
+                    data_vencimento: dataVencimento || null,
                     observacao: observacao
                 }]);
             
@@ -736,7 +736,6 @@
             
             showAlert(`Cliente ${nome} cadastrado com sucesso!`, 'success');
             document.getElementById('formCliente').reset();
-            document.getElementById('clienteVencimento').value = '10';
             
             await carregarDados();
         }
@@ -907,7 +906,7 @@
                                 </div>
                                 <div class="cliente-info-item">
                                     <i class="fas fa-calendar"></i>
-                                    Venc. dia <strong>${cliente.dia_vencimento || 10}</strong>
+                                    Venc. <strong>${cliente.data_vencimento ? new Date(cliente.data_vencimento + 'T00:00:00').toLocaleDateString('pt-BR') : 'Não definido'}</strong>
                                 </div>
                                 <div class="cliente-info-item">
                                     <i class="fas fa-car"></i>
@@ -1114,7 +1113,7 @@
             document.getElementById('editarClienteTelefone').value = cliente.telefone || '';
             document.getElementById('editarClienteEmpresa').value = cliente.empresa || '';
             document.getElementById('editarClienteValor').value = cliente.valor_mensal || 0;
-            document.getElementById('editarClienteVencimento').value = cliente.dia_vencimento || 10;
+            document.getElementById('editarClienteVencimento').value = cliente.data_vencimento || '';
             document.getElementById('editarClienteObservacao').value = cliente.observacao || '';
             
             const modal = new bootstrap.Modal(document.getElementById('modalEditarCliente'));
@@ -1128,7 +1127,7 @@
             const telefone = document.getElementById('editarClienteTelefone').value.replace(/\D/g, '');
             const empresa = document.getElementById('editarClienteEmpresa').value.trim();
             const valor = parseFloat(document.getElementById('editarClienteValor').value) || 0;
-            const vencimento = parseInt(document.getElementById('editarClienteVencimento').value) || 10;
+            const dataVencimento = document.getElementById('editarClienteVencimento').value;
             const observacao = document.getElementById('editarClienteObservacao').value.trim();
             
             if (!nome || !telefone) {
@@ -1143,7 +1142,7 @@
                     telefone: telefone,
                     empresa: empresa,
                     valor_mensal: valor,
-                    dia_vencimento: vencimento,
+                    data_vencimento: dataVencimento || null,
                     observacao: observacao
                 })
                 .eq('id', clienteId);
@@ -1475,10 +1474,12 @@
             const alertas = [];
             
             clientes.forEach(cliente => {
-                const diaVencimento = cliente.dia_vencimento || 10;
+                // Se não tem data de vencimento definida, pula
+                if (!cliente.data_vencimento) return;
                 
-                // Calcular data de vencimento do mês atual
-                let dataVencimento = new Date(anoAtual, mesAtual, diaVencimento);
+                // Usar a data de vencimento completa
+                const dataVencimento = new Date(cliente.data_vencimento + 'T00:00:00');
+                const dataVencimentoFormatada = dataVencimento.toLocaleDateString('pt-BR');
                 
                 // Diferença em dias
                 const diffDias = Math.floor((dataVencimento - hoje) / (1000 * 60 * 60 * 24));
@@ -1488,23 +1489,25 @@
                     alertas.push({
                         tipo: 'hoje',
                         cliente: cliente,
+                        dataVencimento: dataVencimentoFormatada,
                         mensagem: 'Vence HOJE',
                         badge: 'badge-hoje',
                         classe: 'alerta-vence-hoje',
-                        textoWhats: `Olá ${cliente.nome}! Sua mensalidade vence HOJE, dia ${diaVencimento}. Valor: R$ ${(cliente.valor_mensal || 0).toFixed(2)}. Aguardamos seu pagamento!`
+                        textoWhats: `Olá ${cliente.nome}! Sua mensalidade vence HOJE, dia ${dataVencimentoFormatada}. Valor: R$ ${(cliente.valor_mensal || 0).toFixed(2)}. Aguardamos seu pagamento!`
                     });
                 }
                 
-                // Atrasado (5 dias ou mais após vencimento)
-                if (diffDias <= -5) {
+                // Atrasado (1 dia ou mais após vencimento)
+                if (diffDias < 0) {
                     const diasAtraso = Math.abs(diffDias);
                     alertas.push({
                         tipo: 'atrasado',
                         cliente: cliente,
-                        mensagem: `${diasAtraso} dias em atraso`,
+                        dataVencimento: dataVencimentoFormatada,
+                        mensagem: `${diasAtraso} dia(s) em atraso`,
                         badge: 'badge-atrasado',
                         classe: 'alerta-atrasado',
-                        textoWhats: `Olá ${cliente.nome}! Sua mensalidade está em atraso há ${diasAtraso} dias. Valor: R$ ${(cliente.valor_mensal || 0).toFixed(2)}. Por favor, entre em contato para regularização.`
+                        textoWhats: `Olá ${cliente.nome}! Sua mensalidade venceu em ${dataVencimentoFormatada} e está em atraso há ${diasAtraso} dia(s). Valor: R$ ${(cliente.valor_mensal || 0).toFixed(2)}. Por favor, entre em contato para regularização.`
                     });
                 }
             });
@@ -1522,16 +1525,13 @@
             secao.style.display = 'block';
             total.textContent = alertas.length;
             
-            const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-            const mesNome = meses[mesAtual];
-            
             lista.innerHTML = alertas.map(a => `
                 <div class="alerta-item ${a.classe}">
                     <div>
                         <strong>${a.cliente.nome}</strong>
                         <span class="badge ${a.badge} ms-2">${a.mensagem}</span>
                         <br>
-                        <small>Valor: R$ ${(a.cliente.valor_mensal || 0).toFixed(2)} | Venc. dia <strong>${a.cliente.dia_vencimento || 10}/${mesNome}</strong></small>
+                        <small>Valor: R$ ${(a.cliente.valor_mensal || 0).toFixed(2)} | Venc. <strong>${a.dataVencimento}</strong></small>
                     </div>
                     <button class="btn btn-whatsapp btn-sm" onclick="abrirWhatsApp('${a.cliente.telefone}', '${a.textoWhats.replace(/'/g, "\\'")}')">
                         <i class="bi bi-whatsapp me-1"></i>Enviar
