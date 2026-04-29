@@ -301,6 +301,41 @@
             transform: translateY(-3px);
             box-shadow: 0 8px 25px rgba(255,107,107,0.4);
         }
+        
+        /* Garantir que todos os cards tenham o mesmo tamanho */
+        .stats-card, .stats-card-alerta {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            min-height: 140px;
+            padding: 20px 15px;
+        }
+        
+        .stats-card .stats-number, 
+        .stats-card-alerta .stats-number {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 10px 0;
+        }
+        
+        .stats-card div:not(.stats-number), 
+        .stats-card-alerta div:not(.stats-number) {
+            font-size: 0.9rem;
+            font-weight: 500;
+            opacity: 0.9;
+        }
+        
+        /* Ajustar o container dos cards */
+        .row-cols-5 .col {
+            display: flex;
+        }
+        
+        .row-cols-5 .col .stats-card,
+        .row-cols-5 .col .stats-card-alerta {
+            width: 100%;
+        }
     </style>
 </head>
 <body>
@@ -422,6 +457,11 @@
                 <div class="col-auto">
                     <button type="submit" class="btn btn-registrar">
                         <i class="fas fa-plus me-2"></i>Adicionar na Fila
+                    </button>
+                </div>
+                <div class="col-auto">
+                    <button type="button" class="btn btn-outline-primary" onclick="imprimirReciboLavagem()">
+                        <i class="fas fa-print me-2"></i>Imprimir Recibo
                     </button>
                 </div>
             </form>
@@ -1463,6 +1503,107 @@
             
             const url = `https://wa.me/55${telefone}?text=${encodeURIComponent(mensagem)}`;
             window.open(url, '_blank');
+        }
+        
+        // Imprimir recibo de lavagem
+        function imprimirReciboLavagem() {
+            const placa = document.getElementById('placaLavagem').value;
+            const modelo = document.getElementById('modeloLavagem').value;
+            const cor = document.getElementById('corLavagem').value;
+            const tipo = document.getElementById('tipoLavagem').value;
+            const tipoCliente = document.getElementById('tipoCliente').value;
+            const valor = document.getElementById('valorLavagem').value;
+            const celular = document.getElementById('celularLavagem').value;
+            const obs = document.getElementById('obsLavagem').value;
+            
+            if (!placa) {
+                alert('Preencha a placa do veículo!');
+                return;
+            }
+            
+            if (!valor || valor <= 0) {
+                alert('Preencha o valor da lavagem!');
+                return;
+            }
+            
+            const dataAtual = new Date().toLocaleDateString('pt-BR');
+            const horaAtual = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            
+            // Mapear tipos de lavagem
+            const tiposLavagem = {
+                'simples': 'Lavagem Simples',
+                'completa': 'Lavagem Completa',
+                'polimento': 'Polimento',
+                'higienizacao': 'Higienização'
+            };
+            
+            // Criar conteúdo do recibo
+            const reciboContent = `
+                <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 400px; margin: 0 auto;">
+                    <div style="text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px;">
+                        <h2 style="margin: 0; color: #333;">RECIBO DE LAVAGEM</h2>
+                        <p style="margin: 5px 0; color: #666;">Lava Car</p>
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <p style="margin: 5px 0;"><strong>Data:</strong> ${dataAtual} - ${horaAtual}</p>
+                        <p style="margin: 5px 0;"><strong>Placa:</strong> ${placa.toUpperCase()}</p>
+                        <p style="margin: 5px 0;"><strong>Veículo:</strong> ${modelo || '-'} ${cor || '-'}</p>
+                        <p style="margin: 5px 0;"><strong>Tipo:</strong> ${tiposLavagem[tipo] || tipo}</p>
+                        <p style="margin: 5px 0;"><strong>Cliente:</strong> ${tipoCliente === 'mensalista' ? 'Mensalista' : 'Avulso'}</p>
+                        ${celular ? `<p style="margin: 5px 0;"><strong>Celular:</strong> ${celular}</p>` : ''}
+                        ${obs ? `<p style="margin: 5px 0;"><strong>Obs:</strong> ${obs}</p>` : ''}
+                    </div>
+                    
+                    <div style="border: 2px solid #333; padding: 15px; margin-bottom: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 18px; font-weight: bold;">VALOR:</span>
+                            <span style="font-size: 24px; font-weight: bold; color: #333;">R$ ${parseFloat(valor).toFixed(2)}</span>
+                        </div>
+                    </div>
+                    
+                    <div style="text-align: center; margin-top: 30px;">
+                        <div style="border-top: 1px solid #999; padding-top: 10px; margin-bottom: 20px;">
+                            <p style="margin: 0; font-size: 12px; color: #666;">Assinatura do Cliente</p>
+                            <div style="height: 40px; border-bottom: 1px solid #999; margin-top: 20px;"></div>
+                        </div>
+                        
+                        <div style="margin-top: 30px;">
+                            <p style="margin: 0; font-size: 10px; color: #999;">
+                                * Recibo válido para comprovação de serviço<br>
+                                * Não duplicável sem assinatura
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Abrir janela de impressão
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Recibo de Lavagem - ${placa.toUpperCase()}</title>
+                    <style>
+                        @media print {
+                            body { margin: 0; }
+                            @page { margin: 10mm; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${reciboContent}
+                    <script>
+                        window.onload = function() {
+                            window.print();
+                            window.close();
+                        }
+                    </script>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
         }
         
         // Logout

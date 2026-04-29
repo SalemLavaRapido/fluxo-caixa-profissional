@@ -971,6 +971,9 @@
                                     <i class="fas fa-receipt me-1"></i>Histórico Pagamentos
                                     <span class="badge bg-success ms-1">${pagamentosCliente.length}</span>
                                 </button>
+                                <button class="btn btn-outline-primary btn-sm flex-fill" onclick="imprimirReciboMensalista('${cliente.id}', '${cliente.nome}', '${cliente.valor_mensal || 0}')">
+                                    <i class="fas fa-print me-1"></i>Imprimir Recibo
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -1702,6 +1705,81 @@
             setTimeout(() => {
                 alert.remove();
             }, 5000);
+        }
+        
+        // Imprimir recibo de mensalista
+        function imprimirReciboMensalista(clienteId, clienteNome, valorMensal) {
+            const dataAtual = new Date().toLocaleDateString('pt-BR');
+            const mesAtual = new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+            
+            // Buscar veículos do cliente
+            const veiculosCliente = veiculos.filter(v => v.cliente_id === clienteId);
+            const placasVeiculos = veiculosCliente.map(v => v.placa).join(', ') || 'Nenhum veículo cadastrado';
+            
+            // Criar conteúdo do recibo
+            const reciboContent = `
+                <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 400px; margin: 0 auto;">
+                    <div style="text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px;">
+                        <h2 style="margin: 0; color: #333;">RECIBO DE MENSALIDADE</h2>
+                        <p style="margin: 5px 0; color: #666;">Estacionamento</p>
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <p style="margin: 5px 0;"><strong>Cliente:</strong> ${clienteNome}</p>
+                        <p style="margin: 5px 0;"><strong>Período:</strong> ${mesAtual}</p>
+                        <p style="margin: 5px 0;"><strong>Data de Emissão:</strong> ${dataAtual}</p>
+                        <p style="margin: 5px 0;"><strong>Veículos:</strong> ${placasVeiculos}</p>
+                    </div>
+                    
+                    <div style="border: 2px solid #333; padding: 15px; margin-bottom: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 18px; font-weight: bold;">VALOR:</span>
+                            <span style="font-size: 24px; font-weight: bold; color: #333;">R$ ${parseFloat(valorMensal).toFixed(2)}</span>
+                        </div>
+                    </div>
+                    
+                    <div style="text-align: center; margin-top: 30px;">
+                        <div style="border-top: 1px solid #999; padding-top: 10px; margin-bottom: 20px;">
+                            <p style="margin: 0; font-size: 12px; color: #666;">Assinatura do Cliente</p>
+                            <div style="height: 40px; border-bottom: 1px solid #999; margin-top: 20px;"></div>
+                        </div>
+                        
+                        <div style="margin-top: 30px;">
+                            <p style="margin: 0; font-size: 10px; color: #999;">
+                                * Recibo válido para comprovação de pagamento<br>
+                                * Não duplicável sem assinatura
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Abrir janela de impressão
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Recibo de Mensalidade - ${clienteNome}</title>
+                    <style>
+                        @media print {
+                            body { margin: 0; }
+                            @page { margin: 10mm; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${reciboContent}
+                    <script>
+                        window.onload = function() {
+                            window.print();
+                            window.close();
+                        }
+                    </script>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
         }
         
         // Logout
