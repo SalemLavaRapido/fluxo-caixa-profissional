@@ -22,12 +22,6 @@
             min-height: 100vh;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             color: #fff;
-            opacity: 0;
-            transition: opacity 0.2s ease;
-        }
-        
-        body.loaded {
-            opacity: 1;
         }
         
         .navbar-custom {
@@ -1710,24 +1704,26 @@
         // Imprimir recibo de mensalista
         function imprimirReciboMensalista(clienteId, clienteNome, valorMensal) {
             const dataAtual = new Date().toLocaleDateString('pt-BR');
+            const horaAtual = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
             const mesAtual = new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
             
             // Buscar veículos do cliente
             const veiculosCliente = veiculos.filter(v => v.cliente_id === clienteId);
             const placasVeiculos = veiculosCliente.map(v => v.placa).join(', ') || 'Nenhum veículo cadastrado';
             
-            // Criar conteúdo do recibo
+            // Criar conteúdo do recibo (mesmo modelo do avulso)
             const reciboContent = `
                 <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 400px; margin: 0 auto;">
                     <div style="text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px;">
                         <h2 style="margin: 0; color: #333;">RECIBO DE MENSALIDADE</h2>
-                        <p style="margin: 5px 0; color: #666;">Estacionamento</p>
+                        <p style="margin: 5px 0; color: #666;">Sa Lavagem e Estacionamento</p>
                     </div>
                     
                     <div style="margin-bottom: 20px;">
+                        <p style="margin: 5px 0;"><strong>Data:</strong> ${dataAtual} - ${horaAtual}</p>
                         <p style="margin: 5px 0;"><strong>Cliente:</strong> ${clienteNome}</p>
+                        <p style="margin: 5px 0;"><strong>Descrição:</strong> Mensalidade Estacionamento</p>
                         <p style="margin: 5px 0;"><strong>Período:</strong> ${mesAtual}</p>
-                        <p style="margin: 5px 0;"><strong>Data de Emissão:</strong> ${dataAtual}</p>
                         <p style="margin: 5px 0;"><strong>Veículos:</strong> ${placasVeiculos}</p>
                     </div>
                     
