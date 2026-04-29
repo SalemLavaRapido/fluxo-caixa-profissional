@@ -1363,12 +1363,68 @@
             modal.show();
         }
         
+        // Editar veículo
+        async function editarVeiculo(veiculoId) {
+            try {
+                const user = JSON.parse(localStorage.getItem('currentUser'));
+                
+                // Buscar dados do veículo
+                const { data: veiculo, error } = await supabaseClient
+                    .from('veiculos')
+                    .select('*')
+                    .eq('id', veiculoId)
+                    .eq('user_id', user.id)
+                    .single();
+                
+                if (error || !veiculo) {
+                    showAlert('Veículo não encontrado!', 'danger');
+                    return;
+                }
+                
+                // Preencher o modal com os dados do veículo
+                document.getElementById('veiculoClienteId').value = veiculo.cliente_id;
+                document.getElementById('veiculoPlaca').value = veiculo.placa;
+                document.getElementById('veiculoModelo').value = veiculo.modelo || '';
+                document.getElementById('veiculoCor').value = veiculo.cor || '';
+                
+                // Adicionar campo hidden para identificar que é edição
+                let veiculoIdInput = document.getElementById('veiculoId');
+                if (!veiculoIdInput) {
+                    veiculoIdInput = document.createElement('input');
+                    veiculoIdInput.type = 'hidden';
+                    veiculoIdInput.id = 'veiculoId';
+                    document.getElementById('modalVeiculo').appendChild(veiculoIdInput);
+                }
+                veiculoIdInput.value = veiculoId;
+                
+                // Mudar título do modal
+                const modalTitle = document.querySelector('#modalVeiculo .modal-title');
+                if (modalTitle) {
+                    modalTitle.textContent = 'Editar Veículo';
+                }
+                
+                // Mudar texto do botão
+                const saveBtn = document.querySelector('#modalVeiculo .btn-primary');
+                if (saveBtn) {
+                    saveBtn.textContent = 'Atualizar';
+                }
+                
+                const modal = new bootstrap.Modal(document.getElementById('modalVeiculo'));
+                modal.show();
+                
+            } catch (error) {
+                console.error('Erro ao editar veículo:', error);
+                showAlert('Erro ao carregar dados do veículo!', 'danger');
+            }
+        }
+        
         // Salvar veículo
         async function salvarVeiculo() {
             const clienteId = document.getElementById('veiculoClienteId').value;
             const placa = document.getElementById('veiculoPlaca').value.toUpperCase().trim();
             const modelo = document.getElementById('veiculoModelo').value.trim();
             const cor = document.getElementById('veiculoCor').value.trim();
+            const veiculoId = document.getElementById('veiculoId')?.value;
             
             if (!placa) {
                 showAlert('Informe a placa!', 'warning');
@@ -1377,48 +1433,91 @@
             
             const user = JSON.parse(localStorage.getItem('currentUser'));
             
-            // Verificar se placa já existe
-            const { data: existente } = await supabaseClient
-                .from('veiculos')
-                .select('*')
-                .eq('user_id', user.id)
-                .eq('placa', placa)
-                .single();
-            
-            if (existente) {
-                showAlert('Esta placa já está cadastrada!', 'danger');
-                return;
+            try {
+                if (veiculoId) {
+                    // Edição de veículo existente
+                    const { error } = await supabaseClient
+                        .from('veiculos')
+                        .update({
+                            placa: placa,
+                            modelo: modelo,
+                            cor: cor
+                        })
+                        .eq('id', veiculoId)
+                        .eq('user_id', user.id);
+                    
+                    if (error) {
+                        showAlert('Erro ao atualizar veículo!', 'danger');
+                        return;
+                    }
+                    
+                    showAlert('Veículo atualizado com sucesso!', 'success');
+                } else {
+                    // Novo veículo - verificar se placa já existe
+                    const { data: existente } = await supabaseClient
+                        .from('veiculos')
+                        .select('*')
+                        .eq('user_id', user.id)
+                        .eq('placa', placa)
+                        .single();
+                    
+                    if (existente) {
+                        showAlert('Esta placa já está cadastrada!', 'danger');
+                        return;
+                    }
+                    
+                    const { error } = await supabaseClient
+                        .from('veiculos')
+                        .insert([{
+                            cliente_id: clienteId,
+                            user_id: user.id,
+                            placa: placa,
+                            modelo: modelo,
+                            cor: cor
+                        }]);
+                    
+                    if (error) {
+                        showAlert('Erro ao salvar veículo!', 'danger');
+                        return;
+                    }
+                    
+                    showAlert('Veículo cadastrado com sucesso!', 'success');
+                }
+                
+                // Fechar modal e recarregar dados
+                const modalVeiculo = bootstrap.Modal.getInstance(document.getElementById('modalVeiculo'));
+                modalVeiculo.hide();
+                
+                // Resetar modal para novo cadastro
+                resetModalVeiculo();
+                
+                carregarDados();
+                
+            } catch (error) {
+                console.error('Erro ao salvar veículo:', error);
+                showAlert('Erro ao salvar veículo!', 'danger');
             }
-            
-            const { error } = await supabaseClient
-                .from('veiculos')
-                .insert([{
-                    cliente_id: clienteId,
-                    user_id: user.id,
-                    placa: placa,
-                    modelo: modelo,
-                    cor: cor
-                }]);
-            
-            if (error) {
-                showAlert('Erro ao salvar: ' + error.message, 'danger');
-                return;
-            }
-            
-            bootstrap.Modal.getInstance(document.getElementById('modalVeiculo')).hide();
-            showAlert(`Veículo ${placa} cadastrado!`, 'success');
-            
-            await carregarDados();
         }
         
-        // Abrir modal de pagamento
-        function abrirModalPagamento(clienteId, nome, valorMensal) {
-            document.getElementById('pagamentoClienteId').value = clienteId;
-            document.getElementById('pagamentoClienteNome').textContent = nome;
-            document.getElementById('pagamentoValor').value = valorMensal || 0;
+        // Resetar modal para novo cadastro
+        function resetModalVeiculo() {
+            // Remover campo hidden de ID se existir
+            const veiculoIdInput = document.getElementById('veiculoId');
+            if (veiculoIdInput) {
+                veiculoIdInput.remove();
+            }
             
-            const modal = new bootstrap.Modal(document.getElementById('modalPagamento'));
-            modal.show();
+            // Resetar título
+            const modalTitle = document.querySelector('#modalVeiculo .modal-title');
+            if (modalTitle) {
+                modalTitle.textContent = 'Adicionar Veículo';
+            }
+            
+            // Resetar texto do botão
+            const saveBtn = document.querySelector('#modalVeiculo .btn-primary');
+            if (saveBtn) {
+                saveBtn.textContent = 'Salvar';
+            }
         }
         
         // Salvar pagamento
