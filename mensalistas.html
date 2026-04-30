@@ -1584,7 +1584,7 @@
                     .from('entradas')
                     .insert([{
                         user_id: user.id,
-                        data: new Date().toISOString().split('T')[0],
+                        data_entrada: new Date().toISOString(),
                         descricao: `Mensalidade ${mes} - ${clienteNome}`,
                         categoria: 'mensalista',
                         forma_pagamento: forma,
