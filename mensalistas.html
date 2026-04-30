@@ -1522,6 +1522,23 @@
             }
         }
         
+        // Abrir modal de pagamento
+        function abrirModalPagamento(clienteId, clienteNome, valorMensal) {
+            document.getElementById('pagamentoClienteId').value = clienteId;
+            document.getElementById('pagamentoClienteNome').textContent = clienteNome;
+            document.getElementById('pagamentoValor').value = valorMensal || 0;
+            
+            // Definir mês atual se não estiver definido
+            const hoje = new Date();
+            const mesAtual = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`;
+            if (!document.getElementById('pagamentoMes').value) {
+                document.getElementById('pagamentoMes').value = mesAtual;
+            }
+            
+            const modal = new bootstrap.Modal(document.getElementById('modalPagamento'));
+            modal.show();
+        }
+        
         // Salvar pagamento
         async function salvarPagamento() {
             const clienteId = document.getElementById('pagamentoClienteId').value;
