@@ -11,6 +11,14 @@
     <script>
         // Forçar recarregamento para evitar cache
         console.log('Mensalistas atualizado em:', new Date().toISOString());
+        // Limpar cache forçado
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for(let registration of registrations) {
+                    registration.unregister();
+                }
+            });
+        }
     </script>
     <style>
         :root {
@@ -793,6 +801,9 @@
                         <div class="card-cliente-header">
                             <h3 class="cliente-nome">${cliente.nome}</h3>
                             <div>
+                                <button class="btn btn-success btn-sm me-2" onclick="abrirWhatsApp('${cliente.telefone}', 'Olá ${cliente.nome}!')" title="Chamar no WhatsApp">
+                                    <i class="fab fa-whatsapp"></i>
+                                </button>
                                 <button class="btn btn-outline-warning btn-sm me-2" onclick="abrirModalEditarCliente('${cliente.id}')">
                                     <i class="fas fa-edit"></i>
                                 </button>
@@ -922,6 +933,9 @@
                     <div class="card-cliente-header">
                         <h3 class="cliente-nome">${cliente.nome}</h3>
                         <div>
+                            <button class="btn btn-success btn-sm me-2" onclick="abrirWhatsApp('${cliente.telefone}', 'Olá ${cliente.nome}!')" title="Chamar no WhatsApp">
+                                <i class="fab fa-whatsapp"></i>
+                            </button>
                             <button class="btn btn-outline-warning btn-sm me-2" onclick="abrirModalEditarCliente('${cliente.id}')">
                                 <i class="fas fa-edit"></i>
                             </button>
