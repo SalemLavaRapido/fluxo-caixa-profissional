@@ -1582,17 +1582,29 @@
                 // Vincular no fluxo de caixa com modelo do veículo
                 const descricao = `Mensalidade - ${clienteNome} (${mes}) - Veículos: ${modelos}`;
                 
+                // Data no formato YYYY-MM-DD (sem timezone)
+                const agora = new Date();
+                const dataFormatada = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}-${String(agora.getDate()).padStart(2, '0')}`;
+                
+                // Converter forma de pagamento para o padrão do sistema de entradas
+                const formaPagamentoMap = {
+                    'cartao_credito': 'credito',
+                    'cartao_debito': 'debito',
+                    'transferencia': 'pix',
+                    'dinheiro': 'dinheiro',
+                    'pix': 'pix'
+                };
+                const formaConvertida = formaPagamentoMap[forma] || forma;
+                
                 const { error: entradaError } = await supabaseClient
                     .from('entradas')
                     .insert([{
                         user_id: user.id,
                         descricao: descricao,
                         valor: valor,
-                        forma_pagamento: forma,
-                        categoria: 'Estacionamento Mensalista',
-                        data: new Date().toISOString(),
-                        data_entrada: new Date().toISOString(),
-                        cliente_id: clienteId,
+                        forma_pagamento: formaConvertida,
+                        categoria: 'mensalista',
+                        data: dataFormatada,
                         placa: placas
                     }]);
                 
