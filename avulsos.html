@@ -311,6 +311,91 @@
             background: rgba(255,255,255,0.2);
             color: #fff;
         }
+
+        /* CSS responsivo para mobile - não altera desktop */
+        @media (max-width: 768px) {
+            html, body {
+                max-width: 100%;
+                overflow-x: hidden;
+            }
+
+            .container, .container-fluid {
+                padding-left: 10px !important;
+                padding-right: 10px !important;
+            }
+
+            input.form-control, select.form-control, textarea.form-control,
+            input.form-control-custom, select.form-control-custom {
+                font-size: 14px !important;
+            }
+
+            .btn { font-size: 0.85rem; }
+            .btn-sm { font-size: 0.75rem; }
+
+            .navbar-brand { font-size: 0.95rem !important; }
+
+            h1, .h1 { font-size: 1.5rem !important; }
+            h2, .h2 { font-size: 1.3rem !important; }
+            h3, .h3 { font-size: 1.15rem !important; }
+            h4, .h4 { font-size: 1rem !important; }
+            h5, .h5 { font-size: 0.95rem !important; }
+
+            table { font-size: 0.8rem; }
+            .table-responsive {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .modal-dialog {
+                margin: 10px auto !important;
+                max-width: calc(100% - 20px) !important;
+            }
+            .modal-body { padding: 12px !important; }
+            .modal-footer {
+                flex-wrap: wrap !important;
+                padding: 10px !important;
+                gap: 6px;
+            }
+            .modal-footer .btn {
+                flex: 1 1 auto;
+                min-width: 0;
+            }
+            .modal-footer .w-100 {
+                flex: 0 0 100% !important;
+            }
+
+            .row > [class*="col-"] { margin-bottom: 8px; }
+
+            .d-flex.gap-2, .d-flex.gap-3 { flex-wrap: wrap; }
+
+            /* Tabela do pátio - botões de ação */
+            td .btn {
+                margin-bottom: 4px;
+                padding: 4px 8px;
+                font-size: 0.75rem;
+            }
+
+            .placa-badge {
+                font-size: 1rem !important;
+                padding: 6px 12px !important;
+            }
+
+            .resumo-item {
+                flex-wrap: wrap;
+                font-size: 0.85rem;
+            }
+
+            .resumo-total .valor {
+                font-size: 1.3rem !important;
+            }
+        }
+
+        @media (max-width: 430px) {
+            .navbar-brand strong { font-size: 0.85rem; }
+            .placa-badge {
+                font-size: 0.9rem !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -605,6 +690,9 @@
                     </button>
                     <button type="button" class="btn btn-success btn-lg" onclick="confirmarSaida()">
                         <i class="fas fa-check me-2"></i>Confirmar Saída
+                    </button>
+                    <button type="button" class="btn btn-info btn-lg w-100 mt-2" id="btnImprimirReciboAvulso" onclick="imprimirReciboAvulso()" style="display:none;">
+                        <i class="fas fa-print me-2"></i>IMPRIMIR RECIBO
                     </button>
                 </div>
             </div>
@@ -934,6 +1022,13 @@
             const infoValor = document.querySelector('.resumo-total small');
             if (infoValor) infoValor.textContent = `R$ ${valorHora.toFixed(2)} por hora`;
             
+            // Esconder botão de imprimir até a saída ser confirmada
+            const btnImprimir = document.getElementById('btnImprimirReciboAvulso');
+            if (btnImprimir) btnImprimir.style.display = 'none';
+            // Restaurar botão de confirmar saída
+            const btnConfirmar = document.querySelector('#modalSaida .btn-success');
+            if (btnConfirmar) btnConfirmar.style.display = '';
+            
             const modal = new bootstrap.Modal(document.getElementById('modalSaida'));
             modal.show();
         }
@@ -1013,14 +1108,29 @@
                 console.error('Erro ao registrar no caixa:', errorCaixa);
             }
             
-            // Fechar modal
-            const modal = bootstrap.Modal.getInstance(document.getElementById('modalSaida'));
-            modal.hide();
-            
             const msgDesconto = desconto > 0 ? ` (Desconto: R$ ${desconto.toFixed(2)})` : '';
             showAlert(`Saída registrada: ${veiculo.placa} - R$ ${valor.toFixed(2)}${msgDesconto}`, 'success');
             
-            // Recarregar dados
+            // Armazenar dados para impressão e mostrar botão imprimir
+            window.ultimaSaidaAvulso = {
+                placa: veiculo.placa,
+                cliente: veiculo.cliente_nome || '',
+                tipoVeiculo: tipoVeiculo,
+                dataEntrada: veiculo.data_entrada,
+                dataSaida: agora.toISOString(),
+                horas: horasCobradas,
+                valor: valor,
+                desconto: desconto,
+                formaPagamento: formaPagamento
+            };
+            const btnImprimir = document.getElementById('btnImprimirReciboAvulso');
+            if (btnImprimir) btnImprimir.style.display = 'block';
+            
+            // Esconder o botão de Confirmar Saída para evitar duplo registro
+            const btnConfirmar = document.querySelector('#modalSaida .btn-success');
+            if (btnConfirmar) btnConfirmar.style.display = 'none';
+            
+            // Recarregar dados (sem fechar modal para o usuário poder imprimir)
             await carregarVeiculosPatio();
             await carregarEstatisticas();
         }
@@ -1439,6 +1549,106 @@
         // Buscar por número do comprovante
         function buscarPorComprovante() {
             renderizarTabela();
+        }
+        
+        // Imprimir recibo de saída avulso (58mm)
+        function imprimirReciboAvulso() {
+            const d = window.ultimaSaidaAvulso;
+            if (!d) {
+                showAlert('Nenhuma saída recente para imprimir!', 'warning');
+                return;
+            }
+            
+            const tipoNome = d.tipoVeiculo === 'moto' ? 'MOTO' : d.tipoVeiculo === 'caminhonete' ? 'CAMINHONETE' : 'CARRO';
+            const formaPgtoMap = {
+                'dinheiro': 'DINHEIRO',
+                'pix': 'PIX',
+                'debito': 'CARTÃO DÉBITO',
+                'credito': 'CARTÃO CRÉDITO'
+            };
+            const formaPgto = formaPgtoMap[d.formaPagamento] || d.formaPagamento.toUpperCase();
+            const dtEntrada = new Date(d.dataEntrada).toLocaleString('pt-BR');
+            const dtSaida = new Date(d.dataSaida).toLocaleString('pt-BR');
+            const dtImpressao = new Date().toLocaleString('pt-BR');
+            
+            const conteudo = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Recibo Avulso - ${d.placa}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Courier New', monospace;
+            width: 58mm;
+            max-width: 58mm;
+            padding: 4mm 2mm;
+            font-size: 11px;
+            color: #000;
+            text-align: center;
+        }
+        .recibo-58mm { width: 100%; text-align: center; }
+        .titulo { font-size: 13px; font-weight: bold; margin-bottom: 2px; }
+        .info { font-size: 10px; margin: 1px 0; }
+        .linha { border-top: 1px dashed #000; margin: 5px 0; }
+        .label { font-weight: bold; font-size: 11px; margin-top: 4px; }
+        .valor-linha { font-size: 11px; margin: 2px 0; word-break: break-word; }
+        .total { font-size: 14px; font-weight: bold; margin: 6px 0; }
+        .status { font-size: 13px; font-weight: bold; border: 2px solid #000; padding: 4px; margin: 6px 0; }
+        .rodape { font-size: 9px; margin-top: 6px; }
+        @media print {
+            body { width: 58mm; margin: 0; padding: 4mm 2mm; }
+            @page { margin: 0; size: 58mm auto; }
+        }
+    </style>
+</head>
+<body>
+    <div class="recibo-58mm">
+        <div class="titulo">SALÉM LAVA RÁPIDO<br>& ESTACIONAMENTO</div>
+        <div class="info">CNPJ: 63.992.071/0001-38</div>
+        <div class="info">Rua Mariana Junqueira, 1024</div>
+        <div class="info">Centro - Ribeirão Preto/SP</div>
+        <div class="info">WhatsApp: (16) 99395-3720</div>
+        <div class="linha"></div>
+        <div class="label">RECIBO DE PAGAMENTO</div>
+        <div class="info">TIPO: AVULSO</div>
+        <div class="linha"></div>
+        <div class="label">PLACA</div>
+        <div class="valor-linha">${d.placa}</div>
+        <div class="label">VEÍCULO</div>
+        <div class="valor-linha">${tipoNome}</div>
+        ${d.cliente ? `<div class="label">CLIENTE</div><div class="valor-linha">${d.cliente}</div>` : ''}
+        <div class="label">SERVIÇO</div>
+        <div class="valor-linha">Estacionamento Avulso<br>${d.horas} hora(s)</div>
+        <div class="linha"></div>
+        <div class="info">Entrada: ${dtEntrada}</div>
+        <div class="info">Saída: ${dtSaida}</div>
+        <div class="linha"></div>
+        ${d.desconto > 0 ? `<div class="info">Desconto: R$ ${d.desconto.toFixed(2)}</div>` : ''}
+        <div class="total">VALOR PAGO<br>R$ ${d.valor.toFixed(2)}</div>
+        <div class="info">Pagamento: ${formaPgto}</div>
+        <div class="status">PAGO</div>
+        <div class="linha"></div>
+        <div class="rodape">Emitido em: ${dtImpressao}</div>
+        <div class="rodape">Obrigado pela preferência!</div>
+    </div>
+    <script>
+        window.onload = function() {
+            window.print();
+            setTimeout(function(){ window.close(); }, 300);
+        };
+    <\/script>
+</body>
+</html>`;
+            
+            const janela = window.open('', '_blank', 'width=400,height=600');
+            if (!janela) {
+                showAlert('Habilite os pop-ups para imprimir o recibo!', 'warning');
+                return;
+            }
+            janela.document.write(conteudo);
+            janela.document.close();
         }
         
         // Imprimir cupom de entrada
