@@ -686,25 +686,43 @@
                 if (veiculosError) throw veiculosError;
                 veiculos = veiculosData || [];
 
-                // Carregar lavagens
-                const { data: lavagensData, error: lavagensError } = await supabaseClient
-                    .from('lavagens')
-                    .select('*')
-                    .eq('user_id', user.id)
-                    .order('data_lavagem', { ascending: false });
+                // Carregar lavagens (tabela pode não existir)
+                try {
+                    const { data: lavagensData, error: lavagensError } = await supabaseClient
+                        .from('lavagens')
+                        .select('*')
+                        .eq('user_id', user.id)
+                        .order('data_lavagem', { ascending: false });
 
-                if (lavagensError) throw lavagensError;
-                lavagens = lavagensData || [];
+                    if (!lavagensError) {
+                        lavagens = lavagensData || [];
+                    } else {
+                        console.warn('Tabela lavagens não encontrada, continuando sem ela');
+                        lavagens = [];
+                    }
+                } catch (e) {
+                    console.warn('Erro ao carregar lavagens:', e);
+                    lavagens = [];
+                }
 
-                // Carregar pagamentos
-                const { data: pagamentosData, error: pagamentosError } = await supabaseClient
-                    .from('pagamentos')
-                    .select('*')
-                    .eq('user_id', user.id)
-                    .order('data_pagamento', { ascending: false });
+                // Carregar pagamentos (tabela pode não existir)
+                try {
+                    const { data: pagamentosData, error: pagamentosError } = await supabaseClient
+                        .from('pagamentos')
+                        .select('*')
+                        .eq('user_id', user.id)
+                        .order('data_pagamento', { ascending: false });
 
-                if (pagamentosError) throw pagamentosError;
-                pagamentos = pagamentosData || [];
+                    if (!pagamentosError) {
+                        pagamentos = pagamentosData || [];
+                    } else {
+                        console.warn('Tabela pagamentos não encontrada, continuando sem ela');
+                        pagamentos = [];
+                    }
+                } catch (e) {
+                    console.warn('Erro ao carregar pagamentos:', e);
+                    pagamentos = [];
+                }
 
                 renderizarClientes();
                 atualizarStats();
