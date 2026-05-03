@@ -920,7 +920,7 @@
                 const termoBusca = document.getElementById('campoBusca').value.toLowerCase().trim();
                 const nomeDestacado = cliente.nome.replace(
                     new RegExp(termoBusca, 'gi'), 
-                    match => `<mark style="background: yellow; color: black;">${match}</mark>`
+                    match => `<mark style='background: yellow; color: black;'>${match}</mark>`
                 );
                 
                 return `
