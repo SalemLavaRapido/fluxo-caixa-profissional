@@ -1767,7 +1767,7 @@ Obrigado pela preferência!`;
             }, 300);
         }
         
-        // Reimprimir cupom de entrada (versão mobile-friendly)
+        // Reimprimir cupom de entrada (versão direta - impressão automática)
         function reimprimirCupom(placa, cliente, dataEntrada, tipoVeiculo = 'carro', numeroComprovante = '0000000') {
             try {
                 console.log('Reimprimir cupom:', { placa, cliente, dataEntrada, tipoVeiculo, numeroComprovante });
@@ -1797,33 +1797,9 @@ Perda do ticket: exigidos documentos do veículo e do condutor.
 Emitido em: ${dtImpressao}
 Obrigado pela preferência!`;
             
-            // Detectar se é mobile
-            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+            // IMPRIMIR DIRETO - sem pedir para copiar (igual desktop)
+            imprimirCupomSimples(textoCupom, placa);
             
-            if (isMobile) {
-                // Mobile: mostrar opções simples
-                const opcao = confirm(`📱 CUPOM ENTRADA - ${placa}\n\nEscolha uma opção:\n\nOK → Copiar para WhatsApp/Email\nCancelar → Tentar impressão direta`);
-                
-                if (opcao) {
-                    // Copiar para área de transferência
-                    if (navigator.clipboard) {
-                        navigator.clipboard.writeText(textoCupom).then(() => {
-                            alert('✅ Cupom copiado!\n\nCole no WhatsApp, e-mail ou outro app.');
-                        }).catch(() => {
-                            // Fallback
-                            copiarTextoFallback(textoCupom);
-                        });
-                    } else {
-                        copiarTextoFallback(textoCupom);
-                    }
-                } else {
-                    // Tentar impressão direta
-                    imprimirCupomSimples(textoCupom, placa);
-                }
-            } else {
-                // Desktop: imprimir automaticamente
-                imprimirCupomSimples(textoCupom, placa);
-            }
             } catch (error) {
                 console.error('Erro ao reimprimir cupom:', error);
                 alert('❌ Erro ao imprimir cupom: ' + error.message);
@@ -1837,24 +1813,24 @@ Obrigado pela preferência!`;
 <html>
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cupom Entrada - ${placa}</title>
     <style>
         body { 
             font-family: 'Courier New', monospace; 
             font-size: 11px; 
             width: 58mm; 
-            margin: 0; 
+            max-width: 100%;
+            margin: 0 auto; 
             padding: 2mm; 
             text-align: center; 
         }
-        pre { 
-            margin: 0; 
-            white-space: pre-wrap; 
-            word-wrap: break-word; 
-        }
         @media print {
+            body { width: 58mm; max-width: 58mm; }
             @page { margin: 0; size: 58mm auto; }
-            body { width: 58mm; }
+        }
+        @media screen and (max-width: 768px) {
+            body { width: 100%; max-width: 100%; padding: 10px; }
         }
     </style>
 </head>
@@ -1863,27 +1839,37 @@ Obrigado pela preferência!`;
     <script>
         setTimeout(() => {
             window.print();
-            setTimeout(() => window.close(), 1000);
-        }, 100);
+            // No mobile, não fechar automaticamente para dar tempo de imprimir
+            if (window.innerWidth > 768) {
+                setTimeout(() => window.close(), 2000);
+            }
+        }, 500);
     <\/script>
 </body>
 </html>`;
             
-            // Tentar abrir em nova janela
+            // Tentar abrir em nova janela primeiro
             try {
-                const w = window.open('', '_blank', 'width=300,height=400');
-                if (w) {
+                const w = window.open('', '_blank', 'width=300,height=400,scrollbars=yes');
+                if (w && !w.closed) {
                     w.document.write(html);
                     w.document.close();
+                    w.focus();
                     return;
                 }
             } catch (e) {
-                console.log('Popup bloqueado, usando mesma janela');
+                console.log('Popup bloqueado ou falhou:', e);
             }
             
-            // Fallback: mesma janela
-            document.write(html);
-            document.close();
+            // Fallback: abrir na mesma janela
+            try {
+                window.open('', '_self');
+                document.write(html);
+                document.close();
+            } catch (e) {
+                console.error('Erro ao abrir janela de impressão:', e);
+                alert('❌ Não foi possível abrir a janela de impressão. Verifique as permissões do navegador.');
+            }
         }
     </script>
 </body>
