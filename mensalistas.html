@@ -1219,6 +1219,22 @@
             if (!user) return;
 
             try {
+                // Salvar na tabela pagamentos (para histórico)
+                const { error: pagamentoError } = await supabaseClient
+                    .from('pagamentos')
+                    .insert([{
+                        user_id: user.id,
+                        cliente_id: clienteId,
+                        mes_referencia: mes,
+                        valor: valor,
+                        forma_pagamento: forma,
+                        data_pagamento: new Date().toISOString()
+                    }]);
+
+                if (pagamentoError) {
+                    console.warn('Erro ao salvar pagamento (tabela pode não existir):', pagamentoError);
+                }
+
                 // Vincular no fluxo de caixa (tabela entradas)
                 const descricao = `Mensalidade - ${clienteNome} (${mes})`;
                 
