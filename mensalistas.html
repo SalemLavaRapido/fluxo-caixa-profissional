@@ -1521,30 +1521,12 @@
             
             // Abrir janela de impressão
             const printWindow = window.open('', '_blank');
-            printWindow.document.write(`
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>Recibo de Mensalidade - ${clienteNome}</title>
-                    <style>
-                        @media print {
-                            body { margin: 0; }
-                            @page { margin: 10mm; }
-                        }
-                    </style>
-                </head>
-                <body>
-                    ${reciboContent}
-                    <script>
-                        window.onload = function() {
-                            window.print();
-                            window.close();
-                        }
-                    </script>
-                </body>
-                </html>
-            `);
+            printWindow.document.write('<!DOCTYPE html><html><head><title>Recibo de Mensalidade - ' + clienteNome + '</title><style>@media print { body { margin: 0; } @page { margin: 10mm; } }</style></head><body>' + reciboContent + '</body></html>');
             printWindow.document.close();
+            printWindow.onload = function() {
+                printWindow.print();
+                printWindow.close();
+            };
         }
 
         // Mostrar alertas
