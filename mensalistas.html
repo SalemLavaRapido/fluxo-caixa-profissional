@@ -2070,6 +2070,11 @@
 
                 showAlert('Pagamento excluído com sucesso!', 'success');
                 await carregarDados();
+                // Reaplicar busca se houver termo de busca
+                const campoBusca = document.getElementById('campoBusca');
+                if (campoBusca && campoBusca.value.trim()) {
+                    filtrarClientes();
+                }
 
                 // Reabrir modal para atualizar
                 const modal = bootstrap.Modal.getInstance(document.getElementById('modalHistoricoPagamentos'));
