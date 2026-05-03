@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+'<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -76,7 +76,7 @@
             display: flex;
             gap: 20px;
             flex-wrap: wrap;
-            margin-bottom: 15px;
+            margin-bottom: 1'5px;
         }
 
         .cliente-info-item {
@@ -914,38 +914,44 @@
             const container = document.getElementById('listaClientes');
             
             const veiculosCliente = veiculos.filter(v => v.cliente_id === cliente.id);
-            const lavagensCliente = lavagens.filter(l => veiculosCliente.some(v => v.placa === l.placa));
             const pagamentosCliente = pagamentos.filter(p => p.cliente_id === cliente.id);
+            const lavagensCliente = getLavagensCliente(veiculosCliente);
             
             container.innerHTML = `
-                <div class="cliente-card fade-in">
-                    <div class="cliente-header">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <h5 class="mb-1">${cliente.nome}</h5>
-                                <div class="cliente-info">
-                                    <div class="cliente-info-item">
-                                        <i class="fas fa-phone"></i>
-                                        ${formatarTelefone(cliente.telefone)}
-                                    </div>
-                                    ${cliente.empresa ? `
-                                        <div class="cliente-info-item">
-                                            <i class="fas fa-building"></i>
-                                            ${cliente.empresa}
-                                        </div>
-                                    ` : ''}
-                                    ${cliente.data_vencimento ? `
-                                        <div class="cliente-info-item">
-                                            <i class="fas fa-calendar"></i>
-                                            ${new Date(cliente.data_vencimento + 'T00:00:00').toLocaleDateString('pt-BR')}
-                                        </div>
-                                    ` : ''}
+                <div class="card-cliente fade-in">
+                    <div class="card-cliente-header">
+                        <h3 class="cliente-nome">${cliente.nome}</h3>
+                        <div>
+                            <button class="btn btn-outline-warning btn-sm me-2" onclick="abrirModalEditarCliente('${cliente.id}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-outline-danger btn-sm" onclick="excluirCliente('${cliente.id}', '${cliente.nome}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-cliente-body">
+                        <div class="cliente-info">
+                            <div class="cliente-info-item">
+                                <i class="fas fa-phone"></i>
+                                ${formatarTelefone(cliente.telefone)}
+                            </div>
+                            ${cliente.empresa ? `
+                                <div class="cliente-info-item">
+                                    <i class="fas fa-building"></i>
+                                    ${cliente.empresa}
                                 </div>
+                            ` : ''}
+                            <div class="cliente-info-item">
+                                <i class="fas fa-dollar-sign"></i>
+                                R$ ${(cliente.valor_mensal || 0).toFixed(2)}
                             </div>
-                            <div class="text-end">
-                                <h4 class="mb-0">R$ ${(cliente.valor_mensal || 0).toFixed(2)}</h4>
-                                <small class="text-success">/mês</small>
-                            </div>
+                            ${cliente.data_vencimento ? `
+                                <div class="cliente-info-item">
+                                    <i class="fas fa-calendar"></i>
+                                    ${new Date(cliente.data_vencimento + 'T00:00:00').toLocaleDateString('pt-BR')}
+                                </div>
+                            ` : ''}
                         </div>
                         
                         ${cliente.observacao ? `
@@ -963,16 +969,27 @@
                                 <p class="text-muted">Nenhum veículo cadastrado</p>
                             ` : veiculosCliente.map(v => `
                                 <div class="veiculo-card">
-                                    <i class="fas fa-car me-2"></i>
-                                    <strong>${v.placa}</strong> - ${v.modelo} ${v.cor ? `(${v.cor})` : ''}
+                                    <div class="veiculo-info">
+                                        <span class="placa-badge">${v.placa}</span>
+                                        <span>${v.modelo || ''} ${v.cor || ''}</span>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-outline-warning btn-sm" onclick="editarVeiculo('${v.id}')" title="Editar Veículo">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-danger btn-sm" onclick="excluirVeiculo('${v.id}', '${v.placa}')" title="Excluir Veículo">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
                                 </div>
                             `).join('')}
+                            
+                            <button class="btn btn-outline-primary btn-sm mt-2" onclick="abrirModalVeiculo('${cliente.id}')">
+                                <i class="fas fa-plus me-2"></i>Adicionar Veículo
+                            </button>
                         </div>
                         
                         <div class="d-flex gap-2 mt-3">
-                            <button class="btn btn-outline-primary btn-sm" onclick="abrirModalVeiculo('${cliente.id}', '${cliente.nome}')">
-                                <i class="fas fa-plus me-1"></i>Veículo
-                            </button>
                             <button class="btn btn-outline-info btn-sm flex-fill" onclick="abrirHistoricoLavagens('${cliente.id}', '${cliente.nome}')">
                                 <i class="fas fa-soap me-1"></i>Histórico Lavagens
                                 <span class="badge bg-info ms-1">${lavagensCliente.length}</span>
