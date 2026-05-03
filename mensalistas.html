@@ -1516,6 +1516,11 @@
 
                 showAlert('Veículo excluído!', 'success');
                 await carregarDados();
+                // Reaplicar busca se houver termo de busca
+                const campoBusca = document.getElementById('campoBusca');
+                if (campoBusca && campoBusca.value.trim()) {
+                    filtrarClientes();
+                }
 
             } catch (error) {
                 console.error('Erro ao excluir veículo:', error);
@@ -1736,6 +1741,11 @@
 
                 showAlert(`Cliente "${nome}" excluído!`, 'success');
                 await carregarDados();
+                // Reaplicar busca se houver termo de busca
+                const campoBusca = document.getElementById('campoBusca');
+                if (campoBusca && campoBusca.value.trim()) {
+                    filtrarClientes();
+                }
 
             } catch (error) {
                 console.error('Erro ao excluir cliente:', error);
