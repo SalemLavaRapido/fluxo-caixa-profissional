@@ -455,25 +455,25 @@
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">
+                <div class="modal-body" style="background: rgba(255,255,255,0.05);">
                     <form id="formPagamento">
                         <input type="hidden" id="pagamentoClienteId">
                         <input type="hidden" id="pagamentoClienteNome">
                         <div class="mb-3">
                             <label class="form-label">Cliente</label>
-                            <input type="text" class="form-control" id="pagamentoClienteDisplay" readonly>
+                            <input type="text" class="form-control" id="pagamentoClienteDisplay" readonly style="background: rgba(255,255,255,0.2); color: #fff; border: 1px solid rgba(255,255,255,0.3);">
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Mês de Referência</label>
-                            <input type="month" class="form-control" id="pagamentoMes" required>
+                            <input type="month" class="form-control" id="pagamentoMes" required style="background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.3);">
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Valor (R$)</label>
-                            <input type="number" class="form-control" id="pagamentoValor" step="0.01" min="0" required>
+                            <input type="number" class="form-control" id="pagamentoValor" step="0.01" min="0" required style="background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.3);">
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Forma de Pagamento</label>
-                            <select class="form-control" id="pagamentoForma" required>
+                            <select class="form-control" id="pagamentoForma" required style="background: rgba(30,30,50,0.9); color: #fff; border: 1px solid rgba(255,255,255,0.3);">
                                 <option value="">Selecione...</option>
                                 <option value="dinheiro">Dinheiro</option>
                                 <option value="pix">PIX</option>
@@ -1187,8 +1187,10 @@
         // Abrir modal de pagamento
         function abrirModalPagamento(clienteId, nome, valorMensal) {
             document.getElementById('pagamentoClienteId').value = clienteId;
-            document.getElementById('pagamentoClienteNome').textContent = nome;
+            document.getElementById('pagamentoClienteNome').value = nome;
+            document.getElementById('pagamentoClienteDisplay').value = nome;
             document.getElementById('pagamentoValor').value = valorMensal || 0;
+            document.getElementById('pagamentoForma').value = '';
             
             const modal = new bootstrap.Modal(document.getElementById('modalPagamento'));
             modal.show();
@@ -1203,6 +1205,7 @@
         // Salvar pagamento
         async function salvarPagamento() {
             const clienteId = document.getElementById('pagamentoClienteId').value;
+            const clienteNome = document.getElementById('pagamentoClienteNome').value;
             const mes = document.getElementById('pagamentoMes').value;
             const valor = parseFloat(document.getElementById('pagamentoValor').value) || 0;
             const forma = document.getElementById('pagamentoForma').value;
@@ -1216,57 +1219,24 @@
             if (!user) return;
 
             try {
-                // Verificar se já existe pagamento para este mês
-                const { data: existente } = await supabaseClient
-                    .from('pagamentos')
-                    .select('*')
-                    .eq('user_id', user.id)
-                    .eq('cliente_id', clienteId)
-                    .eq('mes_referencia', mes)
-                    .single();
-
-                if (existente) {
-                    showAlert('Já existe um pagamento registrado para este mês!', 'warning');
-                    return;
-                }
-
-                // Inserir pagamento
-                const { error: pagamentoError } = await supabaseClient
-                    .from('pagamentos')
+                // Vincular no fluxo de caixa (tabela entradas) - sempre registra
+                const descricao = `Mensalidade - ${clienteNome} (${mes})`;
+                
+                const { error: entradaError } = await supabaseClient
+                    .from('entradas')
                     .insert([{
                         user_id: user.id,
-                        cliente_id: clienteId,
-                        mes_referencia: mes,
+                        tipo: 'mensalidade',
+                        descricao: descricao,
                         valor: valor,
                         forma_pagamento: forma,
-                        data_pagamento: new Date().toISOString()
+                        data: new Date().toISOString(),
+                        cliente_id: clienteId
                     }]);
-
-                if (pagamentoError) {
-                    showAlert('Erro ao registrar pagamento: ' + pagamentoError.message, 'danger');
+                
+                if (entradaError) {
+                    showAlert('Erro ao registrar pagamento: ' + entradaError.message, 'danger');
                     return;
-                }
-
-                // Vincular no fluxo de caixa (tabela entradas)
-                if (valor > 0 && forma !== 'cortesia') {
-                    const cliente = clientes.find(c => c.id === clienteId);
-                    const descricao = `Mensalidade - ${cliente ? cliente.nome : 'Cliente'} (${mes})`;
-                    
-                    const { error: entradaError } = await supabaseClient
-                        .from('entradas')
-                        .insert([{
-                            user_id: user.id,
-                            tipo: 'mensalidade',
-                            descricao: descricao,
-                            valor: valor,
-                            forma_pagamento: forma,
-                            data: new Date().toISOString(),
-                            cliente_id: clienteId
-                        }]);
-                    
-                    if (entradaError) {
-                        console.warn('Erro ao registrar no fluxo de caixa:', entradaError);
-                    }
                 }
 
                 showAlert('Pagamento registrado com sucesso!', 'success');
