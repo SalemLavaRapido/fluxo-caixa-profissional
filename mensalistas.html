@@ -1219,8 +1219,7 @@
             if (!user) return;
 
             try {
-                // Vincular no fluxo de caixa (tabela entradas) - desativado temporariamente
-                /*
+                // Vincular no fluxo de caixa (tabela entradas)
                 const descricao = `Mensalidade - ${clienteNome} (${mes})`;
                 
                 const { error: entradaError } = await supabaseClient
@@ -1230,6 +1229,7 @@
                         descricao: descricao,
                         valor: valor,
                         forma_pagamento: forma,
+                        categoria: 'Mensalista',
                         data: new Date().toISOString()
                     }]);
                 
@@ -1237,7 +1237,6 @@
                     showAlert('Erro ao registrar pagamento: ' + entradaError.message, 'danger');
                     return;
                 }
-                */
 
                 showAlert('Pagamento registrado com sucesso!', 'success');
                 
