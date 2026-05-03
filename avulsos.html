@@ -1551,7 +1551,7 @@
             renderizarTabela();
         }
         
-        // Imprimir recibo de saída avulso (58mm)
+        // Imprimir recibo de saída avulso (58mm) - versão mobile-friendly
         function imprimirReciboAvulso() {
             const d = window.ultimaSaidaAvulso;
             if (!d) {
@@ -1576,19 +1576,26 @@
 <html>
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Recibo Avulso - ${d.placa}</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Courier New', monospace;
-            width: 58mm;
-            max-width: 58mm;
-            padding: 4mm 2mm;
-            font-size: 11px;
+            background: #fff;
             color: #000;
-            text-align: center;
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
         }
-        .recibo-58mm { width: 100%; text-align: center; }
+        .recibo-container {
+            max-width: 58mm;
+            margin: 0 auto;
+            padding: 4mm 2mm;
+            text-align: center;
+            border: 1px solid #ddd;
+            background: white;
+        }
         .titulo { font-size: 13px; font-weight: bold; margin-bottom: 2px; }
         .info { font-size: 10px; margin: 1px 0; }
         .linha { border-top: 1px dashed #000; margin: 5px 0; }
@@ -1597,14 +1604,58 @@
         .total { font-size: 14px; font-weight: bold; margin: 6px 0; }
         .status { font-size: 13px; font-weight: bold; border: 2px solid #000; padding: 4px; margin: 6px 0; }
         .rodape { font-size: 9px; margin-top: 6px; }
+        .botoes-mobile {
+            margin: 20px 0;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .btn-mobile {
+            padding: 12px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+            max-width: 300px;
+        }
+        .btn-imprimir { background: #28a745; color: white; }
+        .btn-compartilhar { background: #007bff; color: white; }
+        .btn-copiar { background: #6c757d; color: white; }
+        .aviso-mobile {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            color: #856404;
+        }
         @media print {
-            body { width: 58mm; margin: 0; padding: 4mm 2mm; }
+            body { background: white; padding: 0; }
+            .recibo-container { 
+                width: 58mm; 
+                max-width: 58mm;
+                margin: 0;
+                border: none;
+                box-shadow: none;
+            }
+            .botoes-mobile, .aviso-mobile { display: none !important; }
             @page { margin: 0; size: 58mm auto; }
         }
     </style>
 </head>
 <body>
-    <div class="recibo-58mm">
+    <div class="aviso-mobile">
+        <strong>📱 Dicas para impressão:</strong><br>
+        • Use "Imprimir" para impressora térmica<br>
+        • "Compartilhar" envia por WhatsApp/E-mail<br>
+        • "Copiar Texto" para colar em outro app
+    </div>
+    
+    <div class="recibo-container">
         <div class="titulo">SALÉM LAVA RÁPIDO<br>& ESTACIONAMENTO</div>
         <div class="info">CNPJ: 63.992.071/0001-38</div>
         <div class="info">Rua Mariana Junqueira, 1024</div>
@@ -1633,22 +1684,105 @@
         <div class="rodape">Emitido em: ${dtImpressao}</div>
         <div class="rodape">Obrigado pela preferência!</div>
     </div>
+    
+    <div class="botoes-mobile">
+        <button class="btn-mobile btn-imprimir" onclick="window.print()">
+            🖨️ IMPRIMIR RECIBO
+        </button>
+        <button class="btn-mobile btn-compartilhar" onclick="compartilharRecibo()">
+            📤 COMPARTILHAR
+        </button>
+        <button class="btn-mobile btn-copiar" onclick="copiarTexto()">
+            📋 COPIAR TEXTO
+        </button>
+    </div>
+    
     <script>
-        window.onload = function() {
-            window.print();
-            setTimeout(function(){ window.close(); }, 300);
-        };
+        function compartilharRecibo() {
+            const texto = \`RECIBO AVULSO
+PLACA: ${d.placa}
+VEÍCULO: ${tipoNome}
+${d.cliente ? 'CLIENTE: ' + d.cliente + '\\n' : ''}
+SERVIÇO: Estacionamento Avulso (${d.horas}h)
+ENTRADA: ${dtEntrada}
+SAÍDA: ${dtSaida}
+VALOR: R$ ${d.valor.toFixed(2)}
+PAGAMENTO: ${formaPgto}
+STATUS: PAGO
+
+SALÉM LAVA RÁPIDO & ESTACIONAMENTO
+CNPJ: 63.992.071/0001-38
+Rua Mariana Junqueira, 1024 - Centro
+Ribeirão Preto/SP
+WhatsApp: (16) 99395-3720\`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Recibo Avulso - ' + d.placa,
+                    text: texto
+                }).catch(err => console.log('Erro ao compartilhar:', err));
+            } else {
+                // Fallback para navegadores que não suportam Web Share API
+                copiarTexto();
+            }
+        }
+        
+        function copiarTexto() {
+            const texto = \`RECIBO AVULSO
+PLACA: ${d.placa}
+VEÍCULO: ${tipoNome}
+${d.cliente ? 'CLIENTE: ' + d.cliente + '\\n' : ''}
+SERVIÇO: Estacionamento Avulso (${d.horas}h)
+ENTRADA: ${dtEntrada}
+SAÍDA: ${dtSaida}
+VALOR: R$ ${d.valor.toFixed(2)}
+PAGAMENTO: ${formaPgto}
+STATUS: PAGO
+
+SALÉM LAVA RÁPIDO & ESTACIONAMENTO
+CNPJ: 63.992.071/0001-38
+Rua Mariana Junqueira, 1024 - Centro
+Ribeirão Preto/SP
+WhatsApp: (16) 99395-3720\`;
+            
+            navigator.clipboard.writeText(texto).then(() => {
+                alert('✅ Recibo copiado para a área de transferência!\\n\\nCole em WhatsApp, e-mail ou outro app.');
+            }).catch(() => {
+                // Fallback para navegadores antigos
+                const textarea = document.createElement('textarea');
+                textarea.value = texto;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                alert('✅ Recibo copiado para a área de transferência!\\n\\nCole em WhatsApp, e-mail ou outro app.');
+            });
+        }
+        
+        // Tentar imprimir automaticamente no desktop, mas não no mobile
+        if (window.innerWidth > 768) {
+            window.onload = function() {
+                setTimeout(() => window.print(), 500);
+            };
+        }
     <\/script>
 </body>
 </html>`;
             
-            const janela = window.open('', '_blank', 'width=400,height=600');
-            if (!janela) {
-                showAlert('Habilite os pop-ups para imprimir o recibo!', 'warning');
-                return;
+            // Tentar abrir nova janela (desktop)
+            if (window.innerWidth > 768) {
+                const janela = window.open('', '_blank', 'width=400,height=800');
+                if (janela) {
+                    janela.document.write(conteudo);
+                    janela.document.close();
+                    return;
+                }
             }
-            janela.document.write(conteudo);
-            janela.document.close();
+            
+            // No mobile ou se popup bloqueado, abrir na mesma janela
+            const novaJanela = window.open('', '_self');
+            novaJanela.document.write(conteudo);
+            novaJanela.document.close();
         }
         
         // Imprimir cupom de entrada
