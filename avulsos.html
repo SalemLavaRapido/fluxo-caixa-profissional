@@ -876,15 +876,8 @@
             const numeroComprovante = data?.[0]?.numero_comprovante || proximoNumero;
             const numeroFormatado = String(numeroComprovante).padStart(7, '0');
             
-            // Imprimir cupom de entrada
-            imprimirCupomEntrada({
-                placa: placa,
-                cliente: nome,
-                tipoVeiculo: tipoVeiculo,
-                numeroComprovante: numeroFormatado,
-                valorHora: VALORES_HORA[tipoVeiculo],
-                data: new Date().toLocaleString('pt-BR')
-            });
+            // Imprimir cupom de entrada (usando função corrigida)
+            reimprimirCupom(placa, nome, new Date().toISOString(), tipoVeiculo, numeroFormatado);
             
             showAlert(`Entrada registrada: ${placa}`, 'success');
             
