@@ -916,19 +916,12 @@
                 const lavagensCliente = lavagens.filter(l => veiculosCliente.some(v => v.placa === l.placa));
                 const pagamentosCliente = pagamentos.filter(p => p.cliente_id === cliente.id);
                 
-                // Destaque o termo buscado
-                const termoBusca = document.getElementById('campoBusca').value.toLowerCase().trim();
-                const nomeDestacado = cliente.nome.replace(
-                    new RegExp(termoBusca, 'gi'), 
-                    match => `<mark style='background: yellow; color: black;'>${match}</mark>`
-                );
-                
                 return `
                     <div class="cliente-card fade-in">
                         <div class="cliente-header">
                             <div class="d-flex justify-content-between align-items-start">
                                 <div>
-                                    <h5 class="mb-1">${nomeDestacado}</h5>
+                                    <h5 class="mb-1">${cliente.nome}</h5>
                                     <div class="cliente-info">
                                         <div class="cliente-info-item">
                                             <i class="fas fa-phone"></i>
