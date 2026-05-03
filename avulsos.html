@@ -328,6 +328,43 @@
             input.form-control-custom, select.form-control-custom {
                 font-size: 14px !important;
             }
+            
+            /* Formulário de entrada - campos verticais no mobile */
+            #formEntrada .col,
+            #formEntrada .col-md-2 {
+                width: 100% !important;
+                max-width: 100% !important;
+                flex: 0 0 100% !important;
+                margin-bottom: 12px !important;
+            }
+            
+            #formEntrada input,
+            #formEntrada select {
+                font-size: 16px !important;
+                padding: 12px 15px !important;
+                height: auto !important;
+                border-radius: 8px !important;
+                border: 2px solid #e0e0e0 !important;
+            }
+            
+            #formEntrada input:focus,
+            #formEntrada select:focus {
+                border-color: #667eea !important;
+                box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25) !important;
+            }
+            
+            #formEntrada .btn-entrada {
+                font-size: 18px !important;
+                padding: 15px !important;
+                font-weight: bold !important;
+                border-radius: 8px !important;
+                height: auto !important;
+            }
+            
+            #formEntrada .row {
+                flex-direction: column !important;
+                gap: 0 !important;
+            }
 
             .btn { font-size: 0.85rem; }
             .btn-sm { font-size: 0.75rem; }
