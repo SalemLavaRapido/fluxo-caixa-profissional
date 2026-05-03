@@ -1496,6 +1496,11 @@
                         <td><strong>R$ ${valorFormatado}</strong></td>
                         <td class="text-center">${formatarFormaPagamento(h.forma_pagamento)}</td>
                         <td class="text-center">
+                            ${h.data_saida && h.forma_pagamento ? `
+                                <button class="btn btn-secondary btn-sm me-1" onclick="reimprimirReciboSaida('${h.placa}', '${h.cliente_nome || ''}', '${h.data_entrada}', '${h.data_saida}', '${h.tipo_veiculo || 'carro'}', '${h.valor || 0}', '${h.forma_pagamento}', '${h.horas || 0}', '${h.desconto || 0}')" title="Reimprimir Recibo">
+                                    <i class="fas fa-print"></i>
+                                </button>
+                            ` : ''}
                             <button class="btn btn-danger btn-sm" onclick="excluirHistorico('${h.id}', '${h.placa}', ${h.valor || 0})" title="Excluir">
                                 <i class="fas fa-trash"></i>
                             </button>
@@ -1503,6 +1508,60 @@
                     </tr>
                 `;
             }).join('');
+        }
+        
+        // Reimprimir recibo de saída do histórico
+        function reimprimirReciboSaida(placa, cliente, dataEntrada, dataSaida, tipoVeiculo, valor, formaPagamento, horas, desconto) {
+            try {
+                console.log('Reimprimir recibo saída:', { placa, cliente, dataEntrada, dataSaida, tipoVeiculo, valor, formaPagamento, horas, desconto });
+                
+                const nomeTipo = tipoVeiculo === 'moto' ? 'MOTO' : tipoVeiculo === 'caminhonete' ? 'CAMINHONETE' : 'CARRO';
+                const formaPgtoMap = {
+                    'dinheiro': 'DINHEIRO',
+                    'pix': 'PIX',
+                    'debito': 'CARTÃO DÉBITO',
+                    'credito': 'CARTÃO CRÉDITO'
+                };
+                const formaPgto = formaPgtoMap[formaPagamento] || formaPagamento.toUpperCase();
+                const dtEntrada = new Date(dataEntrada).toLocaleString('pt-BR');
+                const dtSaida = new Date(dataSaida).toLocaleString('pt-BR');
+                const dtImpressao = new Date().toLocaleString('pt-BR');
+                const valorNum = parseFloat(valor) || 0;
+                const descontoNum = parseFloat(desconto) || 0;
+                const horasNum = parseFloat(horas) || 0;
+            
+            // Criar texto formatado do recibo de saída
+            const textoRecibo = `<div class="titulo">SALÉM LAVA RÁPIDO & ESTACIONAMENTO</div>
+<div class="info">CNPJ: 63.992.071/0001-38</div>
+<div class="info">Rua Mariana Junqueira, 1024</div>
+<div class="info">Centro - Ribeirão Preto/SP</div>
+<div class="info">WhatsApp: (16) 99395-3720</div>
+<div class="linha"></div>
+<div class="titulo">RECIBO DE PAGAMENTO - AVULSO</div>
+<div class="info">TIPO: AVULSO</div>
+<div class="linha"></div>
+<div class="destaque">${placa}</div>
+<div class="info">${nomeTipo}</div>
+${cliente ? `<div class="info">CLIENTE: ${cliente}</div>` : ''}
+<div class="info">SERVIÇO: Estacionamento Avulso (${horasNum}h)</div>
+<div class="info">Entrada: ${dtEntrada}</div>
+<div class="info">Saída: ${dtSaida}</div>
+<div class="linha"></div>
+${descontoNum > 0 ? `<div class="info">Desconto: R$ ${descontoNum.toFixed(2)}</div>` : ''}
+<div class="total">VALOR PAGO<br>R$ ${valorNum.toFixed(2)}</div>
+<div class="info">Pagamento: ${formaPgto}</div>
+<div class="status">PAGO</div>
+<div class="linha"></div>
+<div class="info">Emitido em: ${dtImpressao}</div>
+<div class="info">Obrigado pela preferência!</div>`;
+            
+            // IMPRIMIR DIRETO - sem pedir para copiar
+            imprimirReciboSimples(textoRecibo, placa);
+            
+            } catch (error) {
+                console.error('Erro ao reimprimir recibo saída:', error);
+                alert('❌ Erro ao imprimir recibo: ' + error.message);
+            }
         }
         
         // Formatar forma de pagamento
