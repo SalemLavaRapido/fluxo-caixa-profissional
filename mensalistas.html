@@ -1615,7 +1615,7 @@
                             .select('*')
                             .eq('user_id', user.id)
                             .eq('categoria', 'Mensalista')
-                            .like('descricao', `%${nome}%`)
+                            .like('descricao', '%' + nome + '%')
                             .order('data', { ascending: false });
                         
                         if (entradasData) {
