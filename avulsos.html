@@ -1777,25 +1777,27 @@ Obrigado pela preferência!`;
                 const dataFormatada = new Date(dataEntrada).toLocaleString('pt-BR');
                 const dtImpressao = new Date().toLocaleString('pt-BR');
             
-            // Criar texto simples do cupom de entrada
-            const textoCupom = `SALÉM LAVA RÁPIDO & ESTACIONAMENTO
-CNPJ: 63.992.071/0001-38
-Rua Mariana Junqueira, 1024
-Centro - Ribeirão Preto/SP
-WhatsApp: (16) 99395-3720
-----------------------------------------
-COMPROVANTE DE ENTRADA
-Nº: ${numeroComprovante}
-PLACA: ${placa}
-VEÍCULO: ${nomeTipo} - R$ ${valorHora.toFixed(2)}/hora${cliente ? '\nCLIENTE: ' + cliente : ''}
-ENTRADA: ${dataFormatada}
-----------------------------------------
-GUARDE ESTE COMPROVANTE
-Não nos responsabilizamos por objetos no veículo.
-Perda do ticket: exigidos documentos do veículo e do condutor.
-----------------------------------------
-Emitido em: ${dtImpressao}
-Obrigado pela preferência!`;
+            // Criar texto formatado do cupom de entrada
+            const textoCupom = `<div class="titulo">SALÉM LAVA RÁPIDO & ESTACIONAMENTO</div>
+<div class="info">CNPJ: 63.992.071/0001-38</div>
+<div class="info">Rua Mariana Junqueira, 1024</div>
+<div class="info">Centro - Ribeirão Preto/SP</div>
+<div class="info">WhatsApp: (16) 99395-3720</div>
+<div class="linha"></div>
+<div class="titulo">COMPROVANTE DE ENTRADA</div>
+<div class="numero">Nº: ${numeroComprovante}</div>
+<div class="linha"></div>
+<div class="destaque">${placa}</div>
+<div class="info">${nomeTipo} - R$ ${valorHora.toFixed(2)}/hora</div>
+${cliente ? `<div class="info">CLIENTE: ${cliente}</div>` : ''}
+<div class="info">ENTRADA: ${dataFormatada}</div>
+<div class="linha"></div>
+<div class="aviso">GUARDE ESTE COMPROVANTE</div>
+<div class="aviso">Não nos responsabilizamos por objetos no veículo.</div>
+<div class="aviso">Perda do ticket: exigidos documentos do veículo e do condutor.</div>
+<div class="linha"></div>
+<div class="info">Emitido em: ${dtImpressao}</div>
+<div class="info">Obrigado pela preferência!</div>`;
             
             // IMPRIMIR DIRETO - sem pedir para copiar (igual desktop)
             imprimirCupomSimples(textoCupom, placa);
@@ -1818,24 +1820,67 @@ Obrigado pela preferência!`;
     <style>
         body { 
             font-family: 'Courier New', monospace; 
-            font-size: 11px; 
+            font-size: 14px; 
             width: 58mm; 
             max-width: 100%;
             margin: 0 auto; 
             padding: 2mm; 
             text-align: center; 
+            line-height: 1.2;
+        }
+        .titulo { 
+            font-size: 16px; 
+            font-weight: bold; 
+            margin-bottom: 3px;
+        }
+        .info { 
+            font-size: 12px; 
+            margin: 1px 0;
+        }
+        .linha { 
+            border-top: 1px dashed #000; 
+            margin: 5px 0; 
+        }
+        .destaque { 
+            font-size: 18px; 
+            font-weight: bold; 
+            margin: 5px 0;
+        }
+        .numero { 
+            font-size: 20px; 
+            font-weight: bold; 
+            margin: 5px 0;
+        }
+        .aviso { 
+            font-size: 10px; 
+            margin: 3px 0;
+            font-weight: bold;
         }
         @media print {
-            body { width: 58mm; max-width: 58mm; }
+            body { 
+                width: 58mm; 
+                max-width: 58mm;
+                font-size: 14px;
+            }
             @page { margin: 0; size: 58mm auto; }
         }
         @media screen and (max-width: 768px) {
-            body { width: 100%; max-width: 100%; padding: 10px; }
+            body { 
+                width: 100%; 
+                max-width: 100%; 
+                padding: 10px;
+                font-size: 16px;
+            }
+            .titulo { font-size: 18px; }
+            .info { font-size: 14px; }
+            .destaque { font-size: 20px; }
+            .numero { font-size: 22px; }
+            .aviso { font-size: 12px; }
         }
     </style>
 </head>
 <body>
-    <pre>${texto}</pre>
+    ${texto}
     <script>
         setTimeout(() => {
             window.print();
