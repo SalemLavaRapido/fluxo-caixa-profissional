@@ -311,6 +311,222 @@
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
+
+        /* CSS para impressão em impressora térmica 58mm */
+        @media print {
+            @page {
+                size: 58mm auto;
+                margin: 0;
+            }
+
+            body {
+                width: 58mm;
+                margin: 0;
+                padding: 0;
+                font-family: Arial, sans-serif;
+                font-size: 11px;
+                text-align: center;
+            }
+
+            .recibo-58mm {
+                width: 58mm;
+                max-width: 58mm;
+                padding: 4mm 2mm;
+                box-sizing: border-box;
+                text-align: center;
+            }
+
+            .recibo-58mm * {
+                text-align: center;
+            }
+
+            .linha {
+                border-top: 1px dashed #000;
+                margin: 6px 0;
+            }
+
+            /* Esconder elementos desnecessários na impressão */
+            .no-print {
+                display: none !important;
+            }
+        }
+
+        /* CSS responsivo para mobile - não altera desktop */
+        @media (max-width: 768px) {
+            html, body {
+                width: 100%;
+                max-width: 100%;
+                overflow-x: hidden;
+            }
+
+            * {
+                box-sizing: border-box;
+            }
+
+            .container,
+            .container-fluid {
+                width: 100% !important;
+                max-width: 100% !important;
+                padding-left: 10px !important;
+                padding-right: 10px !important;
+            }
+
+            .card,
+            .card-cliente,
+            .form-container {
+                width: 100% !important;
+                max-width: 100% !important;
+                padding: 12px !important;
+                margin: 8px 0 !important;
+            }
+
+            .card-cliente-header {
+                flex-direction: column;
+                gap: 8px;
+                align-items: flex-start !important;
+            }
+
+            .card-cliente-header > div {
+                width: 100%;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 4px;
+            }
+
+            .cliente-nome {
+                font-size: 1.1rem !important;
+                word-break: break-word;
+            }
+
+            .cliente-info {
+                flex-direction: column;
+                gap: 6px;
+            }
+
+            .cliente-info-item {
+                font-size: 0.85rem;
+                word-break: break-word;
+            }
+
+            input,
+            select,
+            textarea {
+                max-width: 100% !important;
+                width: 100% !important;
+                font-size: 14px !important;
+            }
+
+            .btn {
+                font-size: 0.85rem;
+                padding: 6px 10px;
+            }
+
+            .btn-sm {
+                font-size: 0.75rem;
+                padding: 4px 8px;
+            }
+
+            .navbar-brand {
+                font-size: 1rem !important;
+            }
+
+            .navbar-nav .nav-link {
+                font-size: 0.9rem;
+                padding: 8px !important;
+            }
+
+            h1, .h1 { font-size: 1.5rem !important; }
+            h2, .h2 { font-size: 1.3rem !important; }
+            h3, .h3 { font-size: 1.15rem !important; }
+            h4, .h4 { font-size: 1rem !important; }
+            h5, .h5 { font-size: 0.95rem !important; }
+            h6, .h6 { font-size: 0.9rem !important; }
+
+            table {
+                font-size: 0.8rem;
+            }
+
+            .table-responsive {
+                width: 100%;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .modal-dialog {
+                width: 95vw !important;
+                max-width: 95vw !important;
+                margin: 10px auto !important;
+            }
+
+            .modal-content {
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+
+            .modal-body {
+                padding: 12px !important;
+            }
+
+            .veiculo-card {
+                flex-direction: column;
+                align-items: flex-start !important;
+                gap: 8px;
+            }
+
+            .veiculo-info {
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+
+            .placa-badge {
+                font-size: 0.8rem;
+            }
+
+            .d-flex.gap-2 {
+                flex-wrap: wrap;
+            }
+
+            .d-flex.gap-2 .btn {
+                flex: 1 1 auto;
+                min-width: 0;
+            }
+
+            .row > [class*="col-"] {
+                margin-bottom: 8px;
+            }
+
+            /* Botões de ação no header dos cards */
+            .card-cliente-header .btn {
+                padding: 4px 8px;
+                font-size: 0.75rem;
+            }
+
+            /* Status do mês */
+            .status-mes-container {
+                flex-direction: column;
+                gap: 4px;
+            }
+        }
+
+        /* Mobile pequeno (até 430px) */
+        @media (max-width: 430px) {
+            .navbar-brand strong {
+                font-size: 0.9rem;
+            }
+
+            .card-cliente {
+                padding: 10px !important;
+            }
+
+            .btn {
+                font-size: 0.8rem;
+            }
+
+            .placa-badge {
+                font-size: 0.75rem;
+                padding: 2px 6px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -513,8 +729,11 @@
                                 <option value="transferencia">Transferência</option>
                             </select>
                         </div>
-                        <button type="submit" class="btn btn-success w-100">
+                        <button type="submit" class="btn btn-success w-100 mb-2">
                             <i class="fas fa-save me-2"></i>Registrar Pagamento
+                        </button>
+                        <button type="button" class="btn btn-info w-100" onclick="imprimirReciboPagamento()" id="btnImprimirRecibo" style="display: none;">
+                            <i class="fas fa-print me-2"></i>Imprimir Recibo
                         </button>
                     </form>
                 </div>
@@ -1620,6 +1839,21 @@
 
                 showAlert('Pagamento registrado com sucesso!', 'success');
                 
+                // Mostrar botão de impressão e armazenar dados para impressão
+                const btnImprimir = document.getElementById('btnImprimirRecibo');
+                if (btnImprimir) {
+                    btnImprimir.style.display = 'block';
+                    // Armazenar dados para impressão
+                    window.ultimoPagamento = {
+                        clienteId: clienteId,
+                        clienteNome: clienteNome,
+                        valor: valor,
+                        forma: forma,
+                        data: new Date().toISOString(),
+                        mes: mes
+                    };
+                }
+                
                 // Atualizar status do cliente para pago no mês atual
                 await atualizarStatusPagamento(clienteId, mes);
                 
@@ -1686,19 +1920,43 @@
                 })
                 .eq('id', clienteId);
 
-            if (error) {
-                showAlert('Erro ao salvar alterações: ' + error.message, 'danger');
-                return;
-            }
-
-            showAlert('Dados atualizados com sucesso!', 'success');
             
-            // Fechar modal e recarregar dados
-            const modal = bootstrap.Modal.getInstance(document.getElementById('modalEditarCliente'));
-            modal.hide();
-            
-            await carregarDados();
-        }
+    if (pagamentosCliente.length === 0) {
+        tabela.innerHTML = `
+            <div class="text-center py-4">
+                <i class="fas fa-receipt fa-2x mb-3 text-muted"></i>
+                <p class="text-muted">Nenhum pagamento registrado</p>
+            </div>
+        `;
+    } else {
+        tabela.innerHTML = `
+            <div class="table-responsive">
+                <table class="table table-dark">
+                    <thead>
+                        <tr>
+                            <th>Mês Referência</th>
+                            <th>Data Pagamento</th>
+                            <th>Valor</th>
+                            <th>Forma</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${pagamentosCliente.map(p => `
+                            <tr>
+                                <td>${formatarMes(p.mes_referencia)}</td>
+                                <td>${formatarData(p.data_pagamento)}</td>
+                                <td>R$ ${(p.valor || 0).toFixed(2)}</td>
+                                <td>${formatarFormaPagamento(p.forma_pagamento)}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary me-1" onclick="imprimirComprovantePagamento('${p.id}', '${cliente.nome}', '${p.valor}', '${p.mes_referencia}', '${p.forma_pagamento}', '${p.data_pagamento}')" title="Imprimir Comprovante">
+                                        <i class="fas fa-print"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="excluirPagamento('${p.id}', '${formatarMes(p.mes_referencia)}')" title="Excluir Pagamento">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
 
         // Excluir cliente
         async function excluirCliente(clienteId, nome) {
@@ -1919,61 +2177,108 @@
             return date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
         }
 
-        // Imprimir recibo de mensalista
-        function imprimirReciboMensalista(clienteId, clienteNome, valorMensal) {
-            const dataAtual = new Date().toLocaleDateString('pt-BR');
-            const mesAtual = new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-            
+        // Imprimir recibo de mensalista para impressora térmica 58mm
+        function imprimirReciboMensalista(clienteId, clienteNome, valorMensal, formaPagamento, dataPagamento, mesReferencia) {
             // Buscar veículos do cliente
             const veiculosCliente = veiculos.filter(v => v.cliente_id === clienteId);
-            const placasVeiculos = veiculosCliente.map(v => v.placa).join(', ') || 'Nenhum veículo cadastrado';
+            const placaPrincipal = veiculosCliente.length > 0 ? veiculosCliente[0].placa : 'N/A';
+            const modeloPrincipal = veiculosCliente.length > 0 ? veiculosCliente[0].modelo : 'N/A';
             
-            // Criar conteúdo do recibo
+            // Formatar data
+            const dataFormatada = new Date(dataPagamento).toLocaleDateString('pt-BR');
+            
+            // Converter forma de pagamento
+            const formaPagamentoMap = {
+                'dinheiro': 'Dinheiro',
+                'pix': 'PIX',
+                'credito': 'Cartão de Crédito',
+                'debito': 'Cartão de Débito'
+            };
+            const formaPagamentoFormatada = formaPagamentoMap[formaPagamento] || formaPagamento;
+            
+            // Criar conteúdo do recibo para impressora térmica 58mm
             const reciboContent = `
-                <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 400px; margin: 0 auto;">
-                    <div style="text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px;">
-                        <h2 style="margin: 0; color: #333;">RECIBO DE MENSALIDADE</h2>
-                        <p style="margin: 5px 0; color: #666;">Estacionamento</p>
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Recibo Mensalista - ${clienteNome}</title>
+                    <style>
+                        @media print {
+                            @page {
+                                size: 58mm auto;
+                                margin: 0;
+                            }
+                            body {
+                                width: 58mm;
+                                margin: 0;
+                                padding: 0;
+                                font-family: Arial, sans-serif;
+                                font-size: 11px;
+                                text-align: center;
+                            }
+                            .recibo-58mm {
+                                width: 58mm;
+                                max-width: 58mm;
+                                padding: 4mm 2mm;
+                                box-sizing: border-box;
+                                text-align: center;
+                            }
+                            .recibo-58mm * {
+                                text-align: center;
+                            }
+                            .linha {
+                                border-top: 1px dashed #000;
+                                margin: 6px 0;
+                            }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="recibo-58mm">
+                        <div style="font-weight: bold; font-size: 12px;">SALÉM LAVA RÁPIDO</div>
+                        <div style="font-weight: bold; font-size: 12px;">& ESTACIONAMENTO</div>
+                        <div style="font-size: 9px;">CNPJ: 63.992.071/0001-38</div>
+                        <div style="font-size: 9px;">Rua Mariana Junqueira, 1024</div>
+                        <div style="font-size: 9px;">Centro - Ribeirão Preto/SP</div>
+                        <div style="font-size: 9px;">WhatsApp: (16) 99395-3720</div>
+                        <div class="linha"></div>
+                        <div style="font-weight: bold; font-size: 11px;">RECIBO DE MENSALISTA</div>
+                        <div class="linha"></div>
+                        <div style="font-size: 10px;">Cliente: ${clienteNome}</div>
+                        <div style="font-size: 10px;">Placa: ${placaPrincipal}</div>
+                        <div style="font-size: 10px;">Veículo: ${modeloPrincipal}</div>
+                        <div style="font-size: 10px;">Mês ref.: ${mesReferencia}</div>
+                        <div style="font-size: 10px;">Valor: R$ ${parseFloat(valorMensal).toFixed(2)}</div>
+                        <div style="font-size: 10px;">Pagamento: ${formaPagamentoFormatada}</div>
+                        <div style="font-size: 10px;">Data: ${dataFormatada}</div>
+                        <div style="font-size: 10px; font-weight: bold;">Status: PAGO</div>
+                        <div class="linha"></div>
+                        <div style="font-size: 9px;">Obrigado pela preferência!</div>
+                        <div class="linha"></div>
                     </div>
-                    
-                    <div style="margin-bottom: 20px;">
-                        <p style="margin: 5px 0;"><strong>Cliente:</strong> ${clienteNome}</p>
-                        <p style="margin: 5px 0;"><strong>Período:</strong> ${mesAtual}</p>
-                        <p style="margin: 5px 0;"><strong>Data de Emissão:</strong> ${dataAtual}</p>
-                        <p style="margin: 5px 0;"><strong>Veículos:</strong> ${placasVeiculos}</p>
-                    </div>
-                    
-                    <div style="border: 2px solid #333; padding: 15px; margin-bottom: 20px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="font-size: 18px; font-weight: bold;">VALOR:</span>
-                            <span style="font-size: 24px; font-weight: bold; color: #333;">R$ ${parseFloat(valorMensal).toFixed(2)}</span>
-                        </div>
-                    </div>
-                    
-                    <div style="text-align: center; margin-top: 30px;">
-                        <div style="border-top: 1px solid #999; padding-top: 10px; margin-bottom: 20px;">
-                            <p style="margin: 0; font-size: 12px; color: #666;">Assinatura do Cliente</p>
-                            <div style="height: 40px; border-bottom: 1px solid #999; margin-top: 20px;"></div>
-                        </div>
-                        
-                        <div style="margin-top: 30px;">
-                            <p style="margin: 0; font-size: 10px; color: #999;">
-                                * Recibo válido para comprovação de pagamento<br>
-                                * Não duplicável sem assinatura
-                            </p>
-                        </div>
-                    </div>
-                </div>
+                </body>
+                </html>
             `;
             
             // Abrir janela de impressão
             const printWindow = window.open('', '_blank');
-            printWindow.document.write('<!DOCTYPE html><html><head><title>Recibo de Mensalidade - ' + clienteNome + '</title><style>@media print { body { margin: 0; } @page { margin: 10mm; } }</style></head><body>' + reciboContent + '</body></html>');
+            printWindow.document.write(reciboContent);
             printWindow.document.close();
             printWindow.onload = function() {
                 printWindow.print();
                 printWindow.close();
             };
+        }
+
+        // Imprimir recibo do último pagamento
+        function imprimirReciboPagamento() {
+            if (!window.ultimoPagamento) {
+                showAlert('Nenhum pagamento recente para imprimir!', 'warning');
+                return;
+            }
+            
+            const { clienteId, clienteNome, valor, forma, data, mes } = window.ultimoPagamento;
+            imprimirReciboMensalista(clienteId, clienteNome, valor, forma, data, mes);
         }
 
         // Formatar forma de pagamento

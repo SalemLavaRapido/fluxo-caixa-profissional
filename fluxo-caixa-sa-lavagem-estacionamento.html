@@ -545,9 +545,14 @@
                     <div class="tab-pane fade" id="saidas" role="tabpanel">
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h5>Gerenciar Saídas</h5>
-                            <button class="btn btn-danger" onclick="openModalSaida()">
-                                <i class="fas fa-plus me-2"></i>Nova Saída
-                            </button>
+                            <div>
+                                <button class="btn btn-outline-primary me-2" onclick="imprimirReciboSaida()">
+                                    <i class="fas fa-print me-2"></i>Imprimir Recibo
+                                </button>
+                                <button class="btn btn-danger" onclick="openModalSaida()">
+                                    <i class="fas fa-plus me-2"></i>Nova Saída
+                                </button>
+                            </div>
                         </div>
 
                         <div class="table-custom">
@@ -1427,6 +1432,189 @@
             }
         }
 
+        // Imprimir recibo de saída avulsa
+        function imprimirReciboSaida() {
+            // Criar formulário temporário para capturar dados da saída
+            const modalHTML = `
+                <div class="modal fade" id="modalReciboSaida" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Imprimir Recibo de Saída</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <form id="formReciboSaida">
+                                    <div class="mb-3">
+                                        <label class="form-label">Descrição da Saída</label>
+                                        <input type="text" class="form-control" id="reciboDescricao" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Categoria</label>
+                                        <select class="form-control" id="reciboCategoria" required>
+                                            <option value="">Selecione...</option>
+                                            <option value="aluguel">Aluguel</option>
+                                            <option value="agua">Água</option>
+                                            <option value="luz">Luz</option>
+                                            <option value="telefone">Telefone</option>
+                                            <option value="internet">Internet</option>
+                                            <option value="material-limpeza">Material de Limpeza</option>
+                                            <option value="manutencao">Manutenção</option>
+                                            <option value="salarios">Salários</option>
+                                            <option value="impostos">Impostos</option>
+                                            <option value="outros">Outros</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Tipo</label>
+                                        <select class="form-control" id="reciboTipo" required>
+                                            <option value="">Selecione...</option>
+                                            <option value="fixo">Fixo</option>
+                                            <option value="variavel">Variável</option>
+                                            <option value="avulso">Avulso</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Valor (R$)</label>
+                                        <input type="number" class="form-control" id="reciboValor" step="0.01" min="0" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Observação</label>
+                                        <textarea class="form-control" id="reciboObservacao" rows="2"></textarea>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                <button type="button" class="btn btn-primary" onclick="gerarReciboSaida()">Gerar Recibo</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Remover modal existente se houver
+            const existingModal = document.getElementById('modalReciboSaida');
+            if (existingModal) {
+                existingModal.remove();
+            }
+            
+            // Adicionar modal ao body
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+            
+            // Mostrar modal
+            const modal = new bootstrap.Modal(document.getElementById('modalReciboSaida'));
+            modal.show();
+        }
+        
+        // Gerar recibo de saída
+        function gerarReciboSaida() {
+            const descricao = document.getElementById('reciboDescricao').value;
+            const categoria = document.getElementById('reciboCategoria').value;
+            const tipo = document.getElementById('reciboTipo').value;
+            const valor = document.getElementById('reciboValor').value;
+            const observacao = document.getElementById('reciboObservacao').value;
+            
+            if (!descricao || !categoria || !tipo || !valor) {
+                alert('Preencha todos os campos obrigatórios!');
+                return;
+            }
+            
+            const dataAtual = new Date().toLocaleDateString('pt-BR');
+            const horaAtual = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            
+            // Mapear categorias
+            const categorias = {
+                'aluguel': 'Aluguel',
+                'agua': 'Água',
+                'luz': 'Luz',
+                'telefone': 'Telefone',
+                'internet': 'Internet',
+                'material-limpeza': 'Material de Limpeza',
+                'manutencao': 'Manutenção',
+                'salarios': 'Salários',
+                'impostos': 'Impostos',
+                'outros': 'Outros'
+            };
+            
+            // Mapear tipos
+            const tipos = {
+                'fixo': 'Fixo',
+                'variavel': 'Variável',
+                'avulso': 'Avulso'
+            };
+            
+            // Criar conteúdo do recibo
+            const reciboContent = `
+                <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 400px; margin: 0 auto;">
+                    <div style="text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px;">
+                        <h2 style="margin: 0; color: #333;">RECIBO DE SAÍDA</h2>
+                        <p style="margin: 5px 0; color: #666;">Sa Lavagem e Estacionamento</p>
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <p style="margin: 5px 0;"><strong>Data:</strong> ${dataAtual} - ${horaAtual}</p>
+                        <p style="margin: 5px 0;"><strong>Descrição:</strong> ${descricao}</p>
+                        <p style="margin: 5px 0;"><strong>Categoria:</strong> ${categorias[categoria] || categoria}</p>
+                        <p style="margin: 5px 0;"><strong>Tipo:</strong> ${tipos[tipo] || tipo}</p>
+                        ${observacao ? `<p style="margin: 5px 0;"><strong>Observação:</strong> ${observacao}</p>` : ''}
+                    </div>
+                    
+                    <div style="border: 2px solid #333; padding: 15px; margin-bottom: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 18px; font-weight: bold;">VALOR:</span>
+                            <span style="font-size: 24px; font-weight: bold; color: #333;">R$ ${parseFloat(valor).toFixed(2)}</span>
+                        </div>
+                    </div>
+                    
+                    <div style="text-align: center; margin-top: 30px;">
+                        <div style="border-top: 1px solid #999; padding-top: 10px; margin-bottom: 20px;">
+                            <p style="margin: 0; font-size: 12px; color: #666;">Assinatura do Responsável</p>
+                            <div style="height: 40px; border-bottom: 1px solid #999; margin-top: 20px;"></div>
+                        </div>
+                        
+                        <div style="margin-top: 30px;">
+                            <p style="margin: 0; font-size: 10px; color: #999;">
+                                * Recibo válido para comprovação de despesa<br>
+                                * Não duplicável sem assinatura
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Abrir janela de impressão
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Recibo de Saída - ${descricao}</title>
+                    <style>
+                        @media print {
+                            body { margin: 0; }
+                            @page { margin: 10mm; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${reciboContent}
+                    <script>
+                        window.onload = function() {
+                            window.print();
+                            window.close();
+                        }
+                    </script>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+            
+            // Fechar modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('modalReciboSaida'));
+            modal.hide();
+        }
+        
         // Inicializar sistema
         const fluxoCaixa = new FluxoCaixaSaLavagem();
     </script>
