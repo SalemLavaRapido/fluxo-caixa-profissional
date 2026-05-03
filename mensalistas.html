@@ -972,6 +972,9 @@
                             </div>
                             
                             <div class="d-flex gap-2 mt-3">
+                                <button class="btn btn-outline-primary btn-sm" onclick="abrirModalVeiculo('${cliente.id}', '${cliente.nome}')">
+                                    <i class="fas fa-plus me-1"></i>Veículo
+                                </button>
                                 <button class="btn btn-outline-info btn-sm flex-fill" onclick="abrirHistoricoLavagens('${cliente.id}', '${cliente.nome}')">
                                     <i class="fas fa-soap me-1"></i>Histórico Lavagens
                                     <span class="badge bg-info ms-1">${lavagensCliente.length}</span>
@@ -1434,8 +1437,9 @@
             if (!user) return;
 
             try {
-                // Buscar veículos do cliente para incluir placa
+                // Buscar veículos do cliente para incluir modelo e placa
                 const veiculosCliente = veiculos.filter(v => v.cliente_id === clienteId);
+                const modelos = veiculosCliente.map(v => `${v.modelo} (${v.placa})`).join(', ') || 'Nenhum veículo';
                 const placas = veiculosCliente.map(v => v.placa).join(', ') || 'Nenhuma placa';
                 
                 // Salvar na tabela pagamentos (para histórico)
@@ -1454,8 +1458,8 @@
                     console.warn('Erro ao salvar pagamento (tabela pode não existir):', pagamentoError);
                 }
 
-                // Vincular no fluxo de caixa com placa do veículo
-                const descricao = `Mensalidade - ${clienteNome} (${mes}) - Placas: ${placas}`;
+                // Vincular no fluxo de caixa com modelo do veículo
+                const descricao = `Mensalidade - ${clienteNome} (${mes}) - Veículos: ${modelos}`;
                 
                 const { error: entradaError } = await supabaseClient
                     .from('entradas')
