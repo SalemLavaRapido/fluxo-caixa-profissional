@@ -991,20 +991,31 @@
         }
 
         function limparBusca() {
-            document.getElementById('campoBusca').value = '';
-            renderizarClientes();
+            try {
+                const campoBusca = document.getElementById('campoBusca');
+                if (campoBusca) {
+                    campoBusca.value = '';
+                }
+                renderizarClientes();
+            } catch (erro) {
+                console.log('Erro ao limpar busca:', erro);
+            }
         }
 
         // Adicionar evento de busca (movido para o DOMContentLoaded principal)
         function setupBusca() {
-            const campoBusca = document.getElementById('campoBusca');
-            if (campoBusca) {
-                campoBusca.addEventListener('input', filtrarClientes);
-                campoBusca.addEventListener('keyup', function(e) {
-                    if (e.key === 'Escape') {
-                        limparBusca();
-                    }
-                });
+            try {
+                const campoBusca = document.getElementById('campoBusca');
+                if (campoBusca) {
+                    campoBusca.addEventListener('input', filtrarClientes);
+                    campoBusca.addEventListener('keyup', function(e) {
+                        if (e.key === 'Escape') {
+                            limparBusca();
+                        }
+                    });
+                }
+            } catch (erro) {
+                console.log('Erro ao configurar busca:', erro);
             }
         }
 
