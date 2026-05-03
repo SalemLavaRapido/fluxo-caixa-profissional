@@ -1444,11 +1444,43 @@
         }
 
         // Abrir histórico de pagamentos
-        function abrirHistoricoPagamentos(clienteId, nome) {
+        async function abrirHistoricoPagamentos(clienteId, nome) {
             const cliente = clientes.find(c => c.id === clienteId);
             if (!cliente) return;
 
-            const pagamentosCliente = pagamentos.filter(p => p.cliente_id === clienteId);
+            let pagamentosCliente = [];
+            
+            // Tentar buscar da tabela pagamentos primeiro
+            if (pagamentos.length > 0) {
+                pagamentosCliente = pagamentos.filter(p => p.cliente_id === clienteId);
+            } else {
+                // Se não tem pagamentos, buscar da tabela entradas
+                try {
+                    const user = JSON.parse(localStorage.getItem('currentUser'));
+                    if (user) {
+                        const { data: entradasData } = await supabaseClient
+                            .from('entradas')
+                            .select('*')
+                            .eq('user_id', user.id)
+                            .eq('categoria', 'Mensalista')
+                            .like('descricao', `%${nome}%`)
+                            .order('data', { ascending: false });
+                        
+                        if (entradasData) {
+                            pagamentosCliente = entradasData.map(e => ({
+                                id: e.id,
+                                cliente_id: clienteId,
+                                mes_referencia: e.descricao.match(/\(([^)]+)\)/ ? e.descricao.match(/\(([^)]+)\)/)[1] : 'N/A',
+                                valor: e.valor,
+                                forma_pagamento: e.forma_pagamento,
+                                data_pagamento: e.data
+                            }));
+                        }
+                    }
+                } catch (error) {
+                    console.warn('Erro ao buscar pagamentos das entradas:', error);
+                }
+            }
 
             document.getElementById('historicoPagamentosNome').textContent = nome;
 
