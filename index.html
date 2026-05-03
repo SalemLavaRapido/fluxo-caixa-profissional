@@ -362,37 +362,29 @@
         /* CSS responsivo para mobile - não altera desktop */
         @media (max-width: 768px) {
             html, body {
-                width: 100%;
                 max-width: 100%;
                 overflow-x: hidden;
             }
 
-            * { box-sizing: border-box; }
-
             .container, .container-fluid {
-                width: 100% !important;
-                max-width: 100% !important;
                 padding-left: 10px !important;
                 padding-right: 10px !important;
             }
 
-            .card, .stat-card, .chart-wrapper, .form-container {
-                width: 100% !important;
-                max-width: 100% !important;
+            .stat-card, .chart-wrapper {
                 padding: 12px !important;
-                margin: 8px 0 !important;
+                margin-bottom: 12px !important;
             }
 
-            input, select, textarea {
-                max-width: 100% !important;
-                width: 100% !important;
+            input.form-control, select.form-control, textarea.form-control,
+            input.form-control-custom, select.form-control-custom {
                 font-size: 14px !important;
             }
 
-            .btn { font-size: 0.85rem; padding: 6px 10px; }
-            .btn-sm { font-size: 0.75rem; padding: 4px 8px; }
+            .btn { font-size: 0.85rem; }
+            .btn-sm { font-size: 0.75rem; }
 
-            .navbar-brand { font-size: 1rem !important; }
+            .navbar-brand { font-size: 0.95rem !important; }
             .navbar-nav .nav-link { font-size: 0.9rem; padding: 8px !important; }
 
             h1, .h1 { font-size: 1.5rem !important; }
@@ -403,19 +395,13 @@
 
             table { font-size: 0.8rem; }
             .table-responsive {
-                width: 100%;
                 overflow-x: auto;
                 -webkit-overflow-scrolling: touch;
             }
 
             .modal-dialog {
-                width: 95vw !important;
-                max-width: 95vw !important;
                 margin: 10px auto !important;
-            }
-            .modal-content {
-                width: 100% !important;
-                max-width: 100% !important;
+                max-width: calc(100% - 20px) !important;
             }
             .modal-body { padding: 12px !important; }
 
@@ -435,8 +421,7 @@
         }
 
         @media (max-width: 430px) {
-            .navbar-brand strong { font-size: 0.9rem; }
-            .btn { font-size: 0.8rem; }
+            .navbar-brand strong { font-size: 0.85rem; }
             .stat-value { font-size: 1rem !important; }
         }
     </style>
