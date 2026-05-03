@@ -341,9 +341,9 @@
             </div>
             <div class="col-md-4">
                 <div class="stats-card fade-in">
-                    <i class="fas fa-credit-card fa-2x mb-2" style="color: #38ef7d;"></i>
-                    <div class="stats-number" id="mensalidadesAtivas">0</div>
-                    <div>Mensalidades Ativas</div>
+                    <i class="fas fa-car fa-2x mb-2" style="color: #38ef7d;"></i>
+                    <div class="stats-number" id="totalVeiculos">0</div>
+                    <div>Veículos Cadastrados</div>
                 </div>
             </div>
             <div class="col-md-4">
@@ -856,8 +856,8 @@
         function atualizarStats() {
             document.getElementById('totalClientes').textContent = clientes.length;
             
-            const mensalidadesAtivas = clientes.filter(c => c.valor_mensal > 0).length;
-            document.getElementById('mensalidadesAtivas').textContent = mensalidadesAtivas;
+            // Total de veículos cadastrados
+            document.getElementById('totalVeiculos').textContent = veiculos.length;
             
             const faturamentoMensal = clientes.reduce((sum, c) => sum + (c.valor_mensal || 0), 0);
             document.getElementById('faturamentoMensal').textContent = `R$ ${faturamentoMensal.toFixed(0)}`;
