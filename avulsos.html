@@ -1649,31 +1649,76 @@ Obrigado pela preferência!`;
             document.body.removeChild(textarea);
         }
         
-        // Função de impressão simples
+        // Função de impressão simples para recibo de saída
         function imprimirReciboSimples(texto, placa) {
             const html = `
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Recibo Avulso - ${placa}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recibo Saída - ${placa}</title>
     <style>
         body { 
             font-family: 'Courier New', monospace; 
-            font-size: 11px; 
+            font-size: 14px; 
             width: 58mm; 
-            margin: 0; 
+            max-width: 100%;
+            margin: 0 auto; 
             padding: 2mm; 
             text-align: center; 
+            line-height: 1.2;
         }
-        pre { 
-            margin: 0; 
-            white-space: pre-wrap; 
-            word-wrap: break-word; 
+        .titulo { 
+            font-size: 16px; 
+            font-weight: bold; 
+            margin-bottom: 3px;
+        }
+        .info { 
+            font-size: 12px; 
+            margin: 1px 0;
+        }
+        .linha { 
+            border-top: 1px dashed #000; 
+            margin: 5px 0; 
+        }
+        .destaque { 
+            font-size: 18px; 
+            font-weight: bold; 
+            margin: 5px 0;
+        }
+        .total { 
+            font-size: 20px; 
+            font-weight: bold; 
+            margin: 6px 0;
+        }
+        .status { 
+            font-size: 16px; 
+            font-weight: bold; 
+            border: 2px solid #000; 
+            padding: 4px; 
+            margin: 6px 0;
         }
         @media print {
+            body { 
+                width: 58mm; 
+                max-width: 58mm;
+                font-size: 14px;
+            }
             @page { margin: 0; size: 58mm auto; }
-            body { width: 58mm; }
+        }
+        @media screen and (max-width: 768px) {
+            body { 
+                width: 100%; 
+                max-width: 100%; 
+                padding: 10px;
+                font-size: 16px;
+            }
+            .titulo { font-size: 18px; }
+            .info { font-size: 14px; }
+            .destaque { font-size: 20px; }
+            .total { font-size: 22px; }
+            .status { font-size: 18px; }
         }
     </style>
 </head>
@@ -1682,27 +1727,37 @@ Obrigado pela preferência!`;
     <script>
         setTimeout(() => {
             window.print();
-            setTimeout(() => window.close(), 1000);
-        }, 100);
+            // No mobile, não fechar automaticamente para dar tempo de imprimir
+            if (window.innerWidth > 768) {
+                setTimeout(() => window.close(), 2000);
+            }
+        }, 500);
     <\/script>
 </body>
 </html>`;
             
-            // Tentar abrir em nova janela
+            // Tentar abrir em nova janela primeiro
             try {
-                const w = window.open('', '_blank', 'width=300,height=400');
-                if (w) {
+                const w = window.open('', '_blank', 'width=300,height=400,scrollbars=yes');
+                if (w && !w.closed) {
                     w.document.write(html);
                     w.document.close();
+                    w.focus();
                     return;
                 }
             } catch (e) {
-                console.log('Popup bloqueado, usando mesma janela');
+                console.log('Popup bloqueado ou falhou:', e);
             }
             
-            // Fallback: mesma janela
-            document.write(html);
-            document.close();
+            // Fallback: abrir na mesma janela
+            try {
+                window.open('', '_self');
+                document.write(html);
+                document.close();
+            } catch (e) {
+                console.error('Erro ao abrir janela de impressão:', e);
+                alert('❌ Não foi possível abrir a janela de impressão. Verifique as permissões do navegador.');
+            }
         }
         
         // Imprimir cupom de entrada
