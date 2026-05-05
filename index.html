@@ -1274,7 +1274,7 @@
             alert(msg);
         }
 
-        // Carregar contas pendentes do mês e atualizar card + modal
+        // Carregar contas pendentes do período filtrado e atualizar card + modal
         async function carregarContasPagar() {
             const sb = getSupabase();
             const uid = getUserId();
@@ -1283,15 +1283,44 @@
                 return;
             }
 
-            const { inicio, fim } = periodoMesAtual();
-            const { data, error } = await sb
+            // Obter período dos filtros (igual à lógica do openModalSaida)
+            let inicio, fim;
+            const dataInicio = document.getElementById('dataInicio')?.value;
+            const dataFim = document.getElementById('dataFim')?.value;
+            
+            if (dataInicio && dataFim) {
+                // Filtro por período completo
+                inicio = dataInicio;
+                fim = dataFim;
+            } else if (dataInicio) {
+                // Só data inicial - usar mês completo dessa data
+                const dt = new Date(dataInicio);
+                inicio = new Date(dt.getFullYear(), dt.getMonth(), 1).toISOString().split('T')[0];
+                fim = new Date(dt.getFullYear(), dt.getMonth() + 1, 0).toISOString().split('T')[0];
+            } else if (dataFim) {
+                // Só data final - usar mês completo dessa data
+                const dt = new Date(dataFim);
+                inicio = new Date(dt.getFullYear(), dt.getMonth(), 1).toISOString().split('T')[0];
+                fim = new Date(dt.getFullYear(), dt.getMonth() + 1, 0).toISOString().split('T')[0];
+            } else {
+                // Sem filtros - usar mês atual (comportamento original)
+                const hoje = new Date();
+                inicio = new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString().split('T')[0];
+                fim = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).toISOString().split('T')[0];
+            }
+
+            let query = sb
                 .from('contas_pagar')
                 .select('*')
                 .eq('user_id', uid)
                 .eq('status', 'pendente')
-                .gte('data_vencimento', inicio)
-                .lte('data_vencimento', fim)
                 .order('data_vencimento', { ascending: true });
+
+            // Aplicar filtros de data apenas se existirem
+            if (inicio) query = query.gte('data_vencimento', inicio);
+            if (fim) query = query.lte('data_vencimento', fim);
+
+            const { data, error } = await query;
 
             if (error) {
                 console.error('[ContasPagar] Erro ao carregar:', error);
@@ -1326,9 +1355,25 @@
             if (!elTbody) return;
 
             if (elMes) {
-                const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-                const hoje = new Date();
-                elMes.textContent = `${meses[hoje.getMonth()]}/${hoje.getFullYear()}`;
+                // Exibir período filtrado no modal
+                const dataInicio = document.getElementById('dataInicio')?.value;
+                const dataFim = document.getElementById('dataFim')?.value;
+                
+                if (dataInicio && dataFim) {
+                    // Período completo
+                    elMes.textContent = `${fmtData(dataInicio)} a ${fmtData(dataFim)}`;
+                } else if (dataInicio || dataFim) {
+                    // Mês único
+                    const dataRef = dataInicio || dataFim;
+                    const dt = new Date(dataRef);
+                    const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+                    elMes.textContent = `${meses[dt.getMonth()]}/${dt.getFullYear()}`;
+                } else {
+                    // Mês atual (sem filtros)
+                    const hoje = new Date();
+                    const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+                    elMes.textContent = `${meses[hoje.getMonth()]}/${hoje.getFullYear()}`;
+                }
             }
             if (elCount) elCount.textContent = contas.length;
             if (elTotal) elTotal.textContent = fmtMoeda(total);
