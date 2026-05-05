@@ -1337,14 +1337,23 @@
             // Atualiza CARD do dashboard
             const elTotal = document.getElementById('totalContasPagar');
             const elQtd = document.getElementById('qtdContasPendentes');
+            console.log('[ContasPagar] Atualizando card - elTotal:', !!elTotal, 'elQtd:', !!elQtd, 'total:', total, 'count:', contas.length);
             if (elTotal) elTotal.textContent = fmtMoeda(total);
             if (elQtd) elQtd.textContent = `${contas.length} pendente${contas.length === 1 ? '' : 's'}`;
 
             // Atualiza MODAL (se aberto)
             renderizarListaContasPagar(contas, total);
+            console.log('[ContasPagar] Carregamento concluído com sucesso!');
         }
 
         function renderizarListaContasPagar(contas, total) {
+            console.log('[ContasPagar] Renderizando lista com', contas.length, 'contas, total:', total);
+            
+            // Elementos do card no dashboard
+            const elCardValor = document.getElementById('cpCardValor');
+            const elCardCount = document.getElementById('cpCardCount');
+            
+            // Elementos do modal
             const elMes = document.getElementById('modalCpMes');
             const elCount = document.getElementById('cpListaCount');
             const elVazio = document.getElementById('cpVazio');
@@ -1353,6 +1362,8 @@
             const elTbody = document.getElementById('cpTbody');
             const elTotal = document.getElementById('cpTotalPendente');
 
+            console.log('[ContasPagar] Elementos encontrados - CardValor:', !!elCardValor, 'CardCount:', !!elCardCount, 'Tbody:', !!elTbody);
+            
             if (!elTbody) return;
 
             if (elMes) {
