@@ -607,11 +607,11 @@
                 <div class="row g-3">
                     <div class="col-md-3">
                         <label class="form-label">Data Inicial</label>
-                        <input type="date" class="form-control form-control-custom" id="dataInicio">
+                        <input type="date" class="form-control form-control-custom" id="dataInicio" onchange="carregarContasPagar()">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Data Final</label>
-                        <input type="date" class="form-control form-control-custom" id="dataFim">
+                        <input type="date" class="form-control form-control-custom" id="dataFim" onchange="carregarContasPagar()">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Categoria</label>
@@ -1276,6 +1276,7 @@
 
         // Carregar contas pendentes do período filtrado e atualizar card + modal
         async function carregarContasPagar() {
+            console.log('[ContasPagar] Iniciando carregamento...');
             const sb = getSupabase();
             const uid = getUserId();
             if (!sb || !uid) {
