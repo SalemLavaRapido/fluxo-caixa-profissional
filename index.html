@@ -1594,6 +1594,20 @@
             });
         });
 
+        // Evento para carregar saídas quando a aba for ativada
+        document.addEventListener('DOMContentLoaded', function() {
+            const saidasTab = document.getElementById('saidas-tab');
+            if (saidasTab) {
+                saidasTab.addEventListener('shown.bs.tab', async function () {
+                    console.log('[Saidas] Aba Saídas ativada, carregando dados...');
+                    if (typeof saidasSystem !== 'undefined') {
+                        await saidasSystem.carregarSaidas();
+                        await saidasSystem.renderizarTabela();
+                    }
+                });
+            }
+        });
+
         // Carregar quando o usuário estiver logado.
         // Tenta a cada 1s até conseguir, máx. 30s.
         let tentativas = 0;
