@@ -1067,6 +1067,13 @@
     // Função salvar SAÍDA
     async function salvarSaidaFinal() {
         try {
+            // Verificar se está editando (ID no campo hidden OU no saidasSystem.editingId)
+            let saidaId = document.getElementById('saidaId').value;
+            if (!saidaId && typeof saidasSystem !== 'undefined' && saidasSystem.editingId) {
+                saidaId = saidasSystem.editingId;
+            }
+            console.log('[SALVAR SAIDA] saidaId detectado:', saidaId);
+            
             // Obter dados do formulário
             const dados = {
                 data: document.getElementById('saidaData').value,
@@ -1098,10 +1105,22 @@
             // Adicionar user_id
             dados.user_id = user.id;
             
-            // Salvar com await
-            const { data, error } = await supabase
-                .from('saidas')
-                .insert([dados]);
+            let error;
+            if (saidaId) {
+                // EDITAR: fazer UPDATE
+                const result = await supabase
+                    .from('saidas')
+                    .update(dados)
+                    .eq('id', saidaId)
+                    .eq('user_id', user.id);
+                error = result.error;
+            } else {
+                // NOVO: fazer INSERT
+                const result = await supabase
+                    .from('saidas')
+                    .insert([dados]);
+                error = result.error;
+            }
                 
             if (error) {
                 alert('Erro ao salvar: ' + error.message);
@@ -1109,8 +1128,12 @@
                 // Fechar modal
                 const modal = bootstrap.Modal.getInstance(document.getElementById('modalSaida'));
                 if (modal) modal.hide();
-                // Limpar formulário
+                // Limpar formulário e o ID de edição
                 document.getElementById('formSaida').reset();
+                document.getElementById('saidaId').value = '';
+                if (typeof saidasSystem !== 'undefined' && saidasSystem.editingId !== undefined) {
+                    saidasSystem.editingId = null;
+                }
                 // Atualizar dados sem recarregar página
                 await saidasSystem.carregarSaidas();
                 await saidasSystem.renderizarTabela();
@@ -1121,6 +1144,30 @@
             alert('Erro: ' + err.message);
         }
     }
+    
+    // Sobrescrever window.salvarSaida para evitar duplicação pelo handler antigo (saidas.js + app.js)
+    // O form submit dispara salvarSaida() de saidas.js, que faz INSERT mesmo durante edição.
+    // Substituímos para sempre usar salvarSaidaFinal (que verifica saidaId).
+    window.salvarSaida = function() {
+        console.log('[OVERRIDE] salvarSaida redirecionando para salvarSaidaFinal');
+        salvarSaidaFinal();
+    };
+    
+    // Substituir submit listener do form para evitar duplicação
+    document.addEventListener('DOMContentLoaded', function() {
+        const formSaida = document.getElementById('formSaida');
+        if (formSaida) {
+            // Clonar o form para remover todos os listeners existentes
+            const novoForm = formSaida.cloneNode(true);
+            formSaida.parentNode.replaceChild(novoForm, formSaida);
+            // Adicionar apenas o handler correto
+            novoForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                salvarSaidaFinal();
+            });
+        }
+    });
     
     function salvarEntradaSimples() {
         // Obter valores diretos dos campos
