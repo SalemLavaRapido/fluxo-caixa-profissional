@@ -704,9 +704,14 @@
                     <div class="tab-pane fade" id="saidas" role="tabpanel">
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h5>Gerenciar Saídas</h5>
-                            <button class="btn btn-danger" onclick="openModalSaida()">
-                                <i class="fas fa-plus me-2"></i>Nova Saída
-                            </button>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-warning" onclick="moverTodasParaContasPagar()">
+                                    <i class="fas fa-arrow-right me-2"></i>Mover Tudo para Contas a Pagar
+                                </button>
+                                <button class="btn btn-danger" onclick="openModalSaida()">
+                                    <i class="fas fa-plus me-2"></i>Nova Saída
+                                </button>
+                            </div>
                         </div>
 
                         <div class="table-custom">
