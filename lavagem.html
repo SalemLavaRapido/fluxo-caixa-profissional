@@ -1,13 +1,25 @@
-<!DOCTYPE html>
+'<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lavagem - Controle Completo</title>
+    <title>Mensalistas - Controle Completo</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Forçar recarregamento para evitar cache
+        console.log('Mensalistas atualizado em:', new Date().toISOString());
+        // Limpar cache forçado
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for(let registration of registrations) {
+                    registration.unregister();
+                }
+            });
+        }
+    </script>
     <style>
         :root {
             --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -15,234 +27,81 @@
             --danger-gradient: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
             --warning-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
             --info-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            --lavagem-gradient: linear-gradient(135deg, #00c6fb 0%, #005bea 100%);
         }
-        
+
         body {
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
             min-height: 100vh;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             color: #fff;
+            opacity: 0;
+            transition: opacity 0.2s ease;
         }
-        
+
+        body.loaded {
+            opacity: 1;
+        }
+
         .navbar-custom {
-            background: var(--lavagem-gradient);
+            background: var(--primary-gradient);
             box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
-        
-        .card-custom {
+
+        .card-cliente {
             background: rgba(255,255,255,0.1);
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255,255,255,0.2);
             border-radius: 20px;
             margin-bottom: 20px;
-        }
-        
-        .stats-card {
-            background: rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 15px;
-            padding: 20px;
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        
-        .stats-number {
-            font-size: 2em;
-            font-weight: bold;
-            color: #fff;
-        }
-        
-        .card-nova-lavagem {
-            background: var(--lavagem-gradient);
-            border-radius: 20px;
-            padding: 25px;
-            margin-bottom: 20px;
-        }
-        
-        .form-control-custom {
-            background: rgba(255,255,255,0.9);
-            border: none;
-            border-radius: 10px;
-            padding: 12px 15px;
-            color: #333;
-        }
-        
-        .form-control-custom:focus {
-            background: #fff;
-            box-shadow: 0 0 0 3px rgba(0,198,251,0.3);
-        }
-        
-        .btn-registrar {
-            background: #fff;
-            color: #005bea;
-            font-weight: bold;
-            padding: 12px 25px;
-            border-radius: 10px;
-            border: none;
-        }
-        
-        .btn-registrar:hover {
-            background: rgba(255,255,255,0.9);
-            color: #005bea;
-        }
-        
-        .btn-voltar {
-            background: rgba(255,255,255,0.1);
-            color: #fff;
-            border: 1px solid rgba(255,255,255,0.3);
-            padding: 10px 20px;
-            border-radius: 10px;
-        }
-        
-        .btn-voltar:hover {
-            background: rgba(255,255,255,0.2);
-            color: #fff;
-        }
-        
-        .table-lavagens {
-            background: rgba(255,255,255,0.05);
-            border-radius: 15px;
             overflow: hidden;
+            transition: all 0.3s;
         }
-        
-        .table-lavagens th {
-            background: rgba(0, 198, 251, 0.3);
-            color: #fff;
-            font-weight: 600;
-            padding: 15px;
-            border: none;
+
+        .card-cliente:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
         }
-        
-        .table-lavagens td {
-            color: #333;
-            background: rgba(255,255,255,0.9);
-            padding: 12px 15px;
-            border-bottom: 1px solid rgba(0,0,0,0.1);
-            vertical-align: middle;
-        }
-        
-        .badge-tipo {
-            padding: 6px 12px;
-            border-radius: 15px;
-            font-size: 0.85em;
-        }
-        
-        .badge-avulso {
-            background: var(--warning-gradient);
-            color: #fff;
-        }
-        
-        .badge-mensalista {
-            background: var(--success-gradient);
-            color: #fff;
-        }
-        
-        .placa-badge {
-            background: #005bea;
-            color: #fff;
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-weight: bold;
-            letter-spacing: 1px;
-        }
-        
-        .btn-whatsapp {
-            background: #25D366;
-            color: #fff;
-            border: none;
-            border-radius: 8px;
-            padding: 8px 12px;
-        }
-        
-        .btn-whatsapp:hover {
-            background: #128C7E;
-            color: #fff;
-        }
-        
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: rgba(255,255,255,0.5);
-        }
-        
-        .empty-state i {
-            font-size: 4em;
-            margin-bottom: 20px;
-        }
-        
-        .filtros-section {
-            background: rgba(255,255,255,0.05);
-            border-radius: 15px;
-            padding: 15px;
-            margin-bottom: 20px;
-        }
-        
-        .nav-tabs-custom .nav-link {
-            color: rgba(255,255,255,0.7);
-            border: none;
-            padding: 12px 20px;
-            border-radius: 10px;
-            margin-right: 5px;
-        }
-        
-        .nav-tabs-custom .nav-link.active {
-            background: var(--lavagem-gradient);
-            color: #fff;
-        }
-        
-        .nav-tabs-custom .nav-link:hover:not(.active) {
-            background: rgba(255,255,255,0.1);
-            color: #fff;
-        }
-        
-        .mensalista-lavagens {
-            background: rgba(255,255,255,0.05);
-            border-radius: 15px;
+
+        .card-cliente-header {
+            background: var(--primary-gradient);
             padding: 20px;
-            margin-bottom: 20px;
-        }
-        
-        .mensalista-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 15px;
-            background: rgba(255,255,255,0.05);
-            border-radius: 10px;
-            margin-bottom: 10px;
         }
-        
-        .dias-lavagem {
-            padding: 5px 12px;
-            border-radius: 15px;
-            font-size: 0.85em;
-        }
-        
-        .dias-ok {
-            background: var(--success-gradient);
-        }
-        
-        .dias-alerta {
-            background: #ffc107;
-            color: #000;
-        }
-        
-        .dias-urgente {
-            background: var(--danger-gradient);
-        }
-        
-        .secao-alertas-lavagem {
-            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
-            border-radius: 20px;
+
+        .card-cliente-body {
             padding: 20px;
-            margin-bottom: 20px;
         }
-        
-        .alerta-lavagem-item {
-            background: rgba(255,255,255,0.15);
-            border-radius: 12px;
+
+        .cliente-nome {
+            font-size: 1.4em;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .cliente-info {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 1'5px;
+        }
+
+        .cliente-info-item {
+            background: rgba(255,255,255,0.1);
+            padding: 10px 15px;
+            border-radius: 10px;
+        }
+
+        .cliente-info-item i {
+            margin-right: 8px;
+            color: #667eea;
+        }
+
+        .veiculo-card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 15px;
             padding: 15px;
             margin-bottom: 10px;
             display: flex;
@@ -251,84 +110,245 @@
             flex-wrap: wrap;
             gap: 10px;
         }
-        
-        .alerta-lavagem-info {
+
+        .veiculo-info {
             display: flex;
             align-items: center;
             gap: 15px;
         }
-        
-        .btn-whatsapp-lavagem {
+
+        .placa-badge {
+            background: rgba(255,255,255,0.2);
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1.1em;
+            letter-spacing: 2px;
+        }
+
+        .lavagem-ok {
+            background: var(--success-gradient);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+        }
+
+        .lavagem-alerta {
+            background: var(--danger-gradient);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
+
+        .btn-whatsapp {
             background: #25D366;
             color: #fff;
             border: none;
             padding: 8px 15px;
             border-radius: 8px;
-            font-weight: bold;
+            transition: all 0.3s;
         }
-        
-        .btn-whatsapp-lavagem:hover {
+
+        .btn-whatsapp:hover {
             background: #128C7E;
             color: #fff;
+            transform: translateY(-2px);
         }
-        
-        .badge-dias-sem-lavar {
-            background: rgba(0,0,0,0.3);
-            padding: 5px 12px;
+
+        .btn-lavagem {
+            background: var(--info-gradient);
+            color: #fff;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .btn-lavagem:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(79, 172, 254, 0.4);
+        }
+
+        .modal-custom .modal-content {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .modal-custom .modal-header {
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .modal-custom .modal-footer {
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .form-control, .form-select {
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: #fff;
+        }
+
+        textarea.form-control {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.4);
+            color: #fff;
+            resize: vertical;
+        }
+
+        .form-control:focus, .form-select:focus {
+            background: rgba(255,255,255,0.15);
+            border-color: #667eea;
+            color: #fff;
+            box-shadow: 0 0 0 0.25rem rgba(102, 126, 234, 0.25);
+        }
+
+        .form-control::placeholder {
+            color: rgba(255,255,255,0.5);
+        }
+
+        .form-label {
+            color: #fff;
+            font-weight: 500;
+        }
+
+        .alert {
+            border: none;
+            border-radius: 10px;
+        }
+
+        .alert-success {
+            background: var(--success-gradient);
+            color: #fff;
+        }
+
+        .alert-danger {
+            background: var(--danger-gradient);
+            color: #fff;
+        }
+
+        .alert-warning {
+            background: var(--warning-gradient);
+            color: #fff;
+        }
+
+        .alert-info {
+            background: var(--info-gradient);
+            color: #fff;
+        }
+
+        .secao-alertas {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
             border-radius: 15px;
-            font-size: 0.85em;
+            padding: 20px;
+            margin-bottom: 30px;
         }
-        
-        .stats-card-alerta {
-            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+
+        .alerta-item {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .alerta-vence-hoje {
+            border-left: 4px solid #ffc107;
+        }
+
+        .alerta-atrasado {
+            border-left: 4px solid #dc3545;
+        }
+
+        .badge-hoje {
+            background: #ffc107;
+            color: #000;
+        }
+
+        .badge-atrasado {
+            background: #dc3545;
+            color: #fff;
+        }
+
+        .stats-card {
+            background: rgba(255,255,255,0.1);
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255,255,255,0.2);
             border-radius: 15px;
             padding: 20px;
             text-align: center;
-            margin-bottom: 20px;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: all 0.3s;
         }
-        
-        .stats-card-alerta:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(255,107,107,0.4);
+
+        .stats-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
         }
-        
-        /* Garantir que todos os cards tenham o mesmo tamanho */
-        .stats-card, .stats-card-alerta {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            min-height: 140px;
-            padding: 20px 15px;
-        }
-        
-        .stats-card .stats-number, 
-        .stats-card-alerta .stats-number {
-            font-size: 2rem;
-            font-weight: 700;
+
+        .stats-number {
+            font-size: 2.5rem;
+            font-weight: bold;
             margin: 10px 0;
         }
-        
-        .stats-card div:not(.stats-number), 
-        .stats-card-alerta div:not(.stats-number) {
-            font-size: 0.9rem;
-            font-weight: 500;
-            opacity: 0.9;
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
         }
-        
-        /* Ajustar o container dos cards */
-        .row-cols-5 .col {
-            display: flex;
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-        
-        .row-cols-5 .col .stats-card,
-        .row-cols-5 .col .stats-card-alerta {
-            width: 100%;
+
+        /* CSS para impressão em impressora térmica 58mm */
+        @media print {
+            @page {
+                size: 58mm auto;
+                margin: 0;
+            }
+
+            body {
+                width: 58mm;
+                margin: 0;
+                padding: 0;
+                font-family: Arial, sans-serif;
+                font-size: 11px;
+                text-align: center;
+            }
+
+            .recibo-58mm {
+                width: 58mm;
+                max-width: 58mm;
+                padding: 4mm 2mm;
+                box-sizing: border-box;
+                text-align: center;
+            }
+
+            .recibo-58mm * {
+                text-align: center;
+            }
+
+            .linha {
+                border-top: 1px dashed #000;
+                margin: 6px 0;
+            }
+
+            /* Esconder elementos desnecessários na impressão */
+            .no-print {
+                display: none !important;
+            }
         }
 
         /* CSS responsivo para mobile - não altera desktop */
@@ -338,19 +358,62 @@
                 overflow-x: hidden;
             }
 
-            .container, .container-fluid {
+            .container,
+            .container-fluid {
                 padding-left: 10px !important;
                 padding-right: 10px !important;
             }
 
-            input.form-control, select.form-control, textarea.form-control {
+            .card-cliente {
+                padding: 12px !important;
+                margin: 8px 0 !important;
+            }
+
+            .card-cliente-header {
+                flex-direction: column;
+                gap: 8px;
+                align-items: flex-start !important;
+            }
+
+            .card-cliente-header > div:last-child {
+                width: 100%;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 4px;
+            }
+
+            .cliente-nome {
+                font-size: 1.1rem !important;
+                word-break: break-word;
+            }
+
+            .cliente-info {
+                flex-direction: column;
+                gap: 6px;
+            }
+
+            .cliente-info-item {
+                font-size: 0.85rem;
+                word-break: break-word;
+            }
+
+            input.form-control,
+            select.form-control,
+            textarea.form-control {
                 font-size: 14px !important;
             }
 
-            .btn { font-size: 0.85rem; }
-            .btn-sm { font-size: 0.75rem; }
+            .btn {
+                font-size: 0.85rem;
+            }
 
-            .navbar-brand { font-size: 0.95rem !important; }
+            .btn-sm {
+                font-size: 0.75rem;
+            }
+
+            .navbar-brand {
+                font-size: 0.95rem !important;
+            }
 
             h1, .h1 { font-size: 1.5rem !important; }
             h2, .h2 { font-size: 1.3rem !important; }
@@ -358,33 +421,62 @@
             h4, .h4 { font-size: 1rem !important; }
             h5, .h5 { font-size: 0.95rem !important; }
 
-            table { font-size: 0.8rem; }
-            .table-responsive {
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
-            }
-
             .modal-dialog {
                 margin: 10px auto !important;
                 max-width: calc(100% - 20px) !important;
             }
-            .modal-body { padding: 12px !important; }
 
-            .row > [class*="col-"] { margin-bottom: 8px; }
-
-            .row-cols-5 > .col {
-                flex: 0 0 50%;
-                max-width: 50%;
+            .modal-body {
+                padding: 12px !important;
             }
 
-            .d-flex.gap-2, .d-flex.gap-3 { flex-wrap: wrap; }
+            .veiculo-card {
+                flex-direction: column;
+                align-items: flex-start !important;
+                gap: 8px;
+            }
+
+            .veiculo-info {
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+
+            .d-flex.gap-2 {
+                flex-wrap: wrap;
+            }
+
+            .d-flex.gap-2 .btn {
+                flex: 1 1 auto;
+            }
+
+            .row > [class*="col-"] {
+                margin-bottom: 8px;
+            }
+
+            .card-cliente-header .btn {
+                padding: 4px 8px;
+                font-size: 0.75rem;
+            }
+
+            .table-responsive {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
         }
 
+        /* Mobile pequeno (até 430px) */
         @media (max-width: 430px) {
-            .navbar-brand strong { font-size: 0.85rem; }
-            .row-cols-5 > .col {
-                flex: 0 0 100%;
-                max-width: 100%;
+            .navbar-brand strong {
+                font-size: 0.85rem;
+            }
+
+            .card-cliente {
+                padding: 10px !important;
+            }
+
+            .placa-badge {
+                font-size: 0.75rem;
+                padding: 2px 6px;
             }
         }
     </style>
@@ -392,1223 +484,1917 @@
 <body>
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark navbar-custom">
-        <div class="container">
-            <a class="navbar-brand" href="#">
-                <i class="fas fa-car-wash me-2"></i>Lavagem
+        <div class="container-fluid">
+            <a class="navbar-brand" href="index.html">
+                <i class="fas fa-car me-2"></i>
+                <strong>Fluxo Caixa Profissional</strong>
             </a>
-            <div class="d-flex align-items-center">
-                <span class="me-3" id="userInfo"></span>
-                <a href="index.html" class="btn btn-voltar me-2">
-                    <i class="fas fa-arrow-left me-2"></i>Voltar
-                </a>
-                <button class="btn btn-outline-light" onclick="logout()">
-                    <i class="fas fa-sign-out-alt"></i>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text me-3" id="userInfo">
+                    <i class="fas fa-user me-1"></i>Carregando...
+                </span>
+                <button class="btn btn-outline-light btn-sm" onclick="logout()">
+                    <i class="fas fa-sign-out-alt me-1"></i>Sair
                 </button>
             </div>
         </div>
     </nav>
 
-    <!-- Container Principal -->
-    <div class="container py-4">
-        <!-- Alertas -->
-        <div id="alertContainer"></div>
-        
+    <!-- Main Content -->
+    <div class="container-fluid p-4">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-users me-2"></i>Mensalistas</h2>
+            <a href="index.html" class="btn btn-outline-light">
+                <i class="fas fa-arrow-left me-2"></i>Voltar
+            </a>
+        </div>
+
         <!-- Stats Cards -->
-        <div class="row mb-4 row-cols-5 g-2">
-            <div class="col">
-                <div class="stats-card h-100">
-                    <i class="fas fa-car-wash fa-2x mb-2" style="color: #00c6fb;"></i>
-                    <div class="stats-number" id="lavagensHoje">0</div>
-                    <div>Lavagens Hoje</div>
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="stats-card fade-in">
+                    <i class="fas fa-users fa-2x mb-2" style="color: #667eea;"></i>
+                    <div class="stats-number" id="totalClientes">0</div>
+                    <div>Clientes Ativos</div>
                 </div>
             </div>
-            <div class="col">
-                <div class="stats-card h-100">
-                    <i class="fas fa-calendar-week fa-2x mb-2" style="color: #38ef7d;"></i>
-                    <div class="stats-number" id="lavagensSemana">0</div>
-                    <div>Esta Semana</div>
+            <div class="col-md-4">
+                <div class="stats-card fade-in">
+                    <i class="fas fa-car fa-2x mb-2" style="color: #38ef7d;"></i>
+                    <div class="stats-number" id="totalVeiculos">0</div>
+                    <div>Veículos Cadastrados</div>
                 </div>
             </div>
-            <div class="col">
-                <div class="stats-card h-100">
-                    <i class="fas fa-calendar-alt fa-2x mb-2" style="color: #f5576c;"></i>
-                    <div class="stats-number" id="lavagensMes">0</div>
-                    <div>Este Mês</div>
-                </div>
-            </div>
-            <div class="col">
-                <div class="stats-card h-100">
+            <div class="col-md-4">
+                <div class="stats-card fade-in">
                     <i class="fas fa-dollar-sign fa-2x mb-2" style="color: #4facfe;"></i>
-                    <div class="stats-number" id="faturamentoMes">R$ 0</div>
-                    <div>Faturamento Mês</div>
-                </div>
-            </div>
-            <div class="col" id="cardAlertaContainer" style="display: none;">
-                <div class="stats-card-alerta h-100" onclick="toggleAlertasLavagem()">
-                    <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
-                    <div class="stats-number" id="alertasLavagemCount">0</div>
-                    <div>+30 dias sem Lavar</div>
+                    <div class="stats-number" id="faturamentoMensal">R$ 0</div>
+                    <div>Faturamento Mensal</div>
                 </div>
             </div>
         </div>
-        
-        <!-- Seção Alertas - Carros sem lavar há mais de 30 dias -->
-        <div class="secao-alertas-lavagem" id="secaoAlertasLavagem" style="display: none;">
+
+        <!-- Alertas de Pagamento -->
+        <div class="secao-alertas" id="secaoAlertas" style="display: none;">
             <h5 class="mb-3">
-                <i class="fas fa-exclamation-triangle me-2"></i>Carros sem Lavar há mais de 30 dias
-                <span class="badge bg-dark ms-2" id="totalAlertasLavagem">0</span>
+                <i class="fas fa-exclamation-triangle me-2"></i>Alertas de Pagamento
+                <span class="badge bg-warning ms-2" id="totalAlertas">0</span>
             </h5>
-            <div id="listaAlertasLavagem"></div>
+            <div id="listaAlertas"></div>
         </div>
-        
-        <!-- Card Nova Lavagem -->
-        <div class="card-nova-lavagem">
-            <h4 class="mb-4">
-                <i class="fas fa-plus-circle me-2"></i>Registrar Nova Lavagem
-            </h4>
-            <form id="formLavagem" class="row g-2">
-                <div class="col">
-                    <input type="text" class="form-control form-control-custom" id="placaLavagem" 
-                           placeholder="PLACA" maxlength="7" style="text-transform: uppercase;" required>
-                </div>
-                <div class="col">
-                    <input type="text" class="form-control form-control-custom" id="modeloLavagem" 
-                           placeholder="Modelo">
-                </div>
-                <div class="col">
-                    <input type="text" class="form-control form-control-custom" id="corLavagem" 
-                           placeholder="Cor">
-                </div>
-                <div class="col">
-                    <select class="form-control form-control-custom" id="tipoLavagem">
-                        <option value="simples">Simples</option>
-                        <option value="completa">Completa</option>
-                        <option value="polimento">Polimento</option>
-                        <option value="higienizacao">Higienização</option>
-                    </select>
-                </div>
-                <div class="col">
-                    <select class="form-control form-control-custom" id="tipoCliente">
-                        <option value="avulso">Avulso</option>
-                        <option value="mensalista">Mensalista</option>
-                    </select>
-                </div>
-                <div class="col">
-                    <input type="number" class="form-control form-control-custom" id="valorLavagem" 
-                           placeholder="R$" step="0.01" min="0">
-                </div>
-                <div class="col">
-                    <input type="text" class="form-control form-control-custom" id="celularLavagem" 
-                           placeholder="Celular">
-                </div>
-                <div class="col-md-2">
-                    <input type="text" class="form-control form-control-custom" id="obsLavagem" 
-                           placeholder="Observação">
-                </div>
-                <div class="col-auto">
-                    <button type="submit" class="btn btn-registrar">
-                        <i class="fas fa-plus me-2"></i>Adicionar na Fila
-                    </button>
-                </div>
-                <div class="col-auto">
-                    <button type="button" class="btn btn-outline-primary" onclick="imprimirReciboLavagem()">
-                        <i class="fas fa-print me-2"></i>Imprimir Recibo
-                    </button>
-                </div>
-            </form>
-        </div>
-        
-        <!-- Tabs -->
-        <ul class="nav nav-tabs nav-tabs-custom mb-4" id="tabsLavagem">
-            <li class="nav-item">
-                <a class="nav-link active" data-bs-toggle="tab" href="#tabHistorico">
-                    <i class="fas fa-history me-2"></i>Histórico de Lavagens
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" data-bs-toggle="tab" href="#tabMensalistas">
-                    <i class="fas fa-list-ol me-2"></i>Fila de Lavagem
-                </a>
-            </li>
-        </ul>
-        
-        <div class="tab-content">
-            <!-- Tab Histórico -->
-            <div class="tab-pane fade show active" id="tabHistorico">
-                <!-- Filtros -->
-                <div class="filtros-section">
+
+        <!-- Formulário de Cadastro -->
+        <div class="card mb-4" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-user-plus me-2"></i>Cadastrar Novo Mensalista</h5>
+            </div>
+            <div class="card-body" style="background: rgba(255,255,255,0.05);">
+                <form id="formCliente">
                     <div class="row g-3">
-                        <div class="col-md-3">
-                            <input type="date" class="form-control form-control-custom" id="filtroDataInicio">
+                        <div class="col-md-6">
+                            <label class="form-label">Nome *</label>
+                            <input type="text" class="form-control" id="clienteNome" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Telefone *</label>
+                            <input type="tel" class="form-control" id="clienteTelefone" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Empresa</label>
+                            <input type="text" class="form-control" id="clienteEmpresa">
                         </div>
                         <div class="col-md-3">
-                            <input type="date" class="form-control form-control-custom" id="filtroDataFim">
+                            <label class="form-label">Valor Mensal (R$)</label>
+                            <input type="number" class="form-control" id="clienteValor" step="0.01" min="0">
                         </div>
                         <div class="col-md-3">
-                            <select class="form-control form-control-custom" id="filtroTipo">
-                                <option value="">Todos os Tipos</option>
-                                <option value="avulso">Avulso</option>
-                                <option value="mensalista">Mensalista</option>
-                            </select>
+                            <label class="form-label">Vencimento</label>
+                            <input type="date" class="form-control" id="clienteVencimento">
                         </div>
-                        <div class="col-md-3">
-                            <button class="btn btn-registrar w-100" onclick="aplicarFiltros()">
-                                <i class="fas fa-filter me-2"></i>Filtrar
+                        <div class="col-12">
+                            <label class="form-label">Observação</label>
+                            <textarea class="form-control" id="clienteObservacao" rows="2"></textarea>
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Cadastrar Cliente
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Campo de Busca -->
+        <div class="card mb-4" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);">
+            <div class="card-body" style="background: rgba(255,255,255,0.05);">
+                <div class="row g-3">
+                    <div class="col-md-12">
+                        <label class="form-label">
+                            <i class="fas fa-search me-2"></i>Buscar por Nome ou Placa
+                        </label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="campoBusca" placeholder="Digite o nome do cliente ou placa do veículo..." style="background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.3);">
+                            <button class="btn btn-outline-secondary" type="button" onclick="limparBusca()">
+                                <i class="fas fa-times"></i> Limpar
                             </button>
                         </div>
                     </div>
                 </div>
-                
-                <!-- Tabela de Lavagens -->
-                <div class="card-custom p-4">
-                    <h5 class="mb-3">
-                        <i class="fas fa-list me-2"></i>Lavagens Realizadas
-                        <span class="badge bg-primary ms-2" id="totalLavagens">0</span>
-                    </h5>
-                    <div class="table-responsive table-lavagens">
-                        <table class="table mb-0">
-                            <thead>
-                                <tr>
-                                    <th><i class="fas fa-car me-2"></i>Placa</th>
-                                    <th><i class="fas fa-car-side me-2"></i>Modelo</th>
-                                    <th><i class="fas fa-palette me-2"></i>Cor</th>
-                                    <th><i class="fas fa-tag me-2"></i>Tipo Cliente</th>
-                                    <th><i class="fas fa-shower me-2"></i>Tipo Lavagem</th>
-                                    <th><i class="fas fa-calendar me-2"></i>Data/Hora</th>
-                                    <th><i class="fas fa-dollar-sign me-2"></i>Valor</th>
-                                    <th><i class="fas fa-credit-card me-2"></i>Pagamento</th>
-                                    <th><i class="fas fa-phone me-2"></i>Celular</th>
-                                    <th><i class="fas fa-cog me-2"></i>Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tabelaLavagens">
-                                <tr>
-                                    <td colspan="10" class="empty-state">
-                                            <i class="fas fa-car-wash"></i>
-                                            <p>Nenhuma lavagem registrada</p>
-                                        </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
             </div>
-            
-            <!-- Tab Fila de Lavagem -->
-            <div class="tab-pane fade" id="tabMensalistas">
-                <!-- Lista da Fila -->
-                <div class="card-custom p-4">
-                    <h5 class="mb-3">
-                        <i class="fas fa-list-ol me-2"></i>Fila de Lavagem
-                        <span class="badge bg-warning text-dark ms-2" id="totalFila">0</span>
+        </div>
+
+        <!-- Lista de Clientes -->
+        <div id="listaClientes"></div>
+    </div>
+
+    <!-- Modal Adicionar Veículo -->
+    <div class="modal fade modal-custom" id="modalVeiculo" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header" style="background: linear-gradient(135deg, #667eea, #764ba2);">
+                    <h5 class="modal-title">
+                        <i class="fas fa-car me-2"></i>Adicionar Veículo
                     </h5>
-                    <div class="table-responsive table-lavagens">
-                        <table class="table mb-0">
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th><i class="fas fa-car me-2"></i>Placa</th>
-                                    <th><i class="fas fa-car-side me-2"></i>Modelo</th>
-                                    <th><i class="fas fa-palette me-2"></i>Cor</th>
-                                    <th><i class="fas fa-tag me-2"></i>Cliente</th>
-                                    <th><i class="fas fa-shower me-2"></i>Lavagem</th>
-                                    <th><i class="fas fa-dollar-sign me-2"></i>Valor</th>
-                                    <th><i class="fas fa-phone me-2"></i>Celular</th>
-                                    <th><i class="fas fa-comment me-2"></i>Observação</th>
-                                    <th><i class="fas fa-cog me-2"></i>Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tabelaFila">
-                                <tr>
-                                    <td colspan="10" class="empty-state">
-                                        <i class="fas fa-car-wash"></i>
-                                        <p>Nenhum veículo na fila</p>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formVeiculo">
+                        <input type="hidden" id="veiculoClienteId">
+                        <input type="hidden" id="veiculoId">
+                        <div class="mb-3">
+                            <label class="form-label">Placa *</label>
+                            <input type="text" class="form-control" id="veiculoPlaca" maxlength="7" style="text-transform: uppercase;" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Modelo</label>
+                            <input type="text" class="form-control" id="veiculoModelo">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Cor</label>
+                            <input type="text" class="form-control" id="veiculoCor">
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-save me-2"></i>Salvar Veículo
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Modal Editar Lavagem -->
-    <div class="modal fade" id="modalEditarLavagem" tabindex="-1">
+    <!-- Modal Registrar Pagamento -->
+    <div class="modal fade modal-custom" id="modalPagamento" tabindex="-1">
         <div class="modal-dialog">
-            <div class="modal-content" style="background: #1a1a2e; color: #fff;">
-                <div class="modal-header" style="background: linear-gradient(135deg, #00c6fb, #005bea); border: none;">
+            <div class="modal-content">
+                <div class="modal-header" style="background: linear-gradient(135deg, #28a745, #1e7e34);">
                     <h5 class="modal-title">
-                        <i class="fas fa-edit me-2"></i>Editar Lavagem
+                        <i class="fas fa-receipt me-2"></i>Registrar Pagamento
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">
-                    <input type="hidden" id="editarLavagemId">
-                    <div class="mb-3">
-                        <label class="form-label">Placa</label>
-                        <input type="text" class="form-control form-control-custom" id="editarLavagemPlaca" 
-                               maxlength="7" style="text-transform: uppercase;">
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Modelo</label>
-                            <input type="text" class="form-control form-control-custom" id="editarLavagemModelo">
+                <div class="modal-body" style="background: rgba(255,255,255,0.05);">
+                    <form id="formPagamento">
+                        <input type="hidden" id="pagamentoClienteId">
+                        <input type="hidden" id="pagamentoClienteNome">
+                        <div class="mb-3">
+                            <label class="form-label">Cliente</label>
+                            <input type="text" class="form-control" id="pagamentoClienteDisplay" readonly style="background: rgba(255,255,255,0.2); color: #fff; border: 1px solid rgba(255,255,255,0.3);">
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Cor</label>
-                            <input type="text" class="form-control form-control-custom" id="editarLavagemCor">
+                        <div class="mb-3">
+                            <label class="form-label">Mês de Referência</label>
+                            <input type="month" class="form-control" id="pagamentoMes" required style="background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.3);">
                         </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Tipo Lavagem</label>
-                            <select class="form-control form-control-custom" id="editarLavagemTipo">
-                                <option value="simples">Simples</option>
-                                <option value="completa">Completa</option>
-                                <option value="polimento">Polimento</option>
-                                <option value="higienizacao">Higienização</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Tipo Cliente</label>
-                            <select class="form-control form-control-custom" id="editarLavagemTipoCliente">
-                                <option value="avulso">Avulso</option>
-                                <option value="mensalista">Mensalista</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
+                        <div class="mb-3">
                             <label class="form-label">Valor (R$)</label>
-                            <input type="number" class="form-control form-control-custom" id="editarLavagemValor" step="0.01" min="0">
+                            <input type="number" class="form-control" id="pagamentoValor" step="0.01" min="0" required style="background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.3);">
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Forma Pagamento</label>
-                            <select class="form-control form-control-custom" id="editarLavagemPagamento">
+                        <div class="mb-3">
+                            <label class="form-label">Forma de Pagamento</label>
+                            <select class="form-control" id="pagamentoForma" required style="background: rgba(30,30,50,0.9); color: #fff; border: 1px solid rgba(255,255,255,0.3);">
+                                <option value="">Selecione...</option>
                                 <option value="dinheiro">Dinheiro</option>
-                                <option value="pix">Pix</option>
-                                <option value="debito">Débito</option>
-                                <option value="credito">Crédito</option>
-                                <option value="cortesia">Cortesia</option>
+                                <option value="pix">PIX</option>
+                                <option value="cartao_credito">Cartão de Crédito</option>
+                                <option value="cartao_debito">Cartão de Débito</option>
+                                <option value="transferencia">Transferência</option>
                             </select>
                         </div>
-                    </div>
-                </div>
-                <div class="modal-footer border-0">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-primary" onclick="salvarEdicaoLavagem()">
-                        <i class="fas fa-save me-2"></i>Salvar
-                    </button>
+                        <button type="submit" class="btn btn-success w-100 mb-2">
+                            <i class="fas fa-save me-2"></i>Registrar Pagamento
+                        </button>
+                        <button type="button" class="btn btn-info w-100" onclick="imprimirReciboPagamento()" id="btnImprimirRecibo" style="display: none;">
+                            <i class="fas fa-print me-2"></i>Imprimir Recibo
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Modal Editar Fila -->
-    <div class="modal fade" id="modalEditarFila" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content" style="background: #1a1a2e; color: #fff;">
-                <div class="modal-header" style="background: linear-gradient(135deg, #f093fb, #f5576c); border: none;">
+    <!-- Modal Editar Cliente -->
+    <div class="modal fade modal-custom" id="modalEditarCliente" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header" style="background: linear-gradient(135deg, #17a2b8, #138496);">
                     <h5 class="modal-title">
-                        <i class="fas fa-edit me-2"></i>Editar Veículo na Fila
+                        <i class="fas fa-edit me-2"></i>Editar Cliente
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <input type="hidden" id="editarFilaId">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Placa</label>
-                            <input type="text" class="form-control form-control-custom" id="editarFilaPlaca" 
-                                   maxlength="7" style="text-transform: uppercase;">
+                    <form id="formEditarCliente">
+                        <input type="hidden" id="editarClienteId">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Nome *</label>
+                                <input type="text" class="form-control" id="editarClienteNome" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Telefone *</label>
+                                <input type="tel" class="form-control" id="editarClienteTelefone" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Empresa</label>
+                                <input type="text" class="form-control" id="editarClienteEmpresa">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Valor Mensal (R$)</label>
+                                <input type="number" class="form-control" id="editarClienteValor" step="0.01" min="0">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Vencimento</label>
+                                <input type="date" class="form-control" id="editarClienteVencimento">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Observação</label>
+                                <textarea class="form-control" id="editarClienteObservacao" rows="2"></textarea>
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-2"></i>Salvar Alterações
+                                </button>
+                            </div>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Modelo</label>
-                            <input type="text" class="form-control form-control-custom" id="editarFilaModelo">
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Cor</label>
-                            <input type="text" class="form-control form-control-custom" id="editarFilaCor">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Tipo Lavagem</label>
-                            <select class="form-control form-control-custom" id="editarFilaTipoLavagem">
-                                <option value="simples">Simples</option>
-                                <option value="completa">Completa</option>
-                                <option value="polimento">Polimento</option>
-                                <option value="higienizacao">Higienização</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Tipo Cliente</label>
-                            <select class="form-control form-control-custom" id="editarFilaTipoCliente">
-                                <option value="avulso">Avulso</option>
-                                <option value="mensalista">Mensalista</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Valor (R$)</label>
-                            <input type="number" class="form-control form-control-custom" id="editarFilaValor" step="0.01" min="0">
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Celular</label>
-                        <input type="text" class="form-control form-control-custom" id="editarFilaCelular" placeholder="(00) 00000-0000">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Observação</label>
-                        <textarea class="form-control form-control-custom" id="editarFilaObs" rows="3" 
-                                  style="background: #fff; color: #000;"></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer border-0">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-primary" onclick="salvarEdicaoFila()">
-                        <i class="fas fa-save me-2"></i>Salvar
-                    </button>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Modal Pagamento Fila -->
-    <div class="modal fade" id="modalPagamentoFila" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content" style="background: #1a1a2e; color: #fff;">
-                <div class="modal-header" style="background: linear-gradient(135deg, #11998e, #38ef7d); border: none;">
+    <!-- Modal Histórico de Lavagens -->
+    <div class="modal fade modal-custom" id="modalHistoricoLavagens" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header" style="background: linear-gradient(135deg, #17a2b8, #138496);">
                     <h5 class="modal-title">
-                        <i class="fas fa-check-circle me-2"></i>Finalizar e Pagar
+                        <i class="fas fa-soap me-2"></i>Histórico de Lavagens - <span id="historicoLavagensNome"></span>
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">
-                    <input type="hidden" id="pagamentoFilaId">
-                    <div class="text-center mb-4">
-                        <span class="placa-badge fs-4" id="pagamentoFilaPlaca">ABC-1234</span>
-                        <p class="mt-2 mb-0" id="pagamentoFilaInfo"></p>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Valor (R$)</label>
-                        <input type="number" class="form-control form-control-custom" id="pagamentoFilaValor" step="0.01" min="0">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Forma de Pagamento</label>
-                        <select class="form-control form-control-custom" id="pagamentoFilaForma">
-                            <option value="dinheiro">Dinheiro</option>
-                            <option value="pix">Pix</option>
-                            <option value="debito">Débito</option>
-                            <option value="credito">Crédito</option>
-                            <option value="cortesia">Cortesia</option>
-                        </select>
-                    </div>
+                <div class="modal-body" style="max-height: 60vh; overflow-y: auto;">
+                    <div id="tabelaHistoricoLavagens"></div>
                 </div>
                 <div class="modal-footer border-0">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-success" onclick="confirmarPagamentoFila()">
-                        <i class="fas fa-check me-2"></i>Confirmar Pagamento
-                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Modal Histórico de Pagamentos -->
+    <div class="modal fade modal-custom" id="modalHistoricoPagamentos" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header" style="background: linear-gradient(135deg, #28a745, #1e7e34);">
+                    <h5 class="modal-title">
+                        <i class="fas fa-receipt me-2"></i>Histórico de Pagamentos - <span id="historicoPagamentosNome"></span>
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" style="max-height: 60vh; overflow-y: auto;">
+                    <div id="tabelaHistoricoPagamentos"></div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         // Configuração Supabase
         const SUPABASE_URL = 'https://emkiewosmlnyjnpujbui.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVta2lld29zbWxueWpucHVqYnVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4MDMxOTIsImV4cCI6MjA5MjM3OTE5Mn0.ohXoyqFJfyJxlyS1Efpykr0l0zezC2MZjVJWf55NV0c';
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        
-        let lavagens = [];
-        let filaLavagem = [];
-        let veiculosMensalistas = [];
+
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // Variáveis globais
         let clientes = [];
-        
-        // Verificar autenticação
+        let veiculos = [];
+        let lavagens = [];
+        let pagamentos = [];
+        let filtroAtual = '';
+        let historicoClienteAtual = { id: null, nome: null }; // Para reabrir modal após exclusão
+
+        // Verificar login ao carregar
         document.addEventListener('DOMContentLoaded', async () => {
-            const user = JSON.parse(localStorage.getItem('currentUser'));
+            const user = JSON.parse(localStorage.getItem('currentUser') || 'null');
             if (!user) {
                 window.location.href = 'index.html';
                 return;
             }
-            
+
             document.body.classList.add('loaded');
             document.getElementById('userInfo').textContent = user.email;
-            
-            // Definir datas padrão dos filtros
+
+            // Definir mês atual no campo de pagamento
             const hoje = new Date();
-            const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-            document.getElementById('filtroDataInicio').value = inicioMes.toISOString().split('T')[0];
-            document.getElementById('filtroDataFim').value = hoje.toISOString().split('T')[0];
-            
+            document.getElementById('pagamentoMes').value = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`;
+
+            // Configurar campo de busca
+            setupBusca();
+
             await carregarDados();
         });
-        
-        // Formulário de lavagem
-        document.getElementById('formLavagem').addEventListener('submit', async (e) => {
+
+        // Formulário de cliente
+        document.getElementById('formCliente').addEventListener('submit', async (e) => {
             e.preventDefault();
-            await registrarLavagem();
+            await cadastrarCliente();
         });
-        
-        // Registrar lavagem (adiciona na fila)
-        async function registrarLavagem() {
-            const placa = document.getElementById('placaLavagem').value.toUpperCase().trim();
-            const modelo = document.getElementById('modeloLavagem').value.trim();
-            const cor = document.getElementById('corLavagem').value.trim();
-            const tipoLavagem = document.getElementById('tipoLavagem').value;
-            const tipoCliente = document.getElementById('tipoCliente').value;
-            const valor = parseFloat(document.getElementById('valorLavagem').value) || 0;
-            const celular = document.getElementById('celularLavagem').value.replace(/\D/g, '');
-            const observacao = document.getElementById('obsLavagem').value.trim();
-            
-            if (!placa) {
-                showAlert('Informe a placa do veículo!', 'warning');
+
+        // Cadastrar cliente
+        async function cadastrarCliente() {
+            const nome = document.getElementById('clienteNome').value.trim();
+            const telefone = document.getElementById('clienteTelefone').value.replace(/\D/g, '');
+            const empresa = document.getElementById('clienteEmpresa').value.trim();
+            const valor = parseFloat(document.getElementById('clienteValor').value) || 0;
+            const dataVencimento = document.getElementById('clienteVencimento').value || null;
+            const observacao = document.getElementById('clienteObservacao').value.trim();
+
+            if (!nome || !telefone) {
+                showAlert('Preencha nome e telefone!', 'warning');
                 return;
             }
-            
+
             const user = JSON.parse(localStorage.getItem('currentUser'));
-            
-            // Adicionar na fila de lavagem
-            const { error } = await supabaseClient
-                .from('fila_lavagem')
-                .insert([{
-                    user_id: user.id,
-                    placa: placa,
-                    modelo: modelo || null,
-                    cor: cor || null,
-                    tipo_lavagem: tipoLavagem,
-                    tipo_cliente: tipoCliente,
-                    valor: valor,
-                    celular: celular || null,
-                    observacao: observacao || null
-                }]);
-            
-            if (error) {
-                showAlert('Erro ao adicionar na fila: ' + error.message, 'danger');
-                return;
+            if (!user) return;
+
+            try {
+                const { error } = await supabaseClient
+                    .from('clientes_estacionamento')
+                    .insert([{
+                        user_id: user.id,
+                        nome: nome,
+                        telefone: telefone,
+                        empresa: empresa,
+                        valor_mensal: valor,
+                        data_vencimento: dataVencimento,
+                        observacao: observacao,
+                        status: 'ativo'
+                    }]);
+
+                if (error) {
+                    showAlert('Erro ao cadastrar cliente: ' + error.message, 'danger');
+                    return;
+                }
+
+                showAlert('Cliente cadastrado com sucesso!', 'success');
+                document.getElementById('formCliente').reset();
+                await carregarDados();
+
+            } catch (error) {
+                console.error('Erro ao cadastrar cliente:', error);
+                showAlert('Erro ao cadastrar cliente', 'danger');
             }
-            
-            showAlert(`${placa} adicionado na fila!`, 'success');
-            document.getElementById('formLavagem').reset();
-            
-            await carregarDados();
         }
-        
-        // Carregar dados
+
+        // Carregar dados do Supabase
         async function carregarDados() {
             const user = JSON.parse(localStorage.getItem('currentUser'));
             if (!user) return;
-            
-            // Carregar lavagens
-            const dataInicio = document.getElementById('filtroDataInicio').value;
-            const dataFim = document.getElementById('filtroDataFim').value;
-            const filtroTipo = document.getElementById('filtroTipo').value;
-            
-            let query = supabaseClient
-                .from('lavagens')
-                .select('*')
-                .eq('user_id', user.id)
-                .order('data_lavagem', { ascending: false });
-            
-            if (dataInicio) {
-                query = query.gte('data_lavagem', dataInicio + 'T00:00:00');
+
+            console.log('%c[MENSALISTAS v2] carregarDados iniciado', 'color:#0f0;font-weight:bold');
+            try {
+                // Carregar clientes
+                const { data: clientesData, error: clientesError } = await supabaseClient
+                    .from('clientes_estacionamento')
+                    .select('*')
+                    .eq('user_id', user.id)
+                    .eq('status', 'ativo')
+                    .order('nome');
+
+                if (clientesError) throw clientesError;
+                clientes = clientesData || [];
+
+                // Carregar veículos
+                const { data: veiculosData, error: veiculosError } = await supabaseClient
+                    .from('veiculos')
+                    .select('*')
+                    .eq('user_id', user.id)
+                    .order('placa');
+
+                if (veiculosError) throw veiculosError;
+                veiculos = veiculosData || [];
+
+                // Carregar lavagens (tabela pode não existir)
+                try {
+                    const { data: lavagensData, error: lavagensError } = await supabaseClient
+                        .from('lavagens')
+                        .select('*')
+                        .eq('user_id', user.id)
+                        .order('data_lavagem', { ascending: false });
+
+                    if (!lavagensError) {
+                        lavagens = lavagensData || [];
+                    } else {
+                        console.warn('Tabela lavagens não encontrada, continuando sem ela');
+                        lavagens = [];
+                    }
+                } catch (e) {
+                    console.warn('Erro ao carregar lavagens:', e);
+                    lavagens = [];
+                }
+
+                // Carregar pagamentos: combinar tabela 'pagamentos' + 'entradas' (categoria mensalista)
+                pagamentos = [];
+                try {
+                    const { data: pagamentosData, error: pagamentosError } = await supabaseClient
+                        .from('pagamentos')
+                        .select('*')
+                        .eq('user_id', user.id)
+                        .order('data_pagamento', { ascending: false });
+
+                    if (!pagamentosError && pagamentosData) {
+                        pagamentos = pagamentosData;
+                    }
+                } catch (e) {
+                    console.warn('Tabela pagamentos indisponível:', e);
+                }
+
+                // SEMPRE buscar também as entradas mensalistas, para garantir detecção
+                // de pagamentos mesmo quando a tabela 'pagamentos' não retornou registros.
+                // Tenta múltiplos filtros para cobrir diferentes formas de registro.
+                try {
+                    // 1) Pelo campo categoria (padrão 'mensalista')
+                    let { data: entradasData } = await supabaseClient
+                        .from('entradas')
+                        .select('*')
+                        .eq('user_id', user.id)
+                        .eq('categoria', 'mensalista')
+                        .order('data', { ascending: false });
+                    
+                    // 2) Se não encontrar, busca por descrição contendo 'Mensalidade'
+                    if (!entradasData || entradasData.length === 0) {
+                        const { data: entradasPorDesc } = await supabaseClient
+                            .from('entradas')
+                            .select('*')
+                            .eq('user_id', user.id)
+                            .ilike('descricao', '%Mensalidade%')
+                            .order('data', { ascending: false });
+                        entradasData = entradasPorDesc;
+                    }
+                    
+                    // 3) Se ainda não encontrar, busca por categoria 'Mensalista' (maiúsculo)
+                    if (!entradasData || entradasData.length === 0) {
+                        const { data: entradasPorCat } = await supabaseClient
+                            .from('entradas')
+                            .select('*')
+                            .eq('user_id', user.id)
+                            .eq('categoria', 'Mensalista')
+                            .order('data', { ascending: false });
+                        entradasData = entradasPorCat;
+                    }
+                    
+                    console.log('[MENSALISTAS v2] Entradas encontradas:', entradasData?.length || 0);
+
+                    if (entradasData && entradasData.length > 0) {
+                        const pagamentosDeEntradas = entradasData.map(e => {
+                            // Formato esperado: "Mensalidade - NOME (MES) - Veículos: ..."
+                            const desc = e.descricao || '';
+                            const nomeMatch = desc.match(/Mensalidade - (.+?) \(/) || desc.match(/Mensalidade - (.+?)\(/) || desc.match(/Mensalidade - (.+)$/);
+                            const mesMatch = desc.match(/\((\d{4}-\d{2}[^)]*)\)/);
+                            // Fallback: derivar mês da data real do lançamento (campo 'data')
+                            let mesRef = mesMatch ? mesMatch[1] : null;
+                            if (!mesRef && e.data) {
+                                mesRef = String(e.data).substring(0, 7); // YYYY-MM
+                            }
+                            return {
+                                id: 'entrada_' + e.id,
+                                entrada_id: e.id,
+                                cliente_id: null,
+                                mes_referencia: mesRef || 'N/A',
+                                valor: e.valor,
+                                forma_pagamento: e.forma_pagamento,
+                                data_pagamento: e.data,
+                                descricao: desc,
+                                cliente_nome: nomeMatch ? nomeMatch[1].trim() : 'Cliente',
+                                placa: e.placa || null,
+                                _origem: 'entrada'
+                            };
+                        });
+
+                        // Mesclar evitando duplicatas (mesmo cliente + mesmo mes_referencia)
+                        const chave = p => {
+                            const cli = (p.cliente_id || (p.cliente_nome || '').trim().toLowerCase());
+                            return cli + '|' + (p.mes_referencia || '');
+                        };
+                        const existentes = new Set(pagamentos.map(chave));
+                        // Resolver cliente_id pelo nome quando possível
+                        pagamentosDeEntradas.forEach(p => {
+                            if (!p.cliente_id && p.cliente_nome) {
+                                const c = clientes.find(c => c.nome.trim().toLowerCase() === p.cliente_nome.trim().toLowerCase());
+                                if (c) p.cliente_id = c.id;
+                            }
+                            if (!existentes.has(chave(p))) {
+                                pagamentos.push(p);
+                                existentes.add(chave(p));
+                            }
+                        });
+                        
+                        console.log('[MENSALISTAS v2] Pagamentos de entradas processados:', pagamentosDeEntradas.length);
+                        console.log('[MENSALISTAS v2] Total após mesclagem:', pagamentos.length);
+                    }
+                } catch (e) {
+                    console.warn('Erro ao carregar entradas mensalistas:', e);
+                }
+
+                console.log('Total de pagamentos carregados:', pagamentos.length);
+                renderizarClientes();
+                atualizarStats();
+                verificarAlertas();
+
+            } catch (error) {
+                console.error('Erro ao carregar dados:', error);
+                showAlert('Erro ao carregar dados', 'danger');
             }
-            if (dataFim) {
-                query = query.lte('data_lavagem', dataFim + 'T23:59:59');
-            }
-            if (filtroTipo) {
-                query = query.eq('tipo_cliente', filtroTipo);
-            }
-            
-            const { data: lavagensData } = await query;
-            lavagens = lavagensData || [];
-            
-            // Carregar clientes mensalistas
-            const { data: clientesData } = await supabaseClient
-                .from('clientes_estacionamento')
-                .select('*')
-                .eq('user_id', user.id)
-                .eq('status', 'ativo');
-            
-            clientes = clientesData || [];
-            
-            // Carregar veículos de mensalistas
-            const { data: veiculosData } = await supabaseClient
-                .from('veiculos')
-                .select('*')
-                .eq('user_id', user.id);
-            
-            veiculosMensalistas = veiculosData || [];
-            
-            // Carregar fila de lavagem
-            const { data: filaData } = await supabaseClient
-                .from('fila_lavagem')
-                .select('*')
-                .eq('user_id', user.id)
-                .order('created_at', { ascending: true });
-            
-            filaLavagem = filaData || [];
-            
-            renderizarLavagens();
-            renderizarFila();
-            atualizarEstatisticas();
-            verificarAlertasLavagem();
         }
-        
-        // Aplicar filtros
-        function aplicarFiltros() {
-            carregarDados();
+
+        // Renderizar lista de clientes
+        function renderizarClientes() {
+            const container = document.getElementById('listaClientes');
+            
+            if (clientes.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-5">
+                        <i class="fas fa-users fa-3x mb-3 text-muted"></i>
+                        <h5 class="text-muted">Nenhum cliente cadastrado</h5>
+                        <p class="text-muted">Comece cadastrando seu primeiro mensalista</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = clientes.map(cliente => {
+                const veiculosCliente = veiculos.filter(v => v.cliente_id === cliente.id);
+                const pagamentosCliente = pagamentos.filter(p => 
+                    p.cliente_id === cliente.id || 
+                    (p.cliente_nome && p.cliente_nome.trim().toLowerCase() === cliente.nome.trim().toLowerCase())
+                );
+                const lavagensCliente = getLavagensCliente(veiculosCliente);
+                
+                console.log(`=== RENDERIZAR ${cliente.nome} ===`);
+                console.log(`- Nome do cliente: "${cliente.nome}"`);
+                console.log(`- Total de pagamentos: ${pagamentos.length}`);
+                console.log(`- Pagamentos filtrados: ${pagamentosCliente.length}`);
+                console.log(`- Pagamentos com nome:`, pagamentos.filter(p => p.cliente_nome).map(p => `"${p.cliente_nome}"`));
+                console.log(`- Comparação:`, pagamentos.filter(p => p.cliente_nome).map(p => ({
+                    nome: p.cliente_nome,
+                    match: p.cliente_nome && 
+                           p.cliente_nome.trim().toLowerCase() === cliente.nome.trim().toLowerCase()
+                })));
+                console.log(`============================`);
+
+                return `
+                    <div class="card-cliente fade-in">
+                        <div class="card-cliente-header">
+                            <h3 class="cliente-nome">${cliente.nome}</h3>
+                            <div>
+                                <button class="btn btn-success btn-sm me-2" onclick="abrirWhatsApp('${cliente.telefone}', 'Olá ${cliente.nome}!')" title="Chamar no WhatsApp">
+                                    <i class="fab fa-whatsapp"></i>
+                                </button>
+                                <button class="btn btn-outline-warning btn-sm me-2" onclick="abrirModalEditarCliente('${cliente.id}')">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-outline-danger btn-sm" onclick="excluirCliente('${cliente.id}', '${cliente.nome}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-cliente-body">
+                            <div class="cliente-info">
+                                <div class="cliente-info-item">
+                                    <i class="fas fa-phone"></i>
+                                    ${formatarTelefone(cliente.telefone)}
+                                </div>
+                                ${cliente.empresa ? `
+                                    <div class="cliente-info-item">
+                                        <i class="fas fa-building"></i>
+                                        ${cliente.empresa}
+                                    </div>
+                                ` : ''}
+                                <div class="cliente-info-item">
+                                    <i class="fas fa-dollar-sign"></i>
+                                    R$ ${(cliente.valor_mensal || 0).toFixed(2)}
+                                </div>
+                                ${cliente.data_vencimento ? `
+                                    <div class="cliente-info-item">
+                                        <i class="fas fa-calendar"></i>
+                                        ${new Date(cliente.data_vencimento + 'T00:00:00').toLocaleDateString('pt-BR')}
+                                    </div>
+                                ` : ''}
+                            </div>
+                            
+                            ${cliente.observacao ? `
+                                <div class="mb-3 p-2" style="background: rgba(255,255,255,0.1); border-radius: 8px;">
+                                    <small style="color: #e0e0e0;">
+                                        <i class="fas fa-sticky-note me-1" style="color: #ffc107;"></i>
+                                        <strong>Obs:</strong> ${cliente.observacao}
+                                    </small>
+                                </div>
+                            ` : ''}
+                            
+                            <div class="mb-3">
+                                <h6><i class="fas fa-car me-2"></i>Veículos (${veiculosCliente.length})</h6>
+                                ${veiculosCliente.length === 0 ? `
+                                    <p class="text-muted">Nenhum veículo cadastrado</p>
+                                ` : veiculosCliente.map(v => `
+                                    <div class="veiculo-card">
+                                        <div class="veiculo-info">
+                                            <span class="placa-badge">${v.placa}</span>
+                                            <span>${v.modelo || ''} ${v.cor || ''}</span>
+                                        </div>
+                                        <div class="d-flex gap-2">
+                                            <button class="btn btn-outline-warning btn-sm" onclick="editarVeiculo('${v.id}')" title="Editar Veículo">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="btn btn-danger btn-sm" onclick="excluirVeiculo('${v.id}', '${v.placa}')" title="Excluir Veículo">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                                
+                                <button class="btn btn-outline-primary btn-sm mt-2" onclick="abrirModalVeiculo('${cliente.id}')">
+                                    <i class="fas fa-plus me-2"></i>Adicionar Veículo
+                                </button>
+                            </div>
+                            
+                            <div class="d-flex gap-2 mt-3">
+                                <button class="btn btn-outline-info btn-sm flex-fill" onclick="abrirHistoricoLavagens('${cliente.id}', '${cliente.nome}')">
+                                    <i class="fas fa-soap me-1"></i>Histórico Lavagens
+                                    <span class="badge bg-info ms-1">${lavagensCliente.length}</span>
+                                </button>
+                                <button class="btn btn-outline-success btn-sm flex-fill" onclick="abrirHistoricoPagamentos('${cliente.id}', '${cliente.nome}')">
+                                    <i class="fas fa-receipt me-1"></i>Histórico Pagamentos
+                                    <span class="badge bg-success ms-1">${pagamentosCliente.length}</span>
+                                </button>
+                                <button class="btn btn-warning btn-sm flex-fill" onclick="abrirModalPagamento('${cliente.id}', '${cliente.nome}', '${cliente.valor_mensal || 0}')">
+                                    <i class="fas fa-dollar-sign me-1"></i>Pagar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
         }
-        
-        // Renderizar tabela de lavagens
-        function renderizarLavagens() {
-            const tbody = document.getElementById('tabelaLavagens');
-            const total = document.getElementById('totalLavagens');
+
+        // Funções de busca
+        function filtrarClientes() {
+            const termoBusca = document.getElementById('campoBusca').value.toLowerCase().trim();
             
-            total.textContent = lavagens.length;
+            if (!termoBusca) {
+                renderizarClientes();
+                return;
+            }
             
-            if (lavagens.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="10" class="empty-state">
-                            <i class="fas fa-car-wash"></i>
-                            <p>Nenhuma lavagem encontrada</p>
-                        </td>
-                    </tr>
+            const clientesFiltrados = clientes.filter(cliente => {
+                // Buscar por nome
+                const nomeMatch = cliente.nome.toLowerCase().includes(termoBusca);
+                
+                // Buscar por placa
+                const veiculosCliente = veiculos.filter(v => v.cliente_id === cliente.id);
+                const placaMatch = veiculosCliente.some(v => 
+                    v.placa.toLowerCase().includes(termoBusca)
+                );
+                
+                return nomeMatch || placaMatch;
+            });
+            
+            // Se encontrou apenas um cliente, mostrar o card completo
+            if (clientesFiltrados.length === 1) {
+                renderizarClienteCompleto(clientesFiltrados[0]);
+            } else {
+                renderizarClientesFiltrados(clientesFiltrados);
+            }
+        }
+
+        // Renderizar card completo de um único cliente encontrado na busca
+        function renderizarClienteCompleto(cliente) {
+            const container = document.getElementById('listaClientes');
+            
+            const veiculosCliente = veiculos.filter(v => v.cliente_id === cliente.id);
+            const pagamentosCliente = pagamentos.filter(p => p.cliente_id === cliente.id);
+            const lavagensCliente = getLavagensCliente(veiculosCliente);
+            
+            container.innerHTML = `
+                <div class="card-cliente fade-in">
+                    <div class="card-cliente-header">
+                        <h3 class="cliente-nome">${cliente.nome}</h3>
+                        <div>
+                            <button class="btn btn-success btn-sm me-2" onclick="abrirWhatsApp('${cliente.telefone}', 'Olá ${cliente.nome}!')" title="Chamar no WhatsApp">
+                                <i class="fab fa-whatsapp"></i>
+                            </button>
+                            <button class="btn btn-outline-warning btn-sm me-2" onclick="abrirModalEditarCliente('${cliente.id}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-outline-danger btn-sm" onclick="excluirCliente('${cliente.id}', '${cliente.nome}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-cliente-body">
+                        <div class="cliente-info">
+                            <div class="cliente-info-item">
+                                <i class="fas fa-phone"></i>
+                                ${formatarTelefone(cliente.telefone)}
+                            </div>
+                            ${cliente.empresa ? `
+                                <div class="cliente-info-item">
+                                    <i class="fas fa-building"></i>
+                                    ${cliente.empresa}
+                                </div>
+                            ` : ''}
+                            <div class="cliente-info-item">
+                                <i class="fas fa-dollar-sign"></i>
+                                R$ ${(cliente.valor_mensal || 0).toFixed(2)}
+                            </div>
+                            ${cliente.data_vencimento ? `
+                                <div class="cliente-info-item">
+                                    <i class="fas fa-calendar"></i>
+                                    ${new Date(cliente.data_vencimento + 'T00:00:00').toLocaleDateString('pt-BR')}
+                                </div>
+                            ` : ''}
+                        </div>
+                        
+                        ${cliente.observacao ? `
+                            <div class="mb-3 p-2" style="background: rgba(255,255,255,0.1); border-radius: 8px;">
+                                <small style="color: #e0e0e0;">
+                                    <i class="fas fa-sticky-note me-1" style="color: #ffc107;"></i>
+                                    <strong>Obs:</strong> ${cliente.observacao}
+                                </small>
+                            </div>
+                        ` : ''}
+                        
+                        <div class="mb-3">
+                            <h6><i class="fas fa-car me-2"></i>Veículos (${veiculosCliente.length})</h6>
+                            ${veiculosCliente.length === 0 ? `
+                                <p class="text-muted">Nenhum veículo cadastrado</p>
+                            ` : veiculosCliente.map(v => `
+                                <div class="veiculo-card">
+                                    <div class="veiculo-info">
+                                        <span class="placa-badge">${v.placa}</span>
+                                        <span>${v.modelo || ''} ${v.cor || ''}</span>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-outline-warning btn-sm" onclick="editarVeiculo('${v.id}')" title="Editar Veículo">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-danger btn-sm" onclick="excluirVeiculo('${v.id}', '${v.placa}')" title="Excluir Veículo">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                            
+                            <button class="btn btn-outline-primary btn-sm mt-2" onclick="abrirModalVeiculo('${cliente.id}')">
+                                <i class="fas fa-plus me-2"></i>Adicionar Veículo
+                            </button>
+                        </div>
+                        
+                        <div class="d-flex gap-2 mt-3">
+                            <button class="btn btn-outline-info btn-sm flex-fill" onclick="abrirHistoricoLavagens('${cliente.id}', '${cliente.nome}')">
+                                <i class="fas fa-soap me-1"></i>Histórico Lavagens
+                                <span class="badge bg-info ms-1">${lavagensCliente.length}</span>
+                            </button>
+                            <button class="btn btn-outline-success btn-sm flex-fill" onclick="abrirHistoricoPagamentos('${cliente.id}', '${cliente.nome}')">
+                                <i class="fas fa-receipt me-1"></i>Histórico Pagamentos
+                                <span class="badge bg-success ms-1">${pagamentosCliente.length}</span>
+                            </button>
+                            <button class="btn btn-warning btn-sm flex-fill" onclick="abrirModalPagamento('${cliente.id}', '${cliente.nome}', '${cliente.valor_mensal || 0}')">
+                                <i class="fas fa-dollar-sign me-1"></i>Pagar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderizarClientesFiltrados(clientesFiltrados) {
+            const container = document.getElementById('listaClientes');
+            
+            if (clientesFiltrados.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-5">
+                        <i class="fas fa-search fa-3x mb-3 text-muted"></i>
+                        <h5 class="text-muted">Nenhum cliente encontrado</h5>
+                        <p class="text-muted">Tente outros termos de busca</p>
+                    </div>
                 `;
                 return;
             }
             
-            tbody.innerHTML = lavagens.map(l => `
-                <tr>
-                    <td><span class="placa-badge">${l.placa}</span></td>
-                    <td>${l.modelo || '-'}</td>
-                    <td>${l.cor || '-'}</td>
-                    <td>
-                        <span class="badge-tipo ${l.tipo_cliente === 'mensalista' ? 'badge-mensalista' : 'badge-avulso'}">
-                            ${l.tipo_cliente === 'mensalista' ? 'Mensalista' : 'Avulso'}
-                        </span>
-                    </td>
-                    <td>${formatarTipoLavagem(l.tipo_lavagem)}</td>
-                    <td>${formatarDataHora(l.data_lavagem)}</td>
-                    <td><strong>R$ ${(l.valor || 0).toFixed(2)}</strong></td>
-                    <td>${formatarFormaPagamento(l.forma_pagamento)}</td>
-                    <td>
-                        ${l.celular ? `
-                            <button class="btn btn-success btn-sm" onclick="abrirWhatsApp('${l.celular}', 'Olá!')" title="WhatsApp">
-                                <i class="fab fa-whatsapp"></i>
-                            </button>
-                        ` : '-'}
-                    </td>
-                    <td>
-                        <button class="btn btn-warning btn-sm me-1" onclick="abrirModalEditarLavagem('${l.id}')" title="Editar">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn btn-danger btn-sm" onclick="excluirLavagem('${l.id}', '${l.placa}')" title="Excluir">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </td>
-                </tr>
+            container.innerHTML = clientesFiltrados.map(cliente => {
+                const veiculosCliente = veiculos.filter(v => v.cliente_id === cliente.id);
+                const lavagensCliente = lavagens.filter(l => veiculosCliente.some(v => v.placa === l.placa));
+                const pagamentosCliente = pagamentos.filter(p => p.cliente_id === cliente.id);
+                
+                return `
+                    <div class="cliente-card fade-in">
+                        <div class="cliente-header">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h5 class="mb-1">${cliente.nome}</h5>
+                                    <div class="cliente-info">
+                                        <div class="cliente-info-item">
+                                            <i class="fas fa-phone"></i>
+                                            ${formatarTelefone(cliente.telefone)}
+                                        </div>
+                                        ${cliente.empresa ? `
+                                            <div class="cliente-info-item">
+                                                <i class="fas fa-building"></i>
+                                                ${cliente.empresa}
+                                            </div>
+                                        ` : ''}
+                                        ${cliente.data_vencimento ? `
+                                            <div class="cliente-info-item">
+                                                <i class="fas fa-calendar"></i>
+                                                ${new Date(cliente.data_vencimento + 'T00:00:00').toLocaleDateString('pt-BR')}
+                                            </div>
+                                        ` : ''}
+                                    </div>
+                                </div>
+                                <div class="text-end">
+                                    <h4 class="mb-0">R$ ${(cliente.valor_mensal || 0).toFixed(2)}</h4>
+                                    <small class="text-success">/mês</small>
+                                </div>
+                            </div>
+                            
+                            ${cliente.observacao ? `
+                                <div class="mb-3 p-2" style="background: rgba(255,255,255,0.1); border-radius: 8px;">
+                                    <small style="color: #e0e0e0;">
+                                        <i class="fas fa-sticky-note me-1" style="color: #ffc107;"></i>
+                                        <strong>Obs:</strong> ${cliente.observacao}
+                                    </small>
+                                </div>
+                            ` : ''}
+                            
+                            <div class="mb-3">
+                                <h6><i class="fas fa-car me-2"></i>Veículos (${veiculosCliente.length})</h6>
+                                ${veiculosCliente.length === 0 ? `
+                                    <p class="text-muted">Nenhum veículo cadastrado</p>
+                                ` : veiculosCliente.map(v => `
+                                    <div class="veiculo-card">
+                                        <i class="fas fa-car me-2"></i>
+                                        <strong>${v.placa}</strong> - ${v.modelo} ${v.cor ? `(${v.cor})` : ''}
+                                    </div>
+                                `).join('')}
+                            </div>
+                            
+                            <div class="d-flex gap-2 mt-3">
+                                <button class="btn btn-outline-primary btn-sm" onclick="abrirModalVeiculo('${cliente.id}', '${cliente.nome}')">
+                                    <i class="fas fa-plus me-1"></i>Veículo
+                                </button>
+                                <button class="btn btn-outline-info btn-sm flex-fill" onclick="abrirHistoricoLavagens('${cliente.id}', '${cliente.nome}')">
+                                    <i class="fas fa-soap me-1"></i>Histórico Lavagens
+                                    <span class="badge bg-info ms-1">${lavagensCliente.length}</span>
+                                </button>
+                                <button class="btn btn-outline-success btn-sm flex-fill" onclick="abrirHistoricoPagamentos('${cliente.id}', '${cliente.nome}')">
+                                    <i class="fas fa-receipt me-1"></i>Histórico Pagamentos
+                                    <span class="badge bg-success ms-1">${pagamentosCliente.length}</span>
+                                </button>
+                                <button class="btn btn-warning btn-sm flex-fill" onclick="abrirModalPagamento('${cliente.id}', '${cliente.nome}', '${cliente.valor_mensal || 0}')">
+                                    <i class="fas fa-dollar-sign me-1"></i>Pagar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function limparBusca() {
+            try {
+                const campoBusca = document.getElementById('campoBusca');
+                if (campoBusca) {
+                    campoBusca.value = '';
+                }
+                renderizarClientes();
+            } catch (erro) {
+                console.log('Erro ao limpar busca:', erro);
+            }
+        }
+
+        // Adicionar evento de busca (movido para o DOMContentLoaded principal)
+        function setupBusca() {
+            try {
+                const campoBusca = document.getElementById('campoBusca');
+                if (campoBusca) {
+                    campoBusca.addEventListener('input', filtrarClientes);
+                    campoBusca.addEventListener('keyup', function(e) {
+                        if (e.key === 'Escape') {
+                            limparBusca();
+                        }
+                    });
+                }
+            } catch (erro) {
+                console.log('Erro ao configurar busca:', erro);
+            }
+        }
+
+        // Atualizar estatísticas
+        function atualizarStats() {
+            document.getElementById('totalClientes').textContent = clientes.length;
+            
+            // Total de veículos cadastrados
+            document.getElementById('totalVeiculos').textContent = veiculos.length;
+            
+            const faturamentoMensal = clientes.reduce((sum, c) => sum + (c.valor_mensal || 0), 0);
+            document.getElementById('faturamentoMensal').textContent = `R$ ${faturamentoMensal.toFixed(0)}`;
+        }
+
+        // Atualizar status de pagamento do cliente
+        async function atualizarStatusPagamento(clienteId, mesPago) {
+            try {
+                // Buscar cliente
+                const cliente = clientes.find(c => c.id === clienteId);
+                if (!cliente) return;
+                
+                // Calcular próximo vencimento após o pagamento
+                const dataVencimento = cliente.data_vencimento;
+                if (dataVencimento) {
+                    const diaVencimento = new Date(dataVencimento).getDate();
+                    const [ano, mes] = mesPago.split('-');
+                    const proximoVencimento = new Date(parseInt(ano), parseInt(mes), diaVencimento);
+                    
+                    // Atualizar data de vencimento do cliente para o próximo mês
+                    const { error } = await supabaseClient
+                        .from('clientes_estacionamento')
+                        .update({
+                            data_vencimento: proximoVencimento.toISOString().split('T')[0],
+                            ultimo_pagamento: new Date().toISOString(),
+                            status_pagamento: 'pago'
+                        })
+                        .eq('id', clienteId);
+                    
+                    if (error) {
+                        console.warn('Erro ao atualizar status do cliente:', error);
+                    }
+                }
+                
+                // Remover cliente da lista de atrasados (se estiver em alertas)
+                verificarAlertasPagamento();
+                
+            } catch (error) {
+                console.warn('Erro ao atualizar status pagamento:', error);
+            }
+        }
+
+        // Verificar alertas de pagamento
+        function verificarAlertas() {
+            const hoje = new Date();
+            hoje.setHours(0, 0, 0, 0);
+            
+            const mesAtual = hoje.getMonth();
+            const anoAtual = hoje.getFullYear();
+            
+            const alertas = [];
+            
+            clientes.forEach(cliente => {
+                // Verificar se cliente já pagou no mês atual
+                const mesAtualStr1 = `${anoAtual}-${String(mesAtual + 1).padStart(2, '0')}`;
+                const mesAtualStr2 = `${String(mesAtual + 1).padStart(2, '0')}/${anoAtual}`;
+                
+                console.log(`=== ALERTA ${cliente.nome} ===`);
+                console.log(`- Mês atual (formato 1): ${mesAtualStr1}`);
+                console.log(`- Mês atual (formato 2): ${mesAtualStr2}`);
+                
+                // Mostrar todos os pagamentos do cliente
+                const todosPagamentosCliente = pagamentos.filter(p => 
+                    p.cliente_id === cliente.id || (p.cliente_nome && 
+                     p.cliente_nome.trim().toLowerCase() === cliente.nome.trim().toLowerCase())
+                );
+                console.log(`- Todos os pagamentos: ${todosPagamentosCliente.length}`);
+                console.log(`- Meses dos pagamentos: ${todosPagamentosCliente.map(p => p.mes_referencia).join(', ')}`);
+                console.log(`- Dados brutos:`, todosPagamentosCliente.map(p => ({ 
+                    id: p.id, 
+                    nome: p.cliente_nome, 
+                    mes: p.mes_referencia, 
+                    normalizado: (() => {
+                        const m = p.mes_referencia;
+                        if (!m) return '';
+                        const s = String(m).trim();
+                        if (/^\d{4}-\d{2}/.test(s)) return s.substring(0, 7);
+                        if (/^\d{2}\/\d{4}$/.test(s)) {
+                            const [mm, aa] = s.split('/');
+                            return `${aa}-${mm}`;
+                        }
+                        return s;
+                    })()
+                })));
+                
+                // Normaliza mes_referencia para "YYYY-MM" antes de comparar
+                // (cobre formatos: "YYYY-MM", "YYYY-MM-DD" e "MM/YYYY")
+                const normalizarMes = (m) => {
+                    if (!m) return '';
+                    const s = String(m).trim();
+                    if (/^\d{4}-\d{2}/.test(s)) return s.substring(0, 7);
+                    if (/^\d{2}\/\d{4}$/.test(s)) {
+                        const [mm, aa] = s.split('/');
+                        return `${aa}-${mm}`;
+                    }
+                    return s;
+                };
+                const pagamentosCliente = todosPagamentosCliente.filter(p =>
+                    normalizarMes(p.mes_referencia) === mesAtualStr1
+                );
+                
+                console.log(`- Pagamentos do mês atual: ${pagamentosCliente.length}`);
+                console.log(`========================`);
+                
+                // Se já pagou no mês atual, não mostrar alerta
+                if (pagamentosCliente.length > 0) {
+                    console.log(`- Cliente ${cliente.nome} já pagou no mês atual, sem alerta`);
+                    return;
+                }
+                
+                let dataVencimento;
+                let dataFormatada;
+                let diaVencimento;
+
+                // Verificar se tem data_vencimento (novo) ou dia_vencimento (antigo)
+                if (cliente.data_vencimento) {
+                    const dataOriginal = new Date(cliente.data_vencimento + 'T00:00:00');
+                    diaVencimento = dataOriginal.getDate();
+
+                    // Se a data original ainda não passou, usa ela
+                    if (dataOriginal >= hoje) {
+                        dataVencimento = dataOriginal;
+                    } else {
+                        // Calcular vencimento do mês atual usando o dia
+                        dataVencimento = new Date(anoAtual, mesAtual, diaVencimento);
+                    }
+                    dataFormatada = dataVencimento.toLocaleDateString('pt-BR');
+                } else if (cliente.dia_vencimento) {
+                    // Usar dia_vencimento no mês atual
+                    diaVencimento = cliente.dia_vencimento;
+                    dataVencimento = new Date(anoAtual, mesAtual, diaVencimento);
+                    dataFormatada = `Dia ${diaVencimento}`;
+                } else {
+                    return; // Sem vencimento definido
+                }
+
+                // Diferença em dias
+                const diffDias = Math.floor((dataVencimento - hoje) / (1000 * 60 * 60 * 24));
+
+                // No dia do vencimento
+                if (diffDias === 0) {
+                    alertas.push({
+                        tipo: 'hoje',
+                        cliente: cliente,
+                        dataFormatada: dataFormatada,
+                        mensagem: 'Vence HOJE',
+                        badge: 'badge-hoje',
+                        classe: 'alerta-vence-hoje',
+                        textoWhats: `Olá ${cliente.nome}! Sua mensalidade vence HOJE, ${dataFormatada}. Valor: R$ ${(cliente.valor_mensal || 0).toFixed(2)}. Aguardamos seu pagamento!`
+                    });
+                }
+
+                // Atrasado (após vencimento)
+                if (diffDias < 0) {
+                    const diasAtraso = Math.abs(diffDias);
+                    alertas.push({
+                        tipo: 'atrasado',
+                        cliente: cliente,
+                        dataFormatada: dataFormatada,
+                        mensagem: `${diasAtraso} dia(s) em atraso`,
+                        badge: 'badge-atrasado',
+                        classe: 'alerta-atrasado',
+                        textoWhats: `Olá ${cliente.nome}! Sua mensalidade venceu em ${dataFormatada} e está em atraso há ${diasAtraso} dia(s). Valor: R$ ${(cliente.valor_mensal || 0).toFixed(2)}. Por favor, entre em contato para regularização.`
+                    });
+                }
+            });
+
+            // Renderizar alertas
+            const secao = document.getElementById('secaoAlertas');
+            const lista = document.getElementById('listaAlertas');
+            const total = document.getElementById('totalAlertas');
+
+            if (alertas.length === 0) {
+                secao.style.display = 'none';
+                return;
+            }
+
+            secao.style.display = 'block';
+            total.textContent = alertas.length;
+
+            lista.innerHTML = alertas.map(a => `
+                <div class="alerta-item ${a.classe}">
+                    <div>
+                        <strong>${a.cliente.nome}</strong>
+                        <span class="badge ${a.badge} ms-2">${a.mensagem}</span>
+                        <br>
+                        <small>Valor: R$ ${(a.cliente.valor_mensal || 0).toFixed(2)} | Venc. <strong>${a.dataFormatada}</strong></small>
+                    </div>
+                    <button class="btn btn-whatsapp btn-sm" onclick="abrirWhatsApp('${a.cliente.telefone}', '${a.textoWhats.replace(/'/g, "\\'")}')">
+                        <i class="bi bi-whatsapp me-1"></i>Enviar
+                    </button>
+                </div>
             `).join('');
         }
-        
-        // Renderizar fila de lavagem
-        function renderizarFila() {
-            const tbody = document.getElementById('tabelaFila');
-            const total = document.getElementById('totalFila');
-            
-            total.textContent = filaLavagem.length;
-            
-            if (filaLavagem.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="10" class="empty-state">
-                            <i class="fas fa-car-wash"></i>
-                            <p>Nenhum veículo na fila</p>
-                        </td>
-                    </tr>
-                `;
+
+        // Formatar telefone
+        function formatarTelefone(tel) {
+            if (!tel) return '-';
+            tel = tel.replace(/\D/g, '');
+            if (tel.length === 11) {
+                return `(${tel.slice(0,2)}) ${tel.slice(2,7)}-${tel.slice(7)}`;
+            }
+            return tel;
+        }
+
+        // Abrir WhatsApp
+        function abrirWhatsApp(numero, mensagem) {
+            if (!numero) {
+                showAlert('Telefone não disponível', 'warning');
                 return;
             }
-            
-            tbody.innerHTML = filaLavagem.map((f, index) => {
-                const bgLavado = f.lavado ? 'background: #00a651 !important; color: #fff !important;' : '';
-                return `
-                <tr>
-                    <td style="${bgLavado}"><span class="badge ${f.lavado ? 'bg-light text-success' : 'bg-warning text-dark'}">${index + 1}</span></td>
-                    <td style="${bgLavado}"><span class="placa-badge">${f.placa}</span></td>
-                    <td style="${bgLavado}">${f.modelo || '-'}</td>
-                    <td style="${bgLavado}">${f.cor || '-'}</td>
-                    <td style="${bgLavado}">
-                        <span class="badge-tipo ${f.tipo_cliente === 'mensalista' ? 'badge-mensalista' : 'badge-avulso'}">
-                            ${f.tipo_cliente === 'mensalista' ? 'Mensalista' : 'Avulso'}
-                        </span>
-                    </td>
-                    <td style="${bgLavado}">${formatarTipoLavagem(f.tipo_lavagem)}</td>
-                    <td style="${bgLavado}"><strong>R$ ${(f.valor || 0).toFixed(2)}</strong></td>
-                    <td style="${bgLavado}">
-                        ${f.celular ? `
-                            <button class="btn btn-success btn-sm" onclick="abrirWhatsApp('${f.celular}', 'Olá! Seu veículo ${f.placa} está pronto!')" title="WhatsApp">
-                                <i class="fab fa-whatsapp"></i>
-                            </button>
-                            <small class="ms-1">${f.celular}</small>
-                        ` : '-'}
-                    </td>
-                    <td style="${bgLavado}">
-                        <input type="text" class="form-control form-control-sm" 
-                               value="${f.observacao || ''}" 
-                               onchange="atualizarObsFila('${f.id}', this.value)"
-                               style="background: ${f.lavado ? '#00a651' : '#fff'}; border: 1px solid #ccc; color: ${f.lavado ? '#fff' : '#000'}; min-width: 180px; font-weight: 500;">
-                    </td>
-                    <td>
-                        <button class="btn btn-warning btn-sm me-1" onclick="abrirModalEditarFila('${f.id}')" title="Editar">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn ${f.lavado ? 'btn-secondary' : 'btn-info'} btn-sm me-1" onclick="marcarLavado('${f.id}')" title="${f.lavado ? 'Desmarcar Lavado' : 'Marcar como Lavado'}">
-                            <i class="fas fa-car-wash"></i>
-                        </button>
-                        <button class="btn btn-success btn-sm me-1" onclick="abrirModalPagamentoFila('${f.id}')" title="Finalizar e Pagar">
-                            <i class="fas fa-dollar-sign"></i>
-                        </button>
-                        <button class="btn btn-danger btn-sm" onclick="removerDaFila('${f.id}')" title="Remover">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </td>
-                </tr>
-            `}).join('');
+            const url = `https://wa.me/55${numero}?text=${encodeURIComponent(mensagem)}`;
+            window.open(url, '_blank');
         }
-        
-        // Atualizar observação da fila
-        async function atualizarObsFila(filaId, observacao) {
-            await supabaseClient
-                .from('fila_lavagem')
-                .update({ observacao: observacao })
-                .eq('id', filaId);
-        }
-        
-        // Marcar como lavado
-        async function marcarLavado(filaId) {
-            const item = filaLavagem.find(f => f.id === filaId);
-            if (!item) return;
+
+        // Abrir modal de veículo
+        function abrirModalVeiculo(clienteId) {
+            document.getElementById('veiculoClienteId').value = clienteId;
+            document.getElementById('veiculoPlaca').value = '';
+            document.getElementById('veiculoModelo').value = '';
+            document.getElementById('veiculoCor').value = '';
             
-            const novoStatus = !item.lavado;
-            
-            const { error } = await supabaseClient
-                .from('fila_lavagem')
-                .update({ lavado: novoStatus })
-                .eq('id', filaId);
-            
-            if (error) {
-                showAlert('Erro ao atualizar: ' + error.message, 'danger');
-                return;
-            }
-            
-            showAlert(novoStatus ? 'Marcado como lavado!' : 'Desmarcado!', 'success');
-            await carregarDados();
-        }
-        
-        // Abrir modal de edição da fila
-        function abrirModalEditarFila(filaId) {
-            const item = filaLavagem.find(f => f.id === filaId);
-            if (!item) return;
-            
-            document.getElementById('editarFilaId').value = item.id;
-            document.getElementById('editarFilaPlaca').value = item.placa || '';
-            document.getElementById('editarFilaModelo').value = item.modelo || '';
-            document.getElementById('editarFilaCor').value = item.cor || '';
-            document.getElementById('editarFilaTipoLavagem').value = item.tipo_lavagem || 'simples';
-            document.getElementById('editarFilaTipoCliente').value = item.tipo_cliente || 'avulso';
-            document.getElementById('editarFilaValor').value = item.valor || 0;
-            document.getElementById('editarFilaCelular').value = item.celular || '';
-            document.getElementById('editarFilaObs').value = item.observacao || '';
-            
-            const modal = new bootstrap.Modal(document.getElementById('modalEditarFila'));
+            const modal = new bootstrap.Modal(document.getElementById('modalVeiculo'));
             modal.show();
         }
-        
-        // Salvar edição da fila
-        async function salvarEdicaoFila() {
-            const filaId = document.getElementById('editarFilaId').value;
-            const placa = document.getElementById('editarFilaPlaca').value.toUpperCase().trim();
-            const modelo = document.getElementById('editarFilaModelo').value.trim();
-            const cor = document.getElementById('editarFilaCor').value.trim();
-            const tipoLavagem = document.getElementById('editarFilaTipoLavagem').value;
-            const tipoCliente = document.getElementById('editarFilaTipoCliente').value;
-            const valor = parseFloat(document.getElementById('editarFilaValor').value) || 0;
-            const celular = document.getElementById('editarFilaCelular').value.replace(/\D/g, '');
-            const observacao = document.getElementById('editarFilaObs').value.trim();
+
+        // Editar veículo
+        async function editarVeiculo(veiculoId) {
+            try {
+                const user = JSON.parse(localStorage.getItem('currentUser'));
+                
+                // Buscar dados do veículo
+                const { data: veiculo, error } = await supabaseClient
+                    .from('veiculos')
+                    .select('*')
+                    .eq('id', veiculoId)
+                    .eq('user_id', user.id)
+                    .single();
+                
+                if (error || !veiculo) {
+                    showAlert('Veículo não encontrado!', 'danger');
+                    return;
+                }
+                
+                // Preencher o modal com os dados do veículo
+                document.getElementById('veiculoClienteId').value = veiculo.cliente_id;
+                document.getElementById('veiculoPlaca').value = veiculo.placa;
+                document.getElementById('veiculoModelo').value = veiculo.modelo || '';
+                document.getElementById('veiculoCor').value = veiculo.cor || '';
+                
+                // Adicionar campo hidden para identificar que é edição
+                let veiculoIdInput = document.getElementById('veiculoId');
+                if (!veiculoIdInput) {
+                    veiculoIdInput = document.createElement('input');
+                    veiculoIdInput.type = 'hidden';
+                    veiculoIdInput.id = 'veiculoId';
+                    document.getElementById('modalVeiculo').appendChild(veiculoIdInput);
+                }
+                veiculoIdInput.value = veiculoId;
+                
+                // Mudar título do modal
+                const modalTitle = document.querySelector('#modalVeiculo .modal-title');
+                if (modalTitle) {
+                    modalTitle.textContent = 'Editar Veículo';
+                }
+                
+                // Mudar texto do botão
+                const saveBtn = document.querySelector('#modalVeiculo .btn-primary');
+                if (saveBtn) {
+                    saveBtn.textContent = 'Atualizar';
+                }
+                
+                const modal = new bootstrap.Modal(document.getElementById('modalVeiculo'));
+                modal.show();
+                
+            } catch (error) {
+                console.error('Erro ao editar veículo:', error);
+                showAlert('Erro ao carregar dados do veículo!', 'danger');
+            }
+        }
+
+        // Salvar veículo
+        async function salvarVeiculo() {
+            const clienteId = document.getElementById('veiculoClienteId').value;
+            const placa = document.getElementById('veiculoPlaca').value.toUpperCase().trim();
+            const modelo = document.getElementById('veiculoModelo').value.trim();
+            const cor = document.getElementById('veiculoCor').value.trim();
+            const veiculoId = document.getElementById('veiculoId')?.value;
             
             if (!placa) {
                 showAlert('Informe a placa!', 'warning');
                 return;
             }
             
-            const { error } = await supabaseClient
-                .from('fila_lavagem')
-                .update({
-                    placa: placa,
-                    modelo: modelo || null,
-                    cor: cor || null,
-                    tipo_lavagem: tipoLavagem,
-                    tipo_cliente: tipoCliente,
-                    valor: valor,
-                    celular: celular || null,
-                    observacao: observacao || null
-                })
-                .eq('id', filaId);
-            
-            if (error) {
-                showAlert('Erro ao salvar: ' + error.message, 'danger');
-                return;
-            }
-            
-            bootstrap.Modal.getInstance(document.getElementById('modalEditarFila')).hide();
-            showAlert('Atualizado com sucesso!', 'success');
-            await carregarDados();
-        }
-        
-        // Remover da fila
-        async function removerDaFila(filaId) {
-            if (!confirm('Remover este veículo da fila?')) return;
-            
-            const { error } = await supabaseClient
-                .from('fila_lavagem')
-                .delete()
-                .eq('id', filaId);
-            
-            if (error) {
-                showAlert('Erro ao remover: ' + error.message, 'danger');
-                return;
-            }
-            
-            showAlert('Removido da fila!', 'success');
-            await carregarDados();
-        }
-        
-        // Abrir modal de pagamento da fila
-        function abrirModalPagamentoFila(filaId) {
-            const item = filaLavagem.find(f => f.id === filaId);
-            if (!item) return;
-            
-            document.getElementById('pagamentoFilaId').value = item.id;
-            document.getElementById('pagamentoFilaPlaca').textContent = item.placa;
-            document.getElementById('pagamentoFilaInfo').textContent = 
-                `${item.modelo || ''} ${item.cor || ''} - ${formatarTipoLavagem(item.tipo_lavagem)}`;
-            document.getElementById('pagamentoFilaValor').value = item.valor || 0;
-            document.getElementById('pagamentoFilaForma').value = 'dinheiro';
-            
-            const modal = new bootstrap.Modal(document.getElementById('modalPagamentoFila'));
-            modal.show();
-        }
-        
-        // Confirmar pagamento e mover para histórico
-        async function confirmarPagamentoFila() {
-            const filaId = document.getElementById('pagamentoFilaId').value;
-            const valor = parseFloat(document.getElementById('pagamentoFilaValor').value) || 0;
-            const formaPagamento = document.getElementById('pagamentoFilaForma').value;
-            
-            const item = filaLavagem.find(f => f.id === filaId);
-            if (!item) return;
-            
             const user = JSON.parse(localStorage.getItem('currentUser'));
             
-            // Inserir no histórico de lavagens
-            const { error: errorLavagem } = await supabaseClient
-                .from('lavagens')
-                .insert([{
-                    user_id: user.id,
-                    placa: item.placa,
-                    modelo: item.modelo,
-                    cor: item.cor,
-                    tipo_lavagem: item.tipo_lavagem,
-                    tipo_cliente: item.tipo_cliente,
-                    valor: valor,
-                    forma_pagamento: formaPagamento,
-                    celular: item.celular,
-                    data_lavagem: new Date().toISOString()
-                }]);
-            
-            if (errorLavagem) {
-                showAlert('Erro ao registrar lavagem: ' + errorLavagem.message, 'danger');
-                return;
+            try {
+                if (veiculoId) {
+                    // Edição de veículo existente
+                    const { error } = await supabaseClient
+                        .from('veiculos')
+                        .update({
+                            placa: placa,
+                            modelo: modelo,
+                            cor: cor
+                        })
+                        .eq('id', veiculoId)
+                        .eq('user_id', user.id);
+                    
+                    if (error) {
+                        showAlert('Erro ao atualizar veículo!', 'danger');
+                        return;
+                    }
+                    
+                    showAlert('Veículo atualizado com sucesso!', 'success');
+                } else {
+                    // Novo veículo - verificar se placa já existe
+                    const { data: existente } = await supabaseClient
+                        .from('veiculos')
+                        .select('*')
+                        .eq('user_id', user.id)
+                        .eq('placa', placa)
+                        .single();
+                    
+                    if (existente) {
+                        showAlert('Esta placa já está cadastrada!', 'danger');
+                        return;
+                    }
+                    
+                    const { error } = await supabaseClient
+                        .from('veiculos')
+                        .insert([{
+                            cliente_id: clienteId,
+                            user_id: user.id,
+                            placa: placa,
+                            modelo: modelo,
+                            cor: cor
+                        }]);
+                    
+                    if (error) {
+                        showAlert('Erro ao salvar veículo!', 'danger');
+                        return;
+                    }
+                    
+                    showAlert('Veículo cadastrado com sucesso!', 'success');
+                }
+                
+                // Fechar modal e recarregar dados
+                const modalVeiculo = bootstrap.Modal.getInstance(document.getElementById('modalVeiculo'));
+                modalVeiculo.hide();
+                
+                // Resetar modal para novo cadastro
+                resetModalVeiculo();
+                
+                carregarDados();
+                
+            } catch (error) {
+                console.error('Erro ao salvar veículo:', error);
+                showAlert('Erro ao salvar veículo!', 'danger');
+            }
+        }
+
+        // Resetar modal para novo cadastro
+        function resetModalVeiculo() {
+            // Limpar campo hidden de ID
+            const veiculoIdInput = document.getElementById('veiculoId');
+            if (veiculoIdInput) {
+                veiculoIdInput.value = '';
             }
             
-            // Registrar no fluxo de caixa (mensalista e avulso)
-            if (valor > 0 && formaPagamento !== 'cortesia') {
-                await supabaseClient
+            // Resetar título
+            const modalTitle = document.querySelector('#modalVeiculo .modal-title');
+            if (modalTitle) {
+                modalTitle.textContent = 'Adicionar Veículo';
+            }
+            
+            // Resetar texto do botão
+            const saveBtn = document.querySelector('#modalVeiculo .btn-primary');
+            if (saveBtn) {
+                saveBtn.textContent = 'Salvar';
+            }
+        }
+
+        // Formulário de veículo
+        document.getElementById('formVeiculo').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await salvarVeiculo();
+        });
+
+        // Excluir veículo
+        async function excluirVeiculo(veiculoId, placa) {
+            if (!confirm(`Tem certeza que deseja excluir o veículo "${placa}"?`)) {
+                return;
+            }
+
+            const user = JSON.parse(localStorage.getItem('currentUser'));
+            if (!user) return;
+
+            try {
+                const { error } = await supabaseClient
+                    .from('veiculos')
+                    .delete()
+                    .eq('id', veiculoId)
+                    .eq('user_id', user.id);
+
+                if (error) {
+                    showAlert('Erro ao excluir veículo: ' + error.message, 'danger');
+                    return;
+                }
+
+                showAlert('Veículo excluído!', 'success');
+                await carregarDados();
+                // Reaplicar busca se houver termo de busca
+                const campoBusca = document.getElementById('campoBusca');
+                if (campoBusca && campoBusca.value.trim()) {
+                    filtrarClientes();
+                }
+
+            } catch (error) {
+                console.error('Erro ao excluir veículo:', error);
+                showAlert('Erro ao excluir veículo', 'danger');
+            }
+        }
+
+        // Abrir modal de pagamento
+        function abrirModalPagamento(clienteId, nome, valorMensal) {
+            document.getElementById('pagamentoClienteId').value = clienteId;
+            document.getElementById('pagamentoClienteNome').value = nome;
+            document.getElementById('pagamentoClienteDisplay').value = nome;
+            document.getElementById('pagamentoValor').value = valorMensal || 0;
+            document.getElementById('pagamentoForma').value = '';
+            
+            const modal = new bootstrap.Modal(document.getElementById('modalPagamento'));
+            modal.show();
+        }
+
+        // Formulário de pagamento
+        document.getElementById('formPagamento').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await salvarPagamento();
+        });
+
+        // Salvar pagamento
+        async function salvarPagamento() {
+            const clienteId = document.getElementById('pagamentoClienteId').value;
+            const clienteNome = document.getElementById('pagamentoClienteNome').value;
+            const mes = document.getElementById('pagamentoMes').value;
+            const valor = parseFloat(document.getElementById('pagamentoValor').value) || 0;
+            const forma = document.getElementById('pagamentoForma').value;
+            
+            if (!mes || !valor || !forma) {
+                showAlert('Preencha todos os campos!', 'warning');
+                return;
+            }
+
+            const user = JSON.parse(localStorage.getItem('currentUser'));
+            if (!user) return;
+
+            try {
+                // Buscar veículos do cliente para incluir modelo
+                const veiculosCliente = veiculos.filter(v => v.cliente_id === clienteId);
+                const modelos = veiculosCliente.map(v => v.modelo).join(', ') || 'Nenhum veículo';
+                const placas = veiculosCliente.map(v => v.placa).join(', ') || 'Nenhuma placa';
+                
+                // Salvar na tabela pagamentos (para histórico)
+                const { error: pagamentoError } = await supabaseClient
+                    .from('pagamentos')
+                    .insert([{
+                        user_id: user.id,
+                        cliente_id: clienteId,
+                        mes_referencia: mes,
+                        valor: valor,
+                        forma_pagamento: forma,
+                        data_pagamento: new Date().toISOString()
+                    }]);
+
+                if (pagamentoError) {
+                    console.warn('Erro ao salvar pagamento (tabela pode não existir):', pagamentoError);
+                }
+
+                // Vincular no fluxo de caixa com modelo do veículo
+                const descricao = `Mensalidade - ${clienteNome} (${mes}) - Veículos: ${modelos}`;
+                
+                // Data no formato YYYY-MM-DD (sem timezone)
+                const agora = new Date();
+                const dataFormatada = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}-${String(agora.getDate()).padStart(2, '0')}`;
+                
+                // Converter forma de pagamento para o padrão do sistema de entradas
+                const formaPagamentoMap = {
+                    'cartao_credito': 'credito',
+                    'cartao_debito': 'debito',
+                    'transferencia': 'pix',
+                    'dinheiro': 'dinheiro',
+                    'pix': 'pix'
+                };
+                const formaConvertida = formaPagamentoMap[forma] || forma;
+                
+                const { error: entradaError } = await supabaseClient
                     .from('entradas')
                     .insert([{
                         user_id: user.id,
-                        data: new Date().toISOString().split('T')[0],
-                        descricao: `Lavagem ${item.tipo_lavagem} (${item.tipo_cliente})`,
-                        placa: item.placa,
+                        descricao: descricao,
                         valor: valor,
-                        categoria: 'lavagem_carro',
-                        forma_pagamento: formaPagamento
+                        forma_pagamento: formaConvertida,
+                        categoria: 'mensalista',
+                        data: dataFormatada,
+                        placa: placas
                     }]);
+                
+                if (entradaError) {
+                    showAlert('Erro ao registrar pagamento: ' + entradaError.message, 'danger');
+                    return;
+                }
+
+                showAlert('Pagamento registrado com sucesso!', 'success');
+                
+                // Mostrar botão de impressão e armazenar dados para impressão
+                const btnImprimir = document.getElementById('btnImprimirRecibo');
+                if (btnImprimir) {
+                    btnImprimir.style.display = 'block';
+                    // Armazenar dados para impressão
+                    window.ultimoPagamento = {
+                        clienteId: clienteId,
+                        clienteNome: clienteNome,
+                        valor: valor,
+                        forma: forma,
+                        data: new Date().toISOString(),
+                        mes: mes
+                    };
+                }
+                
+                // Atualizar status do cliente para pago no mês atual
+                await atualizarStatusPagamento(clienteId, mes);
+                
+                // Fechar modal e recarregar dados
+                const modal = bootstrap.Modal.getInstance(document.getElementById('modalPagamento'));
+                modal.hide();
+                
+                await carregarDados();
+
+            } catch (error) {
+                console.error('Erro ao salvar pagamento:', error);
+                showAlert('Erro ao salvar pagamento', 'danger');
+            }
+        }
+
+        // Abrir modal de edição do cliente
+        function abrirModalEditarCliente(clienteId) {
+            const cliente = clientes.find(c => c.id === clienteId);
+            if (!cliente) return;
+
+            document.getElementById('editarClienteId').value = cliente.id;
+            document.getElementById('editarClienteNome').value = cliente.nome || '';
+            document.getElementById('editarClienteTelefone').value = cliente.telefone || '';
+            document.getElementById('editarClienteEmpresa').value = cliente.empresa || '';
+            document.getElementById('editarClienteValor').value = cliente.valor_mensal || 0;
+            // Se tem data_vencimento usa ela, senão deixa vazio para o usuário preencher
+            document.getElementById('editarClienteVencimento').value = cliente.data_vencimento || '';
+            document.getElementById('editarClienteObservacao').value = cliente.observacao || '';
+
+            const modal = new bootstrap.Modal(document.getElementById('modalEditarCliente'));
+            modal.show();
+        }
+
+        // Formulário de edição
+        document.getElementById('formEditarCliente').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await salvarEdicaoCliente();
+        });
+
+        // Salvar edição do cliente
+        async function salvarEdicaoCliente() {
+            const clienteId = document.getElementById('editarClienteId').value;
+            const nome = document.getElementById('editarClienteNome').value.trim();
+            const telefone = document.getElementById('editarClienteTelefone').value.replace(/\D/g, '');
+            const empresa = document.getElementById('editarClienteEmpresa').value.trim();
+            const valor = parseFloat(document.getElementById('editarClienteValor').value) || 0;
+            const dataVencimento = document.getElementById('editarClienteVencimento').value || null;
+            const observacao = document.getElementById('editarClienteObservacao').value.trim();
+
+            if (!nome || !telefone) {
+                showAlert('Preencha nome e telefone!', 'warning');
+                return;
+            }
+
+            const { error } = await supabaseClient
+                .from('clientes_estacionamento')
+                .update({
+                    nome: nome,
+                    telefone: telefone,
+                    empresa: empresa,
+                    valor_mensal: valor,
+                    data_vencimento: dataVencimento,
+                    observacao: observacao
+                })
+                .eq('id', clienteId);
+
+            if (error) {
+                showAlert('Erro ao atualizar cliente: ' + error.message, 'danger');
+                return;
+            }
+
+            showAlert('Cliente atualizado com sucesso!', 'success');
+            const modal = bootstrap.Modal.getInstance(document.getElementById('modalEditarCliente'));
+            if (modal) modal.hide();
+            await carregarDados();
+            const campoBusca = document.getElementById('campoBusca');
+            if (campoBusca && campoBusca.value.trim()) {
+                filtrarClientes();
+            }
+        }
+
+        // Excluir cliente
+        async function excluirCliente(clienteId, nome) {
+            if (!confirm(`Tem certeza que deseja excluir o cliente "${nome}"?\n\nIsso também excluirá todos os veículos e lavagens associados.`)) {
+                return;
+            }
+
+            const user = JSON.parse(localStorage.getItem('currentUser'));
+            if (!user) return;
+
+            try {
+                // Buscar veículos do cliente
+                const veiculosCliente = veiculos.filter(v => v.cliente_id === clienteId);
+                const idsVeiculos = veiculosCliente.map(v => v.id);
+
+                // Excluir lavagens dos veículos
+                if (idsVeiculos.length > 0) {
+                    await supabaseClient
+                        .from('lavagens')
+                        .delete()
+                        .in('veiculo_id', idsVeiculos);
+                }
+
+                // Excluir veículos
+                await supabaseClient
+                    .from('veiculos')
+                    .delete()
+                    .eq('cliente_id', clienteId);
+
+                // Excluir cliente (soft delete - muda status)
+                const { error } = await supabaseClient
+                    .from('clientes_estacionamento')
+                    .update({ status: 'inativo' })
+                    .eq('id', clienteId);
+
+                if (error) {
+                    showAlert('Erro ao excluir cliente: ' + error.message, 'danger');
+                    return;
+                }
+
+                showAlert(`Cliente "${nome}" excluído!`, 'success');
+                await carregarDados();
+                // Reaplicar busca se houver termo de busca
+                const campoBusca = document.getElementById('campoBusca');
+                if (campoBusca && campoBusca.value.trim()) {
+                    filtrarClientes();
+                }
+
+            } catch (error) {
+                console.error('Erro ao excluir cliente:', error);
+                showAlert('Erro ao excluir cliente', 'danger');
+            }
+        }
+
+        // Obter lavagens de todos os veículos de um cliente (busca por placa)
+        function getLavagensCliente(veiculosCliente) {
+            const placasCliente = veiculosCliente.map(v => v.placa.toUpperCase());
+            return lavagens
+                .filter(l => {
+                    // Busca por placa (da fila de lavagem) ou por veiculo_id (legado)
+                    const placaLavagem = (l.placa || '').toUpperCase();
+                    return placasCliente.includes(placaLavagem) || veiculosCliente.some(v => v.id === l.veiculo_id);
+                })
+                .sort((a, b) => new Date(b.data_lavagem) - new Date(a.data_lavagem));
+        }
+
+        // Abrir histórico de lavagens
+        function abrirHistoricoLavagens(clienteId, nome) {
+            const cliente = clientes.find(c => c.id === clienteId);
+            if (!cliente) return;
+
+            const veiculosCliente = veiculos.filter(v => v.cliente_id === clienteId);
+            const lavagensCliente = getLavagensCliente(veiculosCliente);
+
+            document.getElementById('historicoLavagensNome').textContent = nome;
+
+            const tabela = document.getElementById('tabelaHistoricoLavagens');
+            
+            if (lavagensCliente.length === 0) {
+                tabela.innerHTML = `
+                    <div class="text-center py-4">
+                        <i class="fas fa-soap fa-2x mb-3 text-muted"></i>
+                        <p class="text-muted">Nenhuma lavagem registrada</p>
+                    </div>
+                `;
+            } else {
+                tabela.innerHTML = `
+                    <div class="table-responsive">
+                        <table class="table table-dark">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Veículo</th>
+                                    <th>Tipo</th>
+                                    <th>Valor</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${lavagensCliente.map(l => `
+                                    <tr>
+                                        <td>${formatarData(l.data_lavagem)}</td>
+                                        <td>${l.placa || l.veiculo_id}</td>
+                                        <td>${l.tipo || '-'}</td>
+                                        <td>R$ ${(l.valor || 0).toFixed(2)}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+
+            const modal = new bootstrap.Modal(document.getElementById('modalHistoricoLavagens'));
+            modal.show();
+        }
+
+        // Abrir histórico de pagamentos
+        async function abrirHistoricoPagamentos(clienteId, nome) {
+            const cliente = clientes.find(c => c.id === clienteId);
+            if (!cliente) return;
+            
+            // Armazenar para reabrir modal após exclusão
+            historicoClienteAtual = { id: clienteId, nome: nome };
+
+            let pagamentosCliente = [];
+            
+            // Tentar buscar da tabela pagamentos primeiro
+            if (pagamentos.length > 0) {
+                pagamentosCliente = pagamentos.filter(p => p.cliente_id === clienteId);
+            } else {
+                // Se não tem pagamentos, buscar da tabela entradas
+                try {
+                    const user = JSON.parse(localStorage.getItem('currentUser'));
+                    if (user) {
+                        const { data: entradasData } = await supabaseClient
+                            .from('entradas')
+                            .select('*')
+                            .eq('user_id', user.id)
+                            .eq('categoria', 'mensalista')
+                            .like('descricao', '%' + nome + '%')
+                            .order('data', { ascending: false });
+                        
+                        if (entradasData) {
+                            pagamentosCliente = entradasData.map(e => ({
+                                id: e.id,
+                                cliente_id: clienteId,
+                                mes_referencia: e.descricao.match(/\(([^)]+)\)/) ? e.descricao.match(/\(([^)]+)\)/)[1] : 'N/A',
+                                valor: e.valor,
+                                forma_pagamento: e.forma_pagamento,
+                                data_pagamento: e.data
+                            }));
+                        }
+                    }
+                } catch (error) {
+                    console.warn('Erro ao buscar pagamentos das entradas:', error);
+                }
+            }
+
+            document.getElementById('historicoPagamentosNome').textContent = nome;
+
+            const tabela = document.getElementById('tabelaHistoricoPagamentos');
+            
+            if (pagamentosCliente.length === 0) {
+                tabela.innerHTML = `
+                    <div class="text-center py-4">
+                        <i class="fas fa-receipt fa-2x mb-3 text-muted"></i>
+                        <p class="text-muted">Nenhum pagamento registrado</p>
+                    </div>
+                `;
+            } else {
+                tabela.innerHTML = `
+                    <div class="table-responsive">
+                        <table class="table table-dark">
+                            <thead>
+                                <tr>
+                                    <th>Mês Referência</th>
+                                    <th>Data Pagamento</th>
+                                    <th>Valor</th>
+                                    <th>Forma</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${pagamentosCliente.map(p => `
+                                    <tr>
+                                        <td>${formatarMes(p.mes_referencia)}</td>
+                                        <td>${formatarData(p.data_pagamento)}</td>
+                                        <td>R$ ${(p.valor || 0).toFixed(2)}</td>
+                                        <td>${formatarFormaPagamento(p.forma_pagamento)}</td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary me-1" onclick="imprimirComprovantePagamento('${p.id}', '${cliente.nome}', '${p.valor}', '${p.mes_referencia}', '${p.forma_pagamento}', '${p.data_pagamento}')" title="Imprimir Comprovante">
+                                                <i class="fas fa-print"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger" onclick="excluirPagamento('${p.id}', '${formatarMes(p.mes_referencia)}')" title="Excluir Pagamento">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+
+            const modal = new bootstrap.Modal(document.getElementById('modalHistoricoPagamentos'));
+            modal.show();
+        }
+
+        // Formatar data
+        function formatarData(data) {
+            if (!data) return '-';
+            return new Date(data).toLocaleDateString('pt-BR');
+        }
+
+        // Formatar mês
+        function formatarMes(mes) {
+            if (!mes) return '-';
+            const [ano, mesNum] = mes.split('-');
+            const date = new Date(ano, mesNum - 1);
+            return date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+        }
+
+        // Imprimir recibo de mensalista para impressora térmica 58mm
+        function imprimirReciboMensalista(clienteId, clienteNome, valorMensal, formaPagamento, dataPagamento, mesReferencia) {
+            // Buscar veículos do cliente
+            const veiculosCliente = veiculos.filter(v => v.cliente_id === clienteId);
+            const placaPrincipal = veiculosCliente.length > 0 ? veiculosCliente[0].placa : 'N/A';
+            const modeloPrincipal = veiculosCliente.length > 0 ? veiculosCliente[0].modelo : 'N/A';
+            
+            // Formatar data
+            const dataFormatada = new Date(dataPagamento).toLocaleDateString('pt-BR');
+            
+            // Converter forma de pagamento
+            const formaPagamentoMap = {
+                'dinheiro': 'Dinheiro',
+                'pix': 'PIX',
+                'credito': 'Cartão de Crédito',
+                'debito': 'Cartão de Débito'
+            };
+            const formaPagamentoFormatada = formaPagamentoMap[formaPagamento] || formaPagamento;
+            
+            // Criar conteúdo do recibo para impressora térmica 58mm
+            const reciboContent = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Recibo Mensalista - ${clienteNome}</title>
+                    <style>
+                        @media print {
+                            @page {
+                                size: 58mm auto;
+                                margin: 0;
+                            }
+                            body {
+                                width: 58mm;
+                                margin: 0;
+                                padding: 0;
+                                font-family: Arial, sans-serif;
+                                font-size: 11px;
+                                text-align: center;
+                            }
+                            .recibo-58mm {
+                                width: 58mm;
+                                max-width: 58mm;
+                                padding: 4mm 2mm;
+                                box-sizing: border-box;
+                                text-align: center;
+                            }
+                            .recibo-58mm * {
+                                text-align: center;
+                            }
+                            .linha {
+                                border-top: 1px dashed #000;
+                                margin: 6px 0;
+                            }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="recibo-58mm">
+                        <div style="font-weight: bold; font-size: 12px;">SALÉM LAVA RÁPIDO</div>
+                        <div style="font-weight: bold; font-size: 12px;">& ESTACIONAMENTO</div>
+                        <div style="font-size: 9px;">CNPJ: 63.992.071/0001-38</div>
+                        <div style="font-size: 9px;">Rua Mariana Junqueira, 1024</div>
+                        <div style="font-size: 9px;">Centro - Ribeirão Preto/SP</div>
+                        <div style="font-size: 9px;">WhatsApp: (16) 99395-3720</div>
+                        <div class="linha"></div>
+                        <div style="font-weight: bold; font-size: 11px;">RECIBO DE MENSALISTA</div>
+                        <div class="linha"></div>
+                        <div style="font-size: 10px;">Cliente: ${clienteNome}</div>
+                        <div style="font-size: 10px;">Placa: ${placaPrincipal}</div>
+                        <div style="font-size: 10px;">Veículo: ${modeloPrincipal}</div>
+                        <div style="font-size: 10px;">Mês ref.: ${mesReferencia}</div>
+                        <div style="font-size: 10px;">Valor: R$ ${parseFloat(valorMensal).toFixed(2)}</div>
+                        <div style="font-size: 10px;">Pagamento: ${formaPagamentoFormatada}</div>
+                        <div style="font-size: 10px;">Data: ${dataFormatada}</div>
+                        <div style="font-size: 10px; font-weight: bold;">Status: PAGO</div>
+                        <div class="linha"></div>
+                        <div style="font-size: 9px;">Obrigado pela preferência!</div>
+                        <div class="linha"></div>
+                    </div>
+                </body>
+                </html>
+            `;
+            
+            // Abrir janela de impressão
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(reciboContent);
+            printWindow.document.close();
+            printWindow.onload = function() {
+                printWindow.print();
+                printWindow.close();
+            };
+        }
+
+        // Imprimir recibo do último pagamento
+        function imprimirReciboPagamento() {
+            if (!window.ultimoPagamento) {
+                showAlert('Nenhum pagamento recente para imprimir!', 'warning');
+                return;
             }
             
-            // Remover da fila
-            await supabaseClient
-                .from('fila_lavagem')
-                .delete()
-                .eq('id', filaId);
-            
-            bootstrap.Modal.getInstance(document.getElementById('modalPagamentoFila')).hide();
-            showAlert('Lavagem finalizada e registrada!', 'success');
-            await carregarDados();
+            const { clienteId, clienteNome, valor, forma, data, mes } = window.ultimoPagamento;
+            imprimirReciboMensalista(clienteId, clienteNome, valor, forma, data, mes);
         }
-        
-        // Atualizar estatísticas
-        function atualizarEstatisticas() {
-            const hoje = new Date();
-            const inicioHoje = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
-            const inicioSemana = new Date(hoje);
-            inicioSemana.setDate(hoje.getDate() - hoje.getDay());
-            const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-            
-            // Lavagens hoje
-            const lavagensHoje = lavagens.filter(l => new Date(l.data_lavagem) >= inicioHoje);
-            document.getElementById('lavagensHoje').textContent = lavagensHoje.length;
-            
-            // Lavagens semana
-            const lavagensSemana = lavagens.filter(l => new Date(l.data_lavagem) >= inicioSemana);
-            document.getElementById('lavagensSemana').textContent = lavagensSemana.length;
-            
-            // Lavagens mês
-            const lavagensMes = lavagens.filter(l => new Date(l.data_lavagem) >= inicioMes);
-            document.getElementById('lavagensMes').textContent = lavagensMes.length;
-            
-            // Faturamento mês (apenas avulsos)
-            const faturamento = lavagensMes
-                .filter(l => l.tipo_cliente === 'avulso' && l.forma_pagamento !== 'cortesia')
-                .reduce((sum, l) => sum + (l.valor || 0), 0);
-            document.getElementById('faturamentoMes').textContent = `R$ ${faturamento.toFixed(0)}`;
-        }
-        
-        // Formatar tipo de lavagem
-        function formatarTipoLavagem(tipo) {
-            const tipos = {
-                'simples': 'Simples',
-                'completa': 'Completa',
-                'polimento': 'Polimento',
-                'higienizacao': 'Higienização'
-            };
-            return tipos[tipo] || tipo;
-        }
-        
+
         // Formatar forma de pagamento
         function formatarFormaPagamento(forma) {
             const formas = {
                 'dinheiro': 'Dinheiro',
-                'pix': 'Pix',
-                'debito': 'Débito',
-                'credito': 'Crédito',
-                'cortesia': 'Cortesia'
+                'pix': 'PIX',
+                'cartao_credito': 'Cartão de Crédito',
+                'cartao_debito': 'Cartão de Débito',
+                'transferencia': 'Transferência'
             };
             return formas[forma] || forma;
         }
-        
-        // Formatar data/hora
-        function formatarDataHora(dataStr) {
-            if (!dataStr) return '-';
-            const data = new Date(dataStr);
-            return data.toLocaleString('pt-BR', {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-        }
-        
-        // Formatar data
-        function formatarData(dataStr) {
-            if (!dataStr) return '-';
-            const data = new Date(dataStr);
-            return data.toLocaleDateString('pt-BR');
-        }
-        
-        // Abrir WhatsApp
-        function abrirWhatsApp(numero, mensagem) {
-            if (!numero) {
-                showAlert('Cliente sem telefone cadastrado!', 'warning');
-                return;
-            }
-            let tel = numero.replace(/\D/g, '');
-            if (!tel.startsWith('55')) {
-                tel = '55' + tel;
-            }
-            const url = `https://wa.me/${tel}?text=${encodeURIComponent(mensagem)}`;
-            window.open(url, '_blank');
-        }
-        
-        // Abrir modal de edição de lavagem
-        function abrirModalEditarLavagem(lavagemId) {
-            const lavagem = lavagens.find(l => l.id === lavagemId);
-            if (!lavagem) return;
+
+        // Imprimir comprovante de pagamento
+        function imprimirComprovantePagamento(pagamentoId, clienteNome, valor, mesReferencia, formaPagamento, dataPagamento) {
+            const dataEmissao = new Date().toLocaleDateString('pt-BR');
+            const dataFormatada = formatarData(dataPagamento);
             
-            document.getElementById('editarLavagemId').value = lavagem.id;
-            document.getElementById('editarLavagemPlaca').value = lavagem.placa || '';
-            document.getElementById('editarLavagemModelo').value = lavagem.modelo || '';
-            document.getElementById('editarLavagemCor').value = lavagem.cor || '';
-            document.getElementById('editarLavagemTipo').value = lavagem.tipo_lavagem || 'simples';
-            document.getElementById('editarLavagemTipoCliente').value = lavagem.tipo_cliente || 'avulso';
-            document.getElementById('editarLavagemValor').value = lavagem.valor || 0;
-            document.getElementById('editarLavagemPagamento').value = lavagem.forma_pagamento || 'dinheiro';
-            
-            const modal = new bootstrap.Modal(document.getElementById('modalEditarLavagem'));
-            modal.show();
-        }
-        
-        // Salvar edição de lavagem
-        async function salvarEdicaoLavagem() {
-            const lavagemId = document.getElementById('editarLavagemId').value;
-            const placa = document.getElementById('editarLavagemPlaca').value.toUpperCase().trim();
-            const modelo = document.getElementById('editarLavagemModelo').value.trim();
-            const cor = document.getElementById('editarLavagemCor').value.trim();
-            const tipoLavagem = document.getElementById('editarLavagemTipo').value;
-            const tipoCliente = document.getElementById('editarLavagemTipoCliente').value;
-            const valor = parseFloat(document.getElementById('editarLavagemValor').value) || 0;
-            const formaPagamento = document.getElementById('editarLavagemPagamento').value;
-            
-            if (!placa) {
-                showAlert('Informe a placa!', 'warning');
-                return;
-            }
-            
-            const { error } = await supabaseClient
-                .from('lavagens')
-                .update({
-                    placa: placa,
-                    modelo: modelo,
-                    cor: cor,
-                    tipo_lavagem: tipoLavagem,
-                    tipo_cliente: tipoCliente,
-                    valor: valor,
-                    forma_pagamento: formaPagamento
-                })
-                .eq('id', lavagemId);
-            
-            if (error) {
-                showAlert('Erro ao salvar: ' + error.message, 'danger');
-                return;
-            }
-            
-            bootstrap.Modal.getInstance(document.getElementById('modalEditarLavagem')).hide();
-            showAlert('Lavagem atualizada com sucesso!', 'success');
-            await carregarDados();
-        }
-        
-        // Excluir lavagem
-        async function excluirLavagem(lavagemId, placa) {
-            if (!confirm(`Tem certeza que deseja excluir a lavagem do veículo "${placa}"?`)) {
-                return;
-            }
-            
-            const { error } = await supabaseClient
-                .from('lavagens')
-                .delete()
-                .eq('id', lavagemId);
-            
-            if (error) {
-                showAlert('Erro ao excluir: ' + error.message, 'danger');
-                return;
-            }
-            
-            showAlert('Lavagem excluída com sucesso!', 'success');
-            await carregarDados();
-        }
-        
-        // Mostrar alerta
-        function showAlert(message, type) {
-            const container = document.getElementById('alertContainer');
-            const alert = document.createElement('div');
-            alert.className = `alert alert-${type} alert-dismissible fade show`;
-            alert.innerHTML = `
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            `;
-            container.appendChild(alert);
-            
-            setTimeout(() => {
-                alert.remove();
-            }, 5000);
-        }
-        
-        // Verificar alertas de carros sem lavar há mais de 30 dias
-        async function verificarAlertasLavagem() {
-            const user = JSON.parse(localStorage.getItem('currentUser'));
-            if (!user) return;
-            
-            const hoje = new Date();
-            const alertas = [];
-            
-            // Buscar todas as lavagens para calcular última lavagem por placa
-            const { data: todasLavagens } = await supabaseClient
-                .from('lavagens')
-                .select('*')
-                .eq('user_id', user.id)
-                .order('data_lavagem', { ascending: false });
-            
-            // Agrupar por placa e pegar a última lavagem de cada
-            const ultimaLavagemPorPlaca = {};
-            (todasLavagens || []).forEach(l => {
-                const placa = l.placa?.toUpperCase();
-                if (placa && !ultimaLavagemPorPlaca[placa]) {
-                    ultimaLavagemPorPlaca[placa] = l;
-                }
-            });
-            
-            // Verificar veículos de mensalistas
-            veiculosMensalistas.forEach(veiculo => {
-                const placa = veiculo.placa?.toUpperCase();
-                if (!placa) return;
-                
-                const cliente = clientes.find(c => c.id === veiculo.cliente_id);
-                if (!cliente) return;
-                
-                const ultimaLavagem = ultimaLavagemPorPlaca[placa];
-                let diasSemLavar = 999;
-                
-                if (ultimaLavagem) {
-                    const dataUltimaLavagem = new Date(ultimaLavagem.data_lavagem);
-                    diasSemLavar = Math.floor((hoje - dataUltimaLavagem) / (1000 * 60 * 60 * 24));
-                }
-                
-                // Alertar se mais de 30 dias sem lavar
-                if (diasSemLavar > 30) {
-                    alertas.push({
-                        placa: placa,
-                        modelo: veiculo.modelo || '-',
-                        cor: veiculo.cor || '-',
-                        cliente: cliente.nome,
-                        telefone: cliente.telefone,
-                        diasSemLavar: diasSemLavar,
-                        ultimaLavagem: ultimaLavagem ? new Date(ultimaLavagem.data_lavagem).toLocaleDateString('pt-BR') : 'Nunca'
-                    });
-                }
-            });
-            
-            // Renderizar alertas
-            const secao = document.getElementById('secaoAlertasLavagem');
-            const lista = document.getElementById('listaAlertasLavagem');
-            const total = document.getElementById('totalAlertasLavagem');
-            const cardContainer = document.getElementById('cardAlertaContainer');
-            const cardCount = document.getElementById('alertasLavagemCount');
-            
-            if (alertas.length === 0) {
-                secao.style.display = 'none';
-                cardContainer.style.display = 'none';
-                return;
-            }
-            
-            // Mostrar o card de alerta
-            cardContainer.style.display = 'block';
-            cardCount.textContent = alertas.length;
-            total.textContent = alertas.length;
-            
-            lista.innerHTML = alertas.map(a => `
-                <div class="alerta-lavagem-item">
-                    <div class="alerta-lavagem-info">
-                        <div>
-                            <strong style="font-size: 1.1em;">${a.placa}</strong>
-                            <span class="badge-dias-sem-lavar ms-2">${a.diasSemLavar === 999 ? 'Nunca lavou' : a.diasSemLavar + ' dias'}</span>
-                            <br>
-                            <small>${a.modelo} - ${a.cor} | Cliente: ${a.cliente}</small>
-                            <br>
-                            <small>Última lavagem: ${a.ultimaLavagem}</small>
-                        </div>
-                    </div>
-                    ${a.telefone ? `
-                        <button class="btn btn-whatsapp-lavagem" onclick="abrirWhatsAppLavagem('${a.telefone}', '${a.cliente}', '${a.placa}', ${a.diasSemLavar})">
-                            <i class="bi bi-whatsapp me-1"></i>WhatsApp
-                        </button>
-                    ` : ''}
-                </div>
-            `).join('');
-        }
-        
-        // Toggle seção de alertas de lavagem
-        function toggleAlertasLavagem() {
-            const secao = document.getElementById('secaoAlertasLavagem');
-            if (secao.style.display === 'none' || secao.style.display === '') {
-                secao.style.display = 'block';
-                // Scroll suave até a seção
-                secao.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            } else {
-                secao.style.display = 'none';
-            }
-        }
-        
-        // Abrir WhatsApp para lembrete de lavagem
-        function abrirWhatsAppLavagem(telefone, cliente, placa, dias) {
-            const mensagem = dias === 999 
-                ? `Olá ${cliente}! Notamos que seu veículo ${placa} ainda não foi lavado conosco. Que tal agendar uma lavagem? Temos promoções especiais! 🚗✨`
-                : `Olá ${cliente}! Seu veículo ${placa} está há ${dias} dias sem lavagem. Que tal dar aquele trato no seu carro? Temos promoções especiais hoje! 🚗✨`;
-            
-            const url = `https://wa.me/55${telefone}?text=${encodeURIComponent(mensagem)}`;
-            window.open(url, '_blank');
-        }
-        
-        // Imprimir recibo de lavagem
-        function imprimirReciboLavagem() {
-            const placa = document.getElementById('placaLavagem').value;
-            const modelo = document.getElementById('modeloLavagem').value;
-            const cor = document.getElementById('corLavagem').value;
-            const tipo = document.getElementById('tipoLavagem').value;
-            const tipoCliente = document.getElementById('tipoCliente').value;
-            const valor = document.getElementById('valorLavagem').value;
-            const celular = document.getElementById('celularLavagem').value;
-            const obs = document.getElementById('obsLavagem').value;
-            
-            if (!placa) {
-                alert('Preencha a placa do veículo!');
-                return;
-            }
-            
-            if (!valor || valor <= 0) {
-                alert('Preencha o valor da lavagem!');
-                return;
-            }
-            
-            const dataAtual = new Date().toLocaleDateString('pt-BR');
-            const horaAtual = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-            
-            // Mapear tipos de lavagem
-            const tiposLavagem = {
-                'simples': 'Lavagem Simples',
-                'completa': 'Lavagem Completa',
-                'polimento': 'Polimento',
-                'higienizacao': 'Higienização'
-            };
-            
-            // Criar conteúdo do recibo
-            const reciboContent = `
+            const comprovanteContent = `
                 <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 400px; margin: 0 auto;">
                     <div style="text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px;">
-                        <h2 style="margin: 0; color: #333;">RECIBO DE LAVAGEM</h2>
-                        <p style="margin: 5px 0; color: #666;">Lava Car</p>
+                        <h2 style="margin: 0; color: #333;">COMPROVANTE DE PAGAMENTO</h2>
+                        <p style="margin: 5px 0; color: #666;">Estacionamento</p>
                     </div>
                     
                     <div style="margin-bottom: 20px;">
-                        <p style="margin: 5px 0;"><strong>Data:</strong> ${dataAtual} - ${horaAtual}</p>
-                        <p style="margin: 5px 0;"><strong>Placa:</strong> ${placa.toUpperCase()}</p>
-                        <p style="margin: 5px 0;"><strong>Veículo:</strong> ${modelo || '-'} ${cor || '-'}</p>
-                        <p style="margin: 5px 0;"><strong>Tipo:</strong> ${tiposLavagem[tipo] || tipo}</p>
-                        <p style="margin: 5px 0;"><strong>Cliente:</strong> ${tipoCliente === 'mensalista' ? 'Mensalista' : 'Avulso'}</p>
-                        ${celular ? `<p style="margin: 5px 0;"><strong>Celular:</strong> ${celular}</p>` : ''}
-                        ${obs ? `<p style="margin: 5px 0;"><strong>Obs:</strong> ${obs}</p>` : ''}
+                        <p style="margin: 5px 0;"><strong>Cliente:</strong> ${clienteNome}</p>
+                        <p style="margin: 5px 0;"><strong>Mês Referência:</strong> ${formatarMes(mesReferencia)}</p>
+                        <p style="margin: 5px 0;"><strong>Data Pagamento:</strong> ${dataFormatada}</p>
+                        <p style="margin: 5px 0;"><strong>Data Emissão:</strong> ${dataEmissao}</p>
+                        <p style="margin: 5px 0;"><strong>Forma Pagamento:</strong> ${formatarFormaPagamento(formaPagamento)}</p>
                     </div>
                     
                     <div style="border: 2px solid #333; padding: 15px; margin-bottom: 20px;">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="font-size: 18px; font-weight: bold;">VALOR:</span>
+                            <span style="font-size: 18px; font-weight: bold;">VALOR PAGO:</span>
                             <span style="font-size: 24px; font-weight: bold; color: #333;">R$ ${parseFloat(valor).toFixed(2)}</span>
                         </div>
                     </div>
@@ -1621,7 +2407,7 @@
                         
                         <div style="margin-top: 30px;">
                             <p style="margin: 0; font-size: 10px; color: #999;">
-                                * Recibo válido para comprovação de serviço<br>
+                                * Comprovante válido para comprovação de pagamento<br>
                                 * Não duplicável sem assinatura
                             </p>
                         </div>
@@ -1629,34 +2415,109 @@
                 </div>
             `;
             
-            // Abrir janela de impressão
             const printWindow = window.open('', '_blank');
-            printWindow.document.write(`
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>Recibo de Lavagem - ${placa.toUpperCase()}</title>
-                    <style>
-                        @media print {
-                            body { margin: 0; }
-                            @page { margin: 10mm; }
-                        }
-                    </style>
-                </head>
-                <body>
-                    ${reciboContent}
-                    <scr` + `ipt>
-                        window.onload = function() {
-                            window.print();
-                            window.close();
-                        }
-                    </scr` + `ipt>
-                </body>
-                </html>
-            `);
+            printWindow.document.write('<!DOCTYPE html><html><head><title>Comprovante de Pagamento - ' + clienteNome + '</title><style>@media print { body { margin: 0; } @page { margin: 10mm; } }</style></head><body>' + comprovanteContent + '</body></html>');
             printWindow.document.close();
+            printWindow.onload = function() {
+                printWindow.print();
+                printWindow.close();
+            };
         }
-        
+
+        // Excluir pagamento
+        async function excluirPagamento(pagamentoId, mesReferencia) {
+            if (!confirm(`Tem certeza que deseja excluir o pagamento de ${mesReferencia}?`)) {
+                return;
+            }
+
+            const user = JSON.parse(localStorage.getItem('currentUser'));
+            if (!user) return;
+
+            try {
+                // Verificar se o pagamento é da tabela 'pagamentos' ou veio de 'entradas'
+                const ehEntrada = pagamentoId.startsWith('entrada_');
+                
+                if (ehEntrada) {
+                    // Extrair ID real da entrada
+                    const entradaId = pagamentoId.replace('entrada_', '');
+                    
+                    // Excluir apenas da tabela entradas
+                    const { error } = await supabaseClient
+                        .from('entradas')
+                        .delete()
+                        .eq('id', entradaId)
+                        .eq('user_id', user.id);
+                        
+                    if (error) {
+                        showAlert('Erro ao excluir pagamento: ' + error.message, 'danger');
+                        return;
+                    }
+                } else {
+                    // Excluir da tabela pagamentos
+                    const { error } = await supabaseClient
+                        .from('pagamentos')
+                        .delete()
+                        .eq('id', pagamentoId)
+                        .eq('user_id', user.id);
+
+                    if (error) {
+                        showAlert('Erro ao excluir pagamento: ' + error.message, 'danger');
+                        return;
+                    }
+
+                    // Excluir também do fluxo de caixa (entradas) se existir
+                    await supabaseClient
+                        .from('entradas')
+                        .delete()
+                        .eq('user_id', user.id)
+                        .ilike('descricao', '%Mensalidade%');
+                }
+
+                showAlert('Pagamento excluído com sucesso!', 'success');
+                
+                await carregarDados();
+                
+                // Reaplicar busca se houver termo de busca
+                const campoBusca = document.getElementById('campoBusca');
+                if (campoBusca && campoBusca.value.trim()) {
+                    filtrarClientes();
+                }
+                
+                // Fechar e reabrir modal para atualizar o histórico
+                const modalElement = document.getElementById('modalHistoricoPagamentos');
+                const modal = bootstrap.Modal.getInstance(modalElement);
+                if (modal) {
+                    modal.hide();
+                    // Reabrir após um pequeno delay usando a variável global
+                    setTimeout(() => {
+                        if (historicoClienteAtual.id && historicoClienteAtual.nome) {
+                            abrirHistoricoPagamentos(historicoClienteAtual.id, historicoClienteAtual.nome);
+                        }
+                    }, 300);
+                }
+
+            } catch (error) {
+                console.error('Erro ao excluir pagamento:', error);
+                showAlert('Erro ao excluir pagamento', 'danger');
+            }
+        }
+
+        // Mostrar alertas
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+            alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(alertDiv);
+            
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+
         // Logout
         function logout() {
             localStorage.removeItem('currentUser');
