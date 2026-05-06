@@ -877,6 +877,7 @@
             const user = JSON.parse(localStorage.getItem('currentUser'));
             if (!user) return;
 
+            console.log('%c[MENSALISTAS v2] carregarDados iniciado', 'color:#0f0;font-weight:bold');
             try {
                 // Carregar clientes
                 const { data: clientesData, error: clientesError } = await supabaseClient
@@ -918,7 +919,8 @@
                     lavagens = [];
                 }
 
-                // Carregar pagamentos (tabela pode não existir)
+                // Carregar pagamentos: combinar tabela 'pagamentos' + 'entradas' (categoria mensalista)
+                pagamentos = [];
                 try {
                     const { data: pagamentosData, error: pagamentosError } = await supabaseClient
                         .from('pagamentos')
@@ -926,48 +928,98 @@
                         .eq('user_id', user.id)
                         .order('data_pagamento', { ascending: false });
 
-                    if (!pagamentosError) {
-                        pagamentos = pagamentosData || [];
-                    } else {
-                        console.warn('Tabela pagamentos não encontrada, buscando das entradas');
-                        pagamentos = [];
-                        
-                        // Buscar pagamentos da tabela entradas (categoria mensalista)
-                        const { data: entradasData } = await supabaseClient
+                    if (!pagamentosError && pagamentosData) {
+                        pagamentos = pagamentosData;
+                    }
+                } catch (e) {
+                    console.warn('Tabela pagamentos indisponível:', e);
+                }
+
+                // SEMPRE buscar também as entradas mensalistas, para garantir detecção
+                // de pagamentos mesmo quando a tabela 'pagamentos' não retornou registros.
+                // Tenta múltiplos filtros para cobrir diferentes formas de registro.
+                try {
+                    // 1) Pelo campo categoria (padrão 'mensalista')
+                    let { data: entradasData } = await supabaseClient
+                        .from('entradas')
+                        .select('*')
+                        .eq('user_id', user.id)
+                        .eq('categoria', 'mensalista')
+                        .order('data', { ascending: false });
+                    
+                    // 2) Se não encontrar, busca por descrição contendo 'Mensalidade'
+                    if (!entradasData || entradasData.length === 0) {
+                        const { data: entradasPorDesc } = await supabaseClient
                             .from('entradas')
                             .select('*')
                             .eq('user_id', user.id)
-                            .eq('categoria', 'mensalista')
+                            .ilike('descricao', '%Mensalidade%')
                             .order('data', { ascending: false });
+                        entradasData = entradasPorDesc;
+                    }
+                    
+                    // 3) Se ainda não encontrar, busca por categoria 'Mensalista' (maiúsculo)
+                    if (!entradasData || entradasData.length === 0) {
+                        const { data: entradasPorCat } = await supabaseClient
+                            .from('entradas')
+                            .select('*')
+                            .eq('user_id', user.id)
+                            .eq('categoria', 'Mensalista')
+                            .order('data', { ascending: false });
+                        entradasData = entradasPorCat;
+                    }
+                    
+                    console.log('[MENSALISTAS v2] Entradas encontradas:', entradasData?.length || 0);
+
+                    if (entradasData && entradasData.length > 0) {
+                        const pagamentosDeEntradas = entradasData.map(e => {
+                            // Formato esperado: "Mensalidade - NOME (MES) - Veículos: ..."
+                            const desc = e.descricao || '';
+                            const nomeMatch = desc.match(/Mensalidade - (.+?) \(/) || desc.match(/Mensalidade - (.+?)\(/) || desc.match(/Mensalidade - (.+)$/);
+                            const mesMatch = desc.match(/\((\d{4}-\d{2}[^)]*)\)/);
+                            // Fallback: derivar mês da data real do lançamento (campo 'data')
+                            let mesRef = mesMatch ? mesMatch[1] : null;
+                            if (!mesRef && e.data) {
+                                mesRef = String(e.data).substring(0, 7); // YYYY-MM
+                            }
+                            return {
+                                id: 'entrada_' + e.id,
+                                entrada_id: e.id,
+                                cliente_id: null,
+                                mes_referencia: mesRef || 'N/A',
+                                valor: e.valor,
+                                forma_pagamento: e.forma_pagamento,
+                                data_pagamento: e.data,
+                                descricao: desc,
+                                cliente_nome: nomeMatch ? nomeMatch[1].trim() : 'Cliente',
+                                placa: e.placa || null,
+                                _origem: 'entrada'
+                            };
+                        });
+
+                        // Mesclar evitando duplicatas (mesmo cliente + mesmo mes_referencia)
+                        const chave = p => {
+                            const cli = (p.cliente_id || (p.cliente_nome || '').trim().toLowerCase());
+                            return cli + '|' + (p.mes_referencia || '');
+                        };
+                        const existentes = new Set(pagamentos.map(chave));
+                        // Resolver cliente_id pelo nome quando possível
+                        pagamentosDeEntradas.forEach(p => {
+                            if (!p.cliente_id && p.cliente_nome) {
+                                const c = clientes.find(c => c.nome.trim().toLowerCase() === p.cliente_nome.trim().toLowerCase());
+                                if (c) p.cliente_id = c.id;
+                            }
+                            if (!existentes.has(chave(p))) {
+                                pagamentos.push(p);
+                                existentes.add(chave(p));
+                            }
+                        });
                         
-                        if (entradasData) {
-                            // Converter entradas para formato de pagamentos
-                            pagamentos = entradasData.map(e => {
-                                // Extrair informações da descrição
-                                // Formato: "Mensalidade - NOME_CLIENTE (MES) - Veículos: MODELOS"
-                                const nomeMatch = e.descricao.match(/Mensalidade - (.+?) \(/);
-                                const mesMatch = e.descricao.match(/\(([^)]+)\)/);
-                                
-                                console.log('Processando entrada:', e.descricao);
-                                console.log('Nome extraído:', nomeMatch ? nomeMatch[1] : 'NÃO ENCONTRADO');
-                                console.log('Mês extraído:', mesMatch ? mesMatch[1] : 'NÃO ENCONTRADO');
-                                
-                                return {
-                                    id: e.id,
-                                    cliente_id: null, // Não tem cliente_id direto na entradas
-                                    mes_referencia: mesMatch ? mesMatch[1] : 'N/A',
-                                    valor: e.valor,
-                                    forma_pagamento: e.forma_pagamento,
-                                    data_pagamento: e.data,
-                                    descricao: e.descricao,
-                                    cliente_nome: nomeMatch ? nomeMatch[1] : 'Cliente'
-                                };
-                            });
-                        }
+                        console.log('[MENSALISTAS v2] Pagamentos de entradas processados:', pagamentosDeEntradas.length);
+                        console.log('[MENSALISTAS v2] Total após mesclagem:', pagamentos.length);
                     }
                 } catch (e) {
-                    console.warn('Erro ao carregar pagamentos:', e);
-                    pagamentos = [];
+                    console.warn('Erro ao carregar entradas mensalistas:', e);
                 }
 
                 console.log('Total de pagamentos carregados:', pagamentos.length);
@@ -1000,14 +1052,21 @@
                 const veiculosCliente = veiculos.filter(v => v.cliente_id === cliente.id);
                 const pagamentosCliente = pagamentos.filter(p => 
                     p.cliente_id === cliente.id || 
-                    (p.cliente_nome && p.cliente_nome.toLowerCase() === cliente.nome.toLowerCase())
+                    (p.cliente_nome && p.cliente_nome.trim().toLowerCase() === cliente.nome.trim().toLowerCase())
                 );
                 const lavagensCliente = getLavagensCliente(veiculosCliente);
                 
-                console.log(`Renderizando ${cliente.nome}:`);
-                console.log(`- Pagamentos encontrados: ${pagamentosCliente.length}`);
-                console.log(`- Veículos: ${veiculosCliente.length}`);
-                console.log(`- Lavagens: ${lavagensCliente.length}`);
+                console.log(`=== RENDERIZAR ${cliente.nome} ===`);
+                console.log(`- Nome do cliente: "${cliente.nome}"`);
+                console.log(`- Total de pagamentos: ${pagamentos.length}`);
+                console.log(`- Pagamentos filtrados: ${pagamentosCliente.length}`);
+                console.log(`- Pagamentos com nome:`, pagamentos.filter(p => p.cliente_nome).map(p => `"${p.cliente_nome}"`));
+                console.log(`- Comparação:`, pagamentos.filter(p => p.cliente_nome).map(p => ({
+                    nome: p.cliente_nome,
+                    match: p.cliente_nome && 
+                           p.cliente_nome.trim().toLowerCase() === cliente.nome.trim().toLowerCase()
+                })));
+                console.log(`============================`);
 
                 return `
                     <div class="card-cliente fade-in">
@@ -1416,18 +1475,55 @@
             
             clientes.forEach(cliente => {
                 // Verificar se cliente já pagou no mês atual
-                const mesAtualStr = `${anoAtual}-${String(mesAtual + 1).padStart(2, '0')}`;
-                const pagamentosCliente = pagamentos.filter(p => 
-                    (p.cliente_id === cliente.id || (p.cliente_nome && p.cliente_nome.toLowerCase() === cliente.nome.toLowerCase())) && 
-                    p.mes_referencia === mesAtualStr
+                const mesAtualStr1 = `${anoAtual}-${String(mesAtual + 1).padStart(2, '0')}`;
+                const mesAtualStr2 = `${String(mesAtual + 1).padStart(2, '0')}/${anoAtual}`;
+                
+                console.log(`=== ALERTA ${cliente.nome} ===`);
+                console.log(`- Mês atual (formato 1): ${mesAtualStr1}`);
+                console.log(`- Mês atual (formato 2): ${mesAtualStr2}`);
+                
+                // Mostrar todos os pagamentos do cliente
+                const todosPagamentosCliente = pagamentos.filter(p => 
+                    p.cliente_id === cliente.id || (p.cliente_nome && 
+                     p.cliente_nome.trim().toLowerCase() === cliente.nome.trim().toLowerCase())
+                );
+                console.log(`- Todos os pagamentos: ${todosPagamentosCliente.length}`);
+                console.log(`- Meses dos pagamentos: ${todosPagamentosCliente.map(p => p.mes_referencia).join(', ')}`);
+                console.log(`- Dados brutos:`, todosPagamentosCliente.map(p => ({ 
+                    id: p.id, 
+                    nome: p.cliente_nome, 
+                    mes: p.mes_referencia, 
+                    normalizado: (() => {
+                        const m = p.mes_referencia;
+                        if (!m) return '';
+                        const s = String(m).trim();
+                        if (/^\d{4}-\d{2}/.test(s)) return s.substring(0, 7);
+                        if (/^\d{2}\/\d{4}$/.test(s)) {
+                            const [mm, aa] = s.split('/');
+                            return `${aa}-${mm}`;
+                        }
+                        return s;
+                    })()
+                })));
+                
+                // Normaliza mes_referencia para "YYYY-MM" antes de comparar
+                // (cobre formatos: "YYYY-MM", "YYYY-MM-DD" e "MM/YYYY")
+                const normalizarMes = (m) => {
+                    if (!m) return '';
+                    const s = String(m).trim();
+                    if (/^\d{4}-\d{2}/.test(s)) return s.substring(0, 7);
+                    if (/^\d{2}\/\d{4}$/.test(s)) {
+                        const [mm, aa] = s.split('/');
+                        return `${aa}-${mm}`;
+                    }
+                    return s;
+                };
+                const pagamentosCliente = todosPagamentosCliente.filter(p =>
+                    normalizarMes(p.mes_referencia) === mesAtualStr1
                 );
                 
-                console.log(`Verificando alerta para ${cliente.nome}:`);
-                console.log(`- Mês atual: ${mesAtualStr}`);
-                console.log(`- Pagamentos encontrados: ${pagamentosCliente.length}`);
-                console.log(`- Todos pagamentos do cliente:`, pagamentos.filter(p => 
-                    p.cliente_id === cliente.id || (p.cliente_nome && p.cliente_nome.toLowerCase() === cliente.nome.toLowerCase())
-                ));
+                console.log(`- Pagamentos do mês atual: ${pagamentosCliente.length}`);
+                console.log(`========================`);
                 
                 // Se já pagou no mês atual, não mostrar alerta
                 if (pagamentosCliente.length > 0) {
