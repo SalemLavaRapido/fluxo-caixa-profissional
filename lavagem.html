@@ -902,11 +902,12 @@
             const user = JSON.parse(localStorage.getItem('currentUser'));
             if (!user) return;
             
-            // Carregar lavagens
+            // Carregar lavagens (de ambas as tabelas: lavagens e fila_lavagem)
             const dataInicio = document.getElementById('filtroDataInicio').value;
             const dataFim = document.getElementById('filtroDataFim').value;
             const filtroTipo = document.getElementById('filtroTipo').value;
             
+            // Buscar da tabela lavagens
             let query = supabaseClient
                 .from('lavagens')
                 .select('*')
@@ -925,6 +926,44 @@
             
             const { data: lavagensData } = await query;
             lavagens = lavagensData || [];
+            
+            // Buscar também da tabela fila_lavagem (para recuperar histórico)
+            const { data: filaLavagensData } = await supabaseClient
+                .from('fila_lavagem')
+                .select('*')
+                .eq('user_id', user.id)
+                .order('created_at', { ascending: false });
+            
+            // Converter registros de fila_lavagem para formato compatível com lavagens
+            const lavagensDaFila = (filaLavagensData || []).map(f => ({
+                id: 'fila_' + f.id,
+                placa: f.placa,
+                modelo: f.modelo,
+                cor: f.cor,
+                tipo_lavagem: f.tipo_lavagem,
+                tipo_cliente: f.tipo_cliente,
+                valor: f.valor,
+                forma_pagamento: null,
+                celular: f.celular,
+                observacao: f.observacao,
+                data_lavagem: f.created_at,
+                _origem: 'fila'
+            }));
+            
+            // Mesclar ambas as listas, removendo duplicatas
+            const todasLavagens = [...lavagens, ...lavagensDaFila];
+            const lavagensUnicas = [];
+            const idsVistos = new Set();
+            
+            todasLavagens.forEach(l => {
+                const chave = l.placa + '|' + (l.data_lavagem || l.created_at);
+                if (!idsVistos.has(chave)) {
+                    idsVistos.add(chave);
+                    lavagensUnicas.push(l);
+                }
+            });
+            
+            lavagens = lavagensUnicas.sort((a, b) => new Date(b.data_lavagem) - new Date(a.data_lavagem));
             
             // Carregar clientes mensalistas
             const { data: clientesData } = await supabaseClient
