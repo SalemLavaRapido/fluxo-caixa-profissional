@@ -929,14 +929,48 @@
                     if (!pagamentosError) {
                         pagamentos = pagamentosData || [];
                     } else {
-                        console.warn('Tabela pagamentos não encontrada, continuando sem ela');
+                        console.warn('Tabela pagamentos não encontrada, buscando das entradas');
                         pagamentos = [];
+                        
+                        // Buscar pagamentos da tabela entradas (categoria mensalista)
+                        const { data: entradasData } = await supabaseClient
+                            .from('entradas')
+                            .select('*')
+                            .eq('user_id', user.id)
+                            .eq('categoria', 'mensalista')
+                            .order('data', { ascending: false });
+                        
+                        if (entradasData) {
+                            // Converter entradas para formato de pagamentos
+                            pagamentos = entradasData.map(e => {
+                                // Extrair informações da descrição
+                                // Formato: "Mensalidade - NOME_CLIENTE (MES) - Veículos: MODELOS"
+                                const nomeMatch = e.descricao.match(/Mensalidade - (.+?) \(/);
+                                const mesMatch = e.descricao.match(/\(([^)]+)\)/);
+                                
+                                console.log('Processando entrada:', e.descricao);
+                                console.log('Nome extraído:', nomeMatch ? nomeMatch[1] : 'NÃO ENCONTRADO');
+                                console.log('Mês extraído:', mesMatch ? mesMatch[1] : 'NÃO ENCONTRADO');
+                                
+                                return {
+                                    id: e.id,
+                                    cliente_id: null, // Não tem cliente_id direto na entradas
+                                    mes_referencia: mesMatch ? mesMatch[1] : 'N/A',
+                                    valor: e.valor,
+                                    forma_pagamento: e.forma_pagamento,
+                                    data_pagamento: e.data,
+                                    descricao: e.descricao,
+                                    cliente_nome: nomeMatch ? nomeMatch[1] : 'Cliente'
+                                };
+                            });
+                        }
                     }
                 } catch (e) {
                     console.warn('Erro ao carregar pagamentos:', e);
                     pagamentos = [];
                 }
 
+                console.log('Total de pagamentos carregados:', pagamentos.length);
                 renderizarClientes();
                 atualizarStats();
                 verificarAlertas();
@@ -964,8 +998,16 @@
 
             container.innerHTML = clientes.map(cliente => {
                 const veiculosCliente = veiculos.filter(v => v.cliente_id === cliente.id);
-                const pagamentosCliente = pagamentos.filter(p => p.cliente_id === cliente.id);
+                const pagamentosCliente = pagamentos.filter(p => 
+                    p.cliente_id === cliente.id || 
+                    (p.cliente_nome && p.cliente_nome.toLowerCase() === cliente.nome.toLowerCase())
+                );
                 const lavagensCliente = getLavagensCliente(veiculosCliente);
+                
+                console.log(`Renderizando ${cliente.nome}:`);
+                console.log(`- Pagamentos encontrados: ${pagamentosCliente.length}`);
+                console.log(`- Veículos: ${veiculosCliente.length}`);
+                console.log(`- Lavagens: ${lavagensCliente.length}`);
 
                 return `
                     <div class="card-cliente fade-in">
@@ -1376,12 +1418,20 @@
                 // Verificar se cliente já pagou no mês atual
                 const mesAtualStr = `${anoAtual}-${String(mesAtual + 1).padStart(2, '0')}`;
                 const pagamentosCliente = pagamentos.filter(p => 
-                    p.cliente_id === cliente.id && 
+                    (p.cliente_id === cliente.id || (p.cliente_nome && p.cliente_nome.toLowerCase() === cliente.nome.toLowerCase())) && 
                     p.mes_referencia === mesAtualStr
                 );
                 
+                console.log(`Verificando alerta para ${cliente.nome}:`);
+                console.log(`- Mês atual: ${mesAtualStr}`);
+                console.log(`- Pagamentos encontrados: ${pagamentosCliente.length}`);
+                console.log(`- Todos pagamentos do cliente:`, pagamentos.filter(p => 
+                    p.cliente_id === cliente.id || (p.cliente_nome && p.cliente_nome.toLowerCase() === cliente.nome.toLowerCase())
+                ));
+                
                 // Se já pagou no mês atual, não mostrar alerta
                 if (pagamentosCliente.length > 0) {
+                    console.log(`- Cliente ${cliente.nome} já pagou no mês atual, sem alerta`);
                     return;
                 }
                 
@@ -2021,7 +2071,7 @@
                             .from('entradas')
                             .select('*')
                             .eq('user_id', user.id)
-                            .eq('categoria', 'Mensalista')
+                            .eq('categoria', 'mensalista')
                             .like('descricao', '%' + nome + '%')
                             .order('data', { ascending: false });
                         
