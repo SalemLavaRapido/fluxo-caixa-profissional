@@ -894,7 +894,7 @@
                         <div class="card-body">
                             <form id="formNovaConta">
                                 <div class="row g-2">
-                                    <div class="col-md-4">
+                                    <div class="col-md-3">
                                         <input type="text" class="form-control" id="contaDescricao" placeholder="Descrição" required>
                                     </div>
                                     <div class="col-md-2">
@@ -916,8 +916,15 @@
                                         </select>
                                     </div>
                                     <div class="col-md-2">
-                                        <button type="submit" class="btn btn-success w-100">
-                                            <i class="fas fa-plus"></i> Adicionar
+                                        <select class="form-control" id="contaTipo" required>
+                                            <option value="">Tipo</option>
+                                            <option value="fixo">Fixo</option>
+                                            <option value="variavel">Variável</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-1">
+                                        <button type="submit" class="btn btn-success w-100" title="Adicionar">
+                                            <i class="fas fa-plus"></i>
                                         </button>
                                     </div>
                                 </div>
@@ -933,6 +940,7 @@
                                 <tr>
                                     <th>Descrição</th>
                                     <th>Categoria</th>
+                                    <th>Tipo</th>
                                     <th>Vencimento</th>
                                     <th>Valor</th>
                                     <th>Ações</th>
@@ -940,7 +948,7 @@
                             </thead>
                             <tbody id="listaContasPagar">
                                 <tr>
-                                    <td colspan="5" class="text-center text-muted">
+                                    <td colspan="6" class="text-center text-muted">
                                         <i class="fas fa-check-circle fa-2x mb-2"></i>
                                         <p>Nenhuma conta pendente</p>
                                     </td>
@@ -1244,7 +1252,7 @@
             if (contasPagar.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="5" class="text-center text-muted">
+                        <td colspan="6" class="text-center text-muted">
                             <i class="fas fa-check-circle fa-2x mb-2"></i>
                             <p>Nenhuma conta pendente</p>
                         </td>
@@ -1253,10 +1261,18 @@
                 return;
             }
 
-            tbody.innerHTML = contasPagar.map(conta => `
+            tbody.innerHTML = contasPagar.map(conta => {
+                const tipo = conta.tipo || '-';
+                const tipoBadge = tipo === 'fixo' 
+                    ? '<span class="badge bg-primary">Fixo</span>'
+                    : tipo === 'variavel'
+                    ? '<span class="badge bg-warning text-dark">Variável</span>'
+                    : '<span class="badge bg-secondary">-</span>';
+                return `
                 <tr>
                     <td>${conta.descricao}</td>
                     <td><span class="badge bg-info">${conta.categoria}</span></td>
+                    <td>${tipoBadge}</td>
                     <td>${new Date(conta.data_vencimento).toLocaleDateString('pt-BR')}</td>
                     <td class="text-danger fw-bold">R$ ${conta.valor.toFixed(2)}</td>
                     <td>
@@ -1265,7 +1281,7 @@
                         </button>
                     </td>
                 </tr>
-            `).join('');
+            `;}).join('');
         }
 
         // Salvar nova conta
@@ -1287,6 +1303,7 @@
                     valor: parseFloat(document.getElementById('contaValor').value),
                     data_vencimento: document.getElementById('contaVencimento').value,
                     categoria: document.getElementById('contaCategoria').value,
+                    tipo: document.getElementById('contaTipo').value,
                     status: 'pendente'
                 };
 
