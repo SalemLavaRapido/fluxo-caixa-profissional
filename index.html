@@ -1109,5 +1109,335 @@
             document.getElementById('loginContainer').classList.remove('hidden');
         }
     </script>
+
+    <!-- Modal Contas a Pagar -->
+    <div class="modal fade" id="modalContasPagar" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Contas a Pagar</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h6 id="modalCpMes">Mês Atual</h6>
+                            <small class="text-muted">Total: <span id="cpTotalPendente">R$ 0,00</span></small>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <button class="btn btn-success btn-sm" onclick="document.getElementById('formNovaContaPagar').style.display='block'">
+                                <i class="fas fa-plus me-1"></i>Nova Conta
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Formulário Nova Conta -->
+                    <form id="formNovaContaPagar" style="display:none; background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                        <div class="row">
+                            <div class="col-md-6 mb-2">
+                                <label>Descrição</label>
+                                <input type="text" id="cpDescricao" class="form-control" required>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <label>Valor</label>
+                                <input type="number" id="cpValor" class="form-control" step="0.01" required>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <label>Vencimento</label>
+                                <input type="date" id="cpVencimento" class="form-control" required>
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <label>Categoria</label>
+                                <select id="cpCategoria" class="form-control">
+                                    <option value="aluguel">Aluguel</option>
+                                    <option value="funcionarios">Funcionários</option>
+                                    <option value="fornecedores">Fornecedores</option>
+                                    <option value="impostos">Impostos</option>
+                                    <option value="marketing">Marketing</option>
+                                    <option value="transporte">Transporte</option>
+                                    <option value="outras">Outras</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <label>Observação</label>
+                                <input type="text" id="cpObservacao" class="form-control">
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-success btn-sm me-2">Salvar</button>
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('formNovaContaPagar').style.display='none'">Cancelar</button>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- Lista de Contas -->
+                    <div id="cpVazio" class="text-center text-muted py-4">
+                        <i class="fas fa-inbox fa-2x mb-2"></i>
+                        <p>Nenhuma conta pendente</p>
+                    </div>
+                    <div id="cpTabelaWrap" style="display:none;">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Vencimento</th>
+                                        <th>Descrição</th>
+                                        <th>Categoria</th>
+                                        <th>Valor</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cpTbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Funções Contas a Pagar
+        function getUserId() {
+            if (typeof authSystem !== 'undefined' && authSystem.getUserId) {
+                return authSystem.getUserId();
+            }
+            const user = JSON.parse(localStorage.getItem('user'));
+            return user ? user.id : null;
+        }
+
+        function getSupabase() {
+            if (typeof supabase !== 'undefined') return supabase;
+            if (typeof authSystem !== 'undefined' && authSystem.supabase) return authSystem.supabase;
+            return window.supabase;
+        }
+
+        function fmtMoeda(valor) {
+            return 'R$ ' + parseFloat(valor).toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+        }
+
+        function fmtData(data) {
+            if (!data) return '';
+            const d = new Date(data + 'T00:00:00');
+            return d.toLocaleDateString('pt-BR');
+        }
+
+        function showAlert(msg, tipo) {
+            try {
+                if (typeof authSystem !== 'undefined' && authSystem.showAlert) {
+                    return authSystem.showAlert(msg, tipo);
+                }
+            } catch (_) {}
+            alert(msg);
+        }
+
+        async function carregarContasPagar() {
+            const sb = getSupabase();
+            const uid = getUserId();
+            if (!sb || !uid) return;
+
+            // Obter período dos filtros
+            let inicio, fim;
+            const dataInicio = document.getElementById('dataInicio')?.value;
+            const dataFim = document.getElementById('dataFim')?.value;
+
+            if (dataInicio && dataFim) {
+                inicio = dataInicio;
+                fim = dataFim;
+            } else {
+                const hoje = new Date();
+                const primeiroDia = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+                const ultimoDia = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
+                inicio = primeiroDia.toISOString().split('T')[0];
+                fim = ultimoDia.toISOString().split('T')[0];
+            }
+
+            const { data, error } = await sb
+                .from('contas_pagar')
+                .select('*')
+                .eq('user_id', uid)
+                .eq('status', 'pendente')
+                .gte('data_vencimento', inicio)
+                .lte('data_vencimento', fim)
+                .order('data_vencimento', { ascending: true });
+
+            if (error) {
+                console.error('Erro ao carregar contas:', error);
+                return;
+            }
+
+            const contas = data || [];
+            const total = contas.reduce((s, c) => s + parseFloat(c.valor || 0), 0);
+
+            const elTotal = document.getElementById('totalContasPagar');
+            const elQtd = document.getElementById('qtdContasPendentes');
+            if (elTotal) elTotal.textContent = fmtMoeda(total);
+            if (elQtd) elQtd.textContent = `${contas.length} pendente${contas.length === 1 ? '' : 's'}`;
+
+            renderizarListaContasPagar(contas, total);
+        }
+
+        function renderizarListaContasPagar(contas, total) {
+            const elMes = document.getElementById('modalCpMes');
+            const elCount = document.getElementById('cpListaCount');
+            const elVazio = document.getElementById('cpVazio');
+            const elTabelaWrap = document.getElementById('cpTabelaWrap');
+            const elTbody = document.getElementById('cpTbody');
+            const elTotal = document.getElementById('cpTotalPendente');
+
+            if (!elTbody) return;
+
+            if (elMes) {
+                const dataInicio = document.getElementById('dataInicio')?.value;
+                const dataFim = document.getElementById('dataFim')?.value;
+                if (dataInicio && dataFim) {
+                    elMes.textContent = `${fmtData(dataInicio)} a ${fmtData(dataFim)}`;
+                } else {
+                    const hoje = new Date();
+                    elMes.textContent = hoje.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+                }
+            }
+
+            if (elTotal) elTotal.textContent = fmtMoeda(total);
+
+            if (contas.length === 0) {
+                if (elVazio) elVazio.style.display = 'block';
+                if (elTabelaWrap) elTabelaWrap.style.display = 'none';
+                return;
+            }
+
+            if (elVazio) elVazio.style.display = 'none';
+            if (elTabelaWrap) elTabelaWrap.style.display = 'block';
+
+            elTbody.innerHTML = contas.map(c => `
+                <tr>
+                    <td>${fmtData(c.data_vencimento)}</td>
+                    <td>${c.descricao}</td>
+                    <td><span class="badge bg-secondary">${c.categoria}</span></td>
+                    <td class="text-danger fw-bold">${fmtMoeda(c.valor)}</td>
+                    <td>
+                        <button class="btn btn-sm btn-success" onclick="cpMarcarComoPago('${c.id}')">
+                            <i class="fas fa-check"></i> Pagar
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="cpExcluir('${c.id}')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function abrirModalContasPagar() {
+            const modal = new bootstrap.Modal(document.getElementById('modalContasPagar'));
+            modal.show();
+            carregarContasPagar();
+        }
+
+        document.getElementById('formNovaContaPagar').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const sb = getSupabase();
+            const uid = getUserId();
+            if (!sb || !uid) return;
+
+            const conta = {
+                descricao: document.getElementById('cpDescricao').value,
+                valor: parseFloat(document.getElementById('cpValor').value),
+                data_vencimento: document.getElementById('cpVencimento').value,
+                categoria: document.getElementById('cpCategoria').value,
+                observacao: document.getElementById('cpObservacao').value,
+                status: 'pendente',
+                user_id: uid
+            };
+
+            const { error } = await sb.from('contas_pagar').insert([conta]);
+            if (error) {
+                showAlert('Erro ao salvar: ' + error.message, 'danger');
+            } else {
+                showAlert('Conta salva com sucesso!', 'success');
+                document.getElementById('formNovaContaPagar').reset();
+                document.getElementById('formNovaContaPagar').style.display = 'none';
+                carregarContasPagar();
+            }
+        });
+
+        async function cpMarcarComoPago(id) {
+            if (!confirm('Marcar esta conta como paga?')) return;
+
+            const sb = getSupabase();
+            const uid = getUserId();
+            if (!sb || !uid) return;
+
+            const { data: conta } = await sb.from('contas_pagar').select('*').eq('id', id).single();
+
+            if (!conta) return;
+
+            const hoje = new Date().toISOString().split('T')[0];
+
+            const { error: errorUpdate } = await sb
+                .from('contas_pagar')
+                .update({ status: 'pago', data_pagamento: hoje })
+                .eq('id', id);
+
+            if (errorUpdate) {
+                showAlert('Erro ao marcar como pago: ' + errorUpdate.message, 'danger');
+                return;
+            }
+
+            const saida = {
+                data: conta.data_vencimento,
+                descricao: `[Conta Paga] ${conta.descricao}`,
+                valor: conta.valor,
+                categoria: conta.categoria,
+                tipo: 'variavel',
+                user_id: uid
+            };
+
+            const { error: errorInsert } = await sb.from('saidas').insert([saida]);
+            if (errorInsert) {
+                showAlert('Erro ao inserir saída: ' + errorInsert.message, 'danger');
+                return;
+            }
+
+            showAlert('Conta marcada como paga!', 'success');
+            carregarContasPagar();
+            if (typeof saidasSystem !== 'undefined') {
+                await saidasSystem.carregarSaidas();
+                await saidasSystem.renderizarTabela();
+            }
+            if (typeof dashboardSystem !== 'undefined' && dashboardSystem.init) {
+                await dashboardSystem.init();
+            }
+        }
+
+        async function cpExcluir(id) {
+            if (!confirm('Excluir esta conta?')) return;
+
+            const sb = getSupabase();
+            if (!sb) return;
+
+            const { error } = await sb.from('contas_pagar').delete().eq('id', id);
+            if (error) {
+                showAlert('Erro ao excluir: ' + error.message, 'danger');
+            } else {
+                showAlert('Conta excluída!', 'success');
+                carregarContasPagar();
+            }
+        }
+
+        // Eventos nos filtros de data
+        document.getElementById('dataInicio')?.addEventListener('change', carregarContasPagar);
+        document.getElementById('dataFim')?.addEventListener('change', carregarContasPagar);
+
+        // Carregar quando usuário estiver logado
+        let tentativas = 0;
+        const intervalo = setInterval(() => {
+            tentativas++;
+            if (getUserId() && getSupabase()) {
+                clearInterval(intervalo);
+                carregarContasPagar();
+            } else if (tentativas > 30) {
+                clearInterval(intervalo);
+            }
+        }, 1000);
+    </script>
 </body>
 </html>
