@@ -798,6 +798,7 @@
         let lavagens = [];
         let pagamentos = [];
         let filtroAtual = '';
+        let historicoClienteAtual = { id: null, nome: null }; // Para reabrir modal após exclusão
 
         // Verificar login ao carregar
         document.addEventListener('DOMContentLoaded', async () => {
@@ -877,6 +878,7 @@
             const user = JSON.parse(localStorage.getItem('currentUser'));
             if (!user) return;
 
+            console.log('%c[MENSALISTAS v2] carregarDados iniciado', 'color:#0f0;font-weight:bold');
             try {
                 // Carregar clientes
                 const { data: clientesData, error: clientesError } = await supabaseClient
@@ -918,7 +920,8 @@
                     lavagens = [];
                 }
 
-                // Carregar pagamentos (tabela pode não existir)
+                // Carregar pagamentos: combinar tabela 'pagamentos' + 'entradas' (categoria mensalista)
+                pagamentos = [];
                 try {
                     const { data: pagamentosData, error: pagamentosError } = await supabaseClient
                         .from('pagamentos')
@@ -926,17 +929,101 @@
                         .eq('user_id', user.id)
                         .order('data_pagamento', { ascending: false });
 
-                    if (!pagamentosError) {
-                        pagamentos = pagamentosData || [];
-                    } else {
-                        console.warn('Tabela pagamentos não encontrada, continuando sem ela');
-                        pagamentos = [];
+                    if (!pagamentosError && pagamentosData) {
+                        pagamentos = pagamentosData;
                     }
                 } catch (e) {
-                    console.warn('Erro ao carregar pagamentos:', e);
-                    pagamentos = [];
+                    console.warn('Tabela pagamentos indisponível:', e);
                 }
 
+                // SEMPRE buscar também as entradas mensalistas, para garantir detecção
+                // de pagamentos mesmo quando a tabela 'pagamentos' não retornou registros.
+                // Tenta múltiplos filtros para cobrir diferentes formas de registro.
+                try {
+                    // 1) Pelo campo categoria (padrão 'mensalista')
+                    let { data: entradasData } = await supabaseClient
+                        .from('entradas')
+                        .select('*')
+                        .eq('user_id', user.id)
+                        .eq('categoria', 'mensalista')
+                        .order('data', { ascending: false });
+                    
+                    // 2) Se não encontrar, busca por descrição contendo 'Mensalidade'
+                    if (!entradasData || entradasData.length === 0) {
+                        const { data: entradasPorDesc } = await supabaseClient
+                            .from('entradas')
+                            .select('*')
+                            .eq('user_id', user.id)
+                            .ilike('descricao', '%Mensalidade%')
+                            .order('data', { ascending: false });
+                        entradasData = entradasPorDesc;
+                    }
+                    
+                    // 3) Se ainda não encontrar, busca por categoria 'Mensalista' (maiúsculo)
+                    if (!entradasData || entradasData.length === 0) {
+                        const { data: entradasPorCat } = await supabaseClient
+                            .from('entradas')
+                            .select('*')
+                            .eq('user_id', user.id)
+                            .eq('categoria', 'Mensalista')
+                            .order('data', { ascending: false });
+                        entradasData = entradasPorCat;
+                    }
+                    
+                    console.log('[MENSALISTAS v2] Entradas encontradas:', entradasData?.length || 0);
+
+                    if (entradasData && entradasData.length > 0) {
+                        const pagamentosDeEntradas = entradasData.map(e => {
+                            // Formato esperado: "Mensalidade - NOME (MES) - Veículos: ..."
+                            const desc = e.descricao || '';
+                            const nomeMatch = desc.match(/Mensalidade - (.+?) \(/) || desc.match(/Mensalidade - (.+?)\(/) || desc.match(/Mensalidade - (.+)$/);
+                            const mesMatch = desc.match(/\((\d{4}-\d{2}[^)]*)\)/);
+                            // Fallback: derivar mês da data real do lançamento (campo 'data')
+                            let mesRef = mesMatch ? mesMatch[1] : null;
+                            if (!mesRef && e.data) {
+                                mesRef = String(e.data).substring(0, 7); // YYYY-MM
+                            }
+                            return {
+                                id: 'entrada_' + e.id,
+                                entrada_id: e.id,
+                                cliente_id: null,
+                                mes_referencia: mesRef || 'N/A',
+                                valor: e.valor,
+                                forma_pagamento: e.forma_pagamento,
+                                data_pagamento: e.data,
+                                descricao: desc,
+                                cliente_nome: nomeMatch ? nomeMatch[1].trim() : 'Cliente',
+                                placa: e.placa || null,
+                                _origem: 'entrada'
+                            };
+                        });
+
+                        // Mesclar evitando duplicatas (mesmo cliente + mesmo mes_referencia)
+                        const chave = p => {
+                            const cli = (p.cliente_id || (p.cliente_nome || '').trim().toLowerCase());
+                            return cli + '|' + (p.mes_referencia || '');
+                        };
+                        const existentes = new Set(pagamentos.map(chave));
+                        // Resolver cliente_id pelo nome quando possível
+                        pagamentosDeEntradas.forEach(p => {
+                            if (!p.cliente_id && p.cliente_nome) {
+                                const c = clientes.find(c => c.nome.trim().toLowerCase() === p.cliente_nome.trim().toLowerCase());
+                                if (c) p.cliente_id = c.id;
+                            }
+                            if (!existentes.has(chave(p))) {
+                                pagamentos.push(p);
+                                existentes.add(chave(p));
+                            }
+                        });
+                        
+                        console.log('[MENSALISTAS v2] Pagamentos de entradas processados:', pagamentosDeEntradas.length);
+                        console.log('[MENSALISTAS v2] Total após mesclagem:', pagamentos.length);
+                    }
+                } catch (e) {
+                    console.warn('Erro ao carregar entradas mensalistas:', e);
+                }
+
+                console.log('Total de pagamentos carregados:', pagamentos.length);
                 renderizarClientes();
                 atualizarStats();
                 verificarAlertas();
@@ -964,8 +1051,23 @@
 
             container.innerHTML = clientes.map(cliente => {
                 const veiculosCliente = veiculos.filter(v => v.cliente_id === cliente.id);
-                const pagamentosCliente = pagamentos.filter(p => p.cliente_id === cliente.id);
+                const pagamentosCliente = pagamentos.filter(p => 
+                    p.cliente_id === cliente.id || 
+                    (p.cliente_nome && p.cliente_nome.trim().toLowerCase() === cliente.nome.trim().toLowerCase())
+                );
                 const lavagensCliente = getLavagensCliente(veiculosCliente);
+                
+                console.log(`=== RENDERIZAR ${cliente.nome} ===`);
+                console.log(`- Nome do cliente: "${cliente.nome}"`);
+                console.log(`- Total de pagamentos: ${pagamentos.length}`);
+                console.log(`- Pagamentos filtrados: ${pagamentosCliente.length}`);
+                console.log(`- Pagamentos com nome:`, pagamentos.filter(p => p.cliente_nome).map(p => `"${p.cliente_nome}"`));
+                console.log(`- Comparação:`, pagamentos.filter(p => p.cliente_nome).map(p => ({
+                    nome: p.cliente_nome,
+                    match: p.cliente_nome && 
+                           p.cliente_nome.trim().toLowerCase() === cliente.nome.trim().toLowerCase()
+                })));
+                console.log(`============================`);
 
                 return `
                     <div class="card-cliente fade-in">
@@ -1374,14 +1476,59 @@
             
             clientes.forEach(cliente => {
                 // Verificar se cliente já pagou no mês atual
-                const mesAtualStr = `${anoAtual}-${String(mesAtual + 1).padStart(2, '0')}`;
-                const pagamentosCliente = pagamentos.filter(p => 
-                    p.cliente_id === cliente.id && 
-                    p.mes_referencia === mesAtualStr
+                const mesAtualStr1 = `${anoAtual}-${String(mesAtual + 1).padStart(2, '0')}`;
+                const mesAtualStr2 = `${String(mesAtual + 1).padStart(2, '0')}/${anoAtual}`;
+                
+                console.log(`=== ALERTA ${cliente.nome} ===`);
+                console.log(`- Mês atual (formato 1): ${mesAtualStr1}`);
+                console.log(`- Mês atual (formato 2): ${mesAtualStr2}`);
+                
+                // Mostrar todos os pagamentos do cliente
+                const todosPagamentosCliente = pagamentos.filter(p => 
+                    p.cliente_id === cliente.id || (p.cliente_nome && 
+                     p.cliente_nome.trim().toLowerCase() === cliente.nome.trim().toLowerCase())
                 );
+                console.log(`- Todos os pagamentos: ${todosPagamentosCliente.length}`);
+                console.log(`- Meses dos pagamentos: ${todosPagamentosCliente.map(p => p.mes_referencia).join(', ')}`);
+                console.log(`- Dados brutos:`, todosPagamentosCliente.map(p => ({ 
+                    id: p.id, 
+                    nome: p.cliente_nome, 
+                    mes: p.mes_referencia, 
+                    normalizado: (() => {
+                        const m = p.mes_referencia;
+                        if (!m) return '';
+                        const s = String(m).trim();
+                        if (/^\d{4}-\d{2}/.test(s)) return s.substring(0, 7);
+                        if (/^\d{2}\/\d{4}$/.test(s)) {
+                            const [mm, aa] = s.split('/');
+                            return `${aa}-${mm}`;
+                        }
+                        return s;
+                    })()
+                })));
+                
+                // Normaliza mes_referencia para "YYYY-MM" antes de comparar
+                // (cobre formatos: "YYYY-MM", "YYYY-MM-DD" e "MM/YYYY")
+                const normalizarMes = (m) => {
+                    if (!m) return '';
+                    const s = String(m).trim();
+                    if (/^\d{4}-\d{2}/.test(s)) return s.substring(0, 7);
+                    if (/^\d{2}\/\d{4}$/.test(s)) {
+                        const [mm, aa] = s.split('/');
+                        return `${aa}-${mm}`;
+                    }
+                    return s;
+                };
+                const pagamentosCliente = todosPagamentosCliente.filter(p =>
+                    normalizarMes(p.mes_referencia) === mesAtualStr1
+                );
+                
+                console.log(`- Pagamentos do mês atual: ${pagamentosCliente.length}`);
+                console.log(`========================`);
                 
                 // Se já pagou no mês atual, não mostrar alerta
                 if (pagamentosCliente.length > 0) {
+                    console.log(`- Cliente ${cliente.nome} já pagou no mês atual, sem alerta`);
                     return;
                 }
                 
@@ -1943,13 +2090,28 @@
         // Obter lavagens de todos os veículos de um cliente (busca por placa)
         function getLavagensCliente(veiculosCliente) {
             const placasCliente = veiculosCliente.map(v => v.placa.toUpperCase());
-            return lavagens
+            console.log('[LAVAGENS DEBUG] Placas do cliente:', placasCliente);
+            console.log('[LAVAGENS DEBUG] Total de lavagens carregadas:', lavagens.length);
+            console.log('[LAVAGENS DEBUG] Amostra de lavagens:', lavagens.slice(0, 3).map(l => ({
+                placa: l.placa,
+                veiculo_id: l.veiculo_id,
+                data: l.data_lavagem
+            })));
+            
+            const lavagensFiltradas = lavagens
                 .filter(l => {
                     // Busca por placa (da fila de lavagem) ou por veiculo_id (legado)
                     const placaLavagem = (l.placa || '').toUpperCase();
-                    return placasCliente.includes(placaLavagem) || veiculosCliente.some(v => v.id === l.veiculo_id);
+                    const match = placasCliente.includes(placaLavagem) || veiculosCliente.some(v => v.id === l.veiculo_id);
+                    if (match) {
+                        console.log('[LAVAGENS DEBUG] Lavagem encontrada:', l.placa, l.data_lavagem);
+                    }
+                    return match;
                 })
                 .sort((a, b) => new Date(b.data_lavagem) - new Date(a.data_lavagem));
+            
+            console.log('[LAVAGENS DEBUG] Lavagens filtradas:', lavagensFiltradas.length);
+            return lavagensFiltradas;
         }
 
         // Abrir histórico de lavagens
@@ -1981,6 +2143,7 @@
                                     <th>Veículo</th>
                                     <th>Tipo</th>
                                     <th>Valor</th>
+                                    <th class="text-center">Ações</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -1990,6 +2153,12 @@
                                         <td>${l.placa || l.veiculo_id}</td>
                                         <td>${l.tipo || '-'}</td>
                                         <td>R$ ${(l.valor || 0).toFixed(2)}</td>
+                                        <td class="text-center">
+                                            <button class="btn btn-danger btn-sm" title="Excluir lavagem"
+                                                onclick="excluirLavagemHistorico('${l.id}', '${clienteId}', '${nome.replace(/'/g, "\\'")}')">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </td>
                                     </tr>
                                 `).join('')}
                             </tbody>
@@ -2002,10 +2171,58 @@
             modal.show();
         }
 
+        // Excluir lavagem do histórico (também remove a entrada do fluxo de caixa)
+        async function excluirLavagemHistorico(lavagemId, clienteId, nome) {
+            if (!confirm('Tem certeza que deseja excluir esta lavagem? Ela também será removida do fluxo de caixa.')) return;
+
+            const user = JSON.parse(localStorage.getItem('currentUser'));
+            if (!user) return;
+
+            try {
+                // Buscar dados da lavagem antes de excluir (pra apagar a entrada correspondente)
+                const lavagem = lavagens.find(l => l.id === lavagemId);
+
+                // Excluir da tabela lavagens
+                const { error } = await supabaseClient
+                    .from('lavagens')
+                    .delete()
+                    .eq('id', lavagemId);
+
+                if (error) {
+                    showAlert('Erro ao excluir lavagem: ' + error.message, 'danger');
+                    return;
+                }
+
+                // Tentar remover a entrada correspondente do fluxo de caixa
+                if (lavagem) {
+                    const dataLav = String(lavagem.data_lavagem).split('T')[0];
+                    await supabaseClient
+                        .from('entradas')
+                        .delete()
+                        .eq('user_id', user.id)
+                        .eq('categoria', 'lavagem_carro')
+                        .eq('data', dataLav)
+                        .eq('placa', lavagem.placa)
+                        .eq('valor', lavagem.valor);
+                }
+
+                showAlert('Lavagem excluída com sucesso!', 'success');
+                await carregarDados();
+                // Reabrir o modal já com a lista atualizada
+                abrirHistoricoLavagens(clienteId, nome);
+            } catch (err) {
+                console.error('Erro ao excluir lavagem:', err);
+                showAlert('Erro ao excluir lavagem', 'danger');
+            }
+        }
+
         // Abrir histórico de pagamentos
         async function abrirHistoricoPagamentos(clienteId, nome) {
             const cliente = clientes.find(c => c.id === clienteId);
             if (!cliente) return;
+            
+            // Armazenar para reabrir modal após exclusão
+            historicoClienteAtual = { id: clienteId, nome: nome };
 
             let pagamentosCliente = [];
             
@@ -2021,7 +2238,7 @@
                             .from('entradas')
                             .select('*')
                             .eq('user_id', user.id)
-                            .eq('categoria', 'Mensalista')
+                            .eq('categoria', 'mensalista')
                             .like('descricao', '%' + nome + '%')
                             .order('data', { ascending: false });
                         
@@ -2284,36 +2501,66 @@
             if (!user) return;
 
             try {
-                // Excluir pagamento
-                const { error } = await supabaseClient
-                    .from('pagamentos')
-                    .delete()
-                    .eq('id', pagamentoId)
-                    .eq('user_id', user.id);
+                // Verificar se o pagamento é da tabela 'pagamentos' ou veio de 'entradas'
+                const ehEntrada = pagamentoId.startsWith('entrada_');
+                
+                if (ehEntrada) {
+                    // Extrair ID real da entrada
+                    const entradaId = pagamentoId.replace('entrada_', '');
+                    
+                    // Excluir apenas da tabela entradas
+                    const { error } = await supabaseClient
+                        .from('entradas')
+                        .delete()
+                        .eq('id', entradaId)
+                        .eq('user_id', user.id);
+                        
+                    if (error) {
+                        showAlert('Erro ao excluir pagamento: ' + error.message, 'danger');
+                        return;
+                    }
+                } else {
+                    // Excluir da tabela pagamentos
+                    const { error } = await supabaseClient
+                        .from('pagamentos')
+                        .delete()
+                        .eq('id', pagamentoId)
+                        .eq('user_id', user.id);
 
-                if (error) {
-                    showAlert('Erro ao excluir pagamento: ' + error.message, 'danger');
-                    return;
+                    if (error) {
+                        showAlert('Erro ao excluir pagamento: ' + error.message, 'danger');
+                        return;
+                    }
+
+                    // Excluir também do fluxo de caixa (entradas) se existir
+                    await supabaseClient
+                        .from('entradas')
+                        .delete()
+                        .eq('user_id', user.id)
+                        .ilike('descricao', '%Mensalidade%');
                 }
 
-                // Excluir do fluxo de caixa também
-                await supabaseClient
-                    .from('entradas')
-                    .delete()
-                    .eq('user_id', user.id);
-
                 showAlert('Pagamento excluído com sucesso!', 'success');
+                
                 await carregarDados();
+                
                 // Reaplicar busca se houver termo de busca
                 const campoBusca = document.getElementById('campoBusca');
                 if (campoBusca && campoBusca.value.trim()) {
                     filtrarClientes();
                 }
-
-                // Reabrir modal para atualizar
-                const modal = bootstrap.Modal.getInstance(document.getElementById('modalHistoricoPagamentos'));
+                
+                // Fechar e reabrir modal para atualizar o histórico
+                const modalElement = document.getElementById('modalHistoricoPagamentos');
+                const modal = bootstrap.Modal.getInstance(modalElement);
                 if (modal) {
                     modal.hide();
+                    // Reabrir após um pequeno delay usando a variável global
+                    setTimeout(() => {
+                        if (historicoClienteAtual.id && historicoClienteAtual.nome) {
+                            abrirHistoricoPagamentos(historicoClienteAtual.id, historicoClienteAtual.nome);
+                        }
+                    }, 300);
                 }
 
             } catch (error) {
