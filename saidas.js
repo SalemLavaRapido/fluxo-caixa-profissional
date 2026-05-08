@@ -1,24 +1,27 @@
-// Sistema de Saídas (Despesas)
+// Sistema de Saídas (Despesas) - com status pendente/paga
 class SaidasSystem {
     constructor() {
-        this.saidas = [];
+        this.saidas = [];          // TODAS as saídas (pendentes + pagas)
         this.editingId = null;
+        this.filtros = {};
     }
 
-    // Carregar saídas do Supabase
+    // Carregar saídas do Supabase (ambas pendentes e pagas)
     async carregarSaidas(filtros = {}) {
         try {
             if (!supabase || !authSystem.isLoggedIn()) {
                 return [];
             }
 
+            this.filtros = filtros || {};
+            const userId = authSystem.getCurrentUserId();
+
             let query = supabase
                 .from('saidas')
                 .select('*')
-                .eq('user_id', authSystem.getCurrentUserId())
+                .eq('user_id', userId)
                 .order('data', { ascending: false });
 
-            // Aplicar filtros
             if (filtros.dataInicio) {
                 query = query.gte('data', filtros.dataInicio);
             }
@@ -30,60 +33,60 @@ class SaidasSystem {
             }
 
             const { data, error } = await query;
+            if (error) throw error;
 
-            if (error) {
-                throw error;
-            }
+            // Normalizar: se vier sem status, considerar 'paga' (registros antigos)
+            this.saidas = (data || []).map(s => ({
+                ...s,
+                status: s.status || 'paga'
+            }));
 
-            this.saidas = data || [];
             return this.saidas;
         } catch (error) {
             console.error('Erro ao carregar saídas:', error);
-            authSystem.showAlert('Erro ao carregar saídas: ' + error.message, 'danger');
+            if (authSystem && authSystem.showAlert) {
+                authSystem.showAlert('Erro ao carregar saídas: ' + error.message, 'danger');
+            }
             return [];
         }
     }
 
-    // Salvar saída
+    // Salvar saída (nova vai como pendente; edição preserva status)
     async salvarSaida(saida) {
         try {
-            if (!supabase || !authSystem.isLoggedIn()) {
-                return false;
-            }
+            if (!supabase || !authSystem.isLoggedIn()) return false;
+            const userId = authSystem.getCurrentUserId();
 
-            // Adicionar user_id
-            saida.user_id = authSystem.getCurrentUserId();
-
-            let result;
             if (this.editingId) {
-                // Atualizar
-                result = await supabase
+                saida.user_id = userId;
+                const { error } = await supabase
                     .from('saidas')
                     .update(saida)
-                    .eq('id', this.editingId);
+                    .eq('id', this.editingId)
+                    .eq('user_id', userId);
+                if (error) throw error;
+                authSystem.showAlert('Saída atualizada com sucesso!', 'success');
             } else {
-                // Inserir
-                result = await supabase
+                const novaSaida = {
+                    ...saida,
+                    user_id: userId,
+                    status: 'pendente',
+                    data_pagamento: null
+                };
+                const { error } = await supabase
                     .from('saidas')
-                    .insert([saida]);
+                    .insert([novaSaida]);
+                if (error) throw error;
+                authSystem.showAlert('Saída cadastrada como pendente! Use o botão verde para marcar como paga.', 'success');
             }
 
-            if (result.error) {
-                throw result.error;
-            }
-
-            authSystem.showAlert(
-                this.editingId ? 'Saída atualizada com sucesso!' : 'Saída cadastrada com sucesso!',
-                'success'
-            );
-
-            // Limpar edição
             this.editingId = null;
-
-            // Recarregar dados
-            await this.carregarSaidas();
+            await this.carregarSaidas(this.filtros);
             await this.renderizarTabela();
 
+            if (typeof dashboardSystem !== 'undefined' && dashboardSystem.atualizarResumo) {
+                await dashboardSystem.atualizarResumo(this.filtros);
+            }
             return true;
         } catch (error) {
             console.error('Erro ao salvar saída:', error);
@@ -92,32 +95,56 @@ class SaidasSystem {
         }
     }
 
+    // Marcar saída como paga (data automática = hoje)
+    async marcarComoPaga(id) {
+        try {
+            if (!supabase || !authSystem.isLoggedIn()) return false;
+            if (!confirm('Marcar esta saída como paga?')) return false;
+
+            const userId = authSystem.getCurrentUserId();
+            const hoje = new Date().toISOString().split('T')[0];
+
+            const { error } = await supabase
+                .from('saidas')
+                .update({ status: 'paga', data_pagamento: hoje })
+                .eq('id', id)
+                .eq('user_id', userId);
+            if (error) throw error;
+
+            authSystem.showAlert('Saída marcada como paga!', 'success');
+            await this.carregarSaidas(this.filtros);
+            await this.renderizarTabela();
+
+            if (typeof dashboardSystem !== 'undefined' && dashboardSystem.atualizarResumo) {
+                await dashboardSystem.atualizarResumo(this.filtros);
+            }
+            return true;
+        } catch (error) {
+            console.error('Erro ao marcar como paga:', error);
+            authSystem.showAlert('Erro ao marcar como paga: ' + error.message, 'danger');
+            return false;
+        }
+    }
+
     // Excluir saída
     async excluirSaida(id) {
         try {
-            if (!supabase || !authSystem.isLoggedIn()) {
-                return false;
-            }
-
-            if (!confirm('Tem certeza que deseja excluir esta saída?')) {
-                return false;
-            }
+            if (!supabase || !authSystem.isLoggedIn()) return false;
+            if (!confirm('Tem certeza que deseja excluir esta saída?')) return false;
 
             const { error } = await supabase
                 .from('saidas')
                 .delete()
                 .eq('id', id);
-
-            if (error) {
-                throw error;
-            }
+            if (error) throw error;
 
             authSystem.showAlert('Saída excluída com sucesso!', 'success');
-
-            // Recarregar dados
-            await this.carregarSaidas();
+            await this.carregarSaidas(this.filtros);
             await this.renderizarTabela();
 
+            if (typeof dashboardSystem !== 'undefined' && dashboardSystem.atualizarResumo) {
+                await dashboardSystem.atualizarResumo(this.filtros);
+            }
             return true;
         } catch (error) {
             console.error('Erro ao excluir saída:', error);
@@ -126,27 +153,25 @@ class SaidasSystem {
         }
     }
 
-    // Editar saída
+    // Editar saída (abre modal preenchido)
     editarSaida(id) {
         const saida = this.saidas.find(s => s.id === id);
         if (!saida) return;
-
         this.editingId = id;
 
-        // Preencher formulário
-        document.getElementById('saidaId').value = saida.id;
-        document.getElementById('saidaData').value = saida.data;
-        document.getElementById('saidaDescricao').value = saida.descricao;
-        document.getElementById('saidaCategoria').value = saida.categoria;
-        document.getElementById('saidaTipo').value = saida.tipo;
-        document.getElementById('saidaValor').value = saida.valor;
+        const set = (el, val) => { const e = document.getElementById(el); if (e) e.value = val; };
+        set('saidaId', saida.id);
+        set('saidaData', saida.data);
+        set('saidaDescricao', saida.descricao);
+        set('saidaCategoria', saida.categoria);
+        set('saidaTipo', saida.tipo);
+        set('saidaValor', saida.valor);
 
-        // Abrir modal
         const modal = new bootstrap.Modal(document.getElementById('modalSaida'));
         modal.show();
     }
 
-    // Renderizar tabela
+    // Renderizar tabela única (todas as saídas) com botão "Paga" só nos pendentes
     async renderizarTabela() {
         const tbody = document.getElementById('tabelaSaidas');
         if (!tbody) return;
@@ -154,35 +179,59 @@ class SaidasSystem {
         if (this.saidas.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="6" class="text-center text-muted">
+                    <td colspan="7" class="text-center text-muted py-4">
                         <i class="fas fa-inbox fa-2x mb-2"></i>
                         <p>Nenhuma saída encontrada</p>
                     </td>
-                </tr>
-            `;
+                </tr>`;
             return;
         }
 
-        tbody.innerHTML = this.saidas.map(saida => `
-            <tr>
-                <td>${this.formatarData(saida.data)}</td>
-                <td>${saida.descricao}</td>
-                <td><span class="badge bg-secondary">${this.formatarCategoria(saida.categoria)}</span></td>
-                <td><span class="badge ${saida.tipo === 'fixo' ? 'bg-warning' : 'bg-info'}">${saida.tipo === 'fixo' ? 'Fixo' : 'Variável'}</span></td>
-                <td class="text-danger fw-bold">-${this.formatarDinheiro(saida.valor)}</td>
-                <td>
-                    <button class="btn btn-sm btn-action btn-edit" onclick="saidasSystem.editarSaida('${saida.id}')">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="btn btn-sm btn-action btn-delete" onclick="saidasSystem.excluirSaida('${saida.id}')">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </td>
-            </tr>
-        `).join('');
+        tbody.innerHTML = this.saidas.map(s => {
+            const isPendente = s.status === 'pendente';
+            const statusBadge = isPendente
+                ? '<span class="badge bg-warning text-dark"><i class="fas fa-clock me-1"></i>Pendente</span>'
+                : '<span class="badge bg-success"><i class="fas fa-check me-1"></i>Paga</span>';
+            const btnPagar = isPendente
+                ? `<button class="btn btn-sm btn-success me-1" title="Marcar como paga" onclick="saidasSystem.marcarComoPaga('${s.id}')">
+                       <i class="fas fa-check"></i> Paga
+                   </button>`
+                : '';
+            return `
+                <tr>
+                    <td>${this.formatarData(s.data)}</td>
+                    <td>${s.descricao}</td>
+                    <td><span class="badge bg-info">${this.formatarCategoria(s.categoria)}</span></td>
+                    <td>${this.badgeTipo(s.tipo)}</td>
+                    <td>${statusBadge}</td>
+                    <td class="text-danger fw-bold">-${this.formatarDinheiro(s.valor)}</td>
+                    <td class="text-nowrap">
+                        ${btnPagar}
+                        <button class="btn btn-sm btn-action btn-edit" title="Editar" onclick="saidasSystem.editarSaida('${s.id}')">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-action btn-delete" title="Excluir" onclick="saidasSystem.excluirSaida('${s.id}')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>`;
+        }).join('');
     }
 
-    // Obter categorias
+    // Preencher select de filtros (compatibilidade com app.js)
+    preencherFiltros() {
+        const select = document.getElementById('filtroCategoria');
+        if (!select) return;
+        if (select.children.length > 1) return;
+
+        this.getCategorias().forEach(cat => {
+            const option = document.createElement('option');
+            option.value = cat.value;
+            option.textContent = cat.label;
+            select.appendChild(option);
+        });
+    }
+
     getCategorias() {
         return [
             { value: 'luz', label: 'Luz' },
@@ -198,129 +247,72 @@ class SaidasSystem {
         ];
     }
 
-    // Obter categorias antigas (para compatibilidade)
-    getCategoriasAntigas() {
-        return [
-            { value: 'funcionarios', label: 'Funcionários' },
-            { value: 'fornecedores', label: 'Fornecedores' },
-            { value: 'impostos', label: 'Impostos' },
-            { value: 'marketing', label: 'Marketing' },
-            { value: 'transporte', label: 'Transporte' },
-            { value: 'outras', label: 'Outras' }
-        ];
-    }
-
-    // Preencher select de categorias
-    preencherCategorias() {
-        const select = document.getElementById('saidaCategoria');
-        if (!select) return;
-
-        const categorias = this.getCategorias();
-        categorias.forEach(cat => {
-            const option = document.createElement('option');
-            option.value = cat.value;
-            option.textContent = cat.label;
-            select.appendChild(option);
-        });
-    }
-
-    // Preencher select de filtros
-    preencherFiltros() {
-        const select = document.getElementById('filtroCategoria');
-        if (!select) return;
-
-        // Se já foi preenchido pelas entradas, não preencher novamente
-        if (select.children.length > 1) return;
-
-        const categorias = this.getCategorias();
-        categorias.forEach(cat => {
-            const option = document.createElement('option');
-            option.value = cat.value;
-            option.textContent = cat.label;
-            select.appendChild(option);
-        });
-    }
-
-    // Calcular total
+    // TOTAL = só o que foi pago (dashboard)
     calcularTotal() {
-        return this.saidas.reduce((total, saida) => total + parseFloat(saida.valor), 0);
+        return this.saidas
+            .filter(s => s.status === 'paga')
+            .reduce((total, s) => total + parseFloat(s.valor || 0), 0);
     }
 
-    // Calcular total por tipo
+    // Total de pendentes
+    calcularTotalPendente() {
+        return this.saidas
+            .filter(s => s.status === 'pendente')
+            .reduce((total, s) => total + parseFloat(s.valor || 0), 0);
+    }
+
     calcularTotalPorTipo() {
-        const totais = {
-            fixo: 0,
-            variavel: 0
-        };
-
-        this.saidas.forEach(saida => {
-            totais[saida.tipo] = (totais[saida.tipo] || 0) + parseFloat(saida.valor);
+        const totais = { fixo: 0, variavel: 0 };
+        this.saidas.filter(s => s.status === 'paga').forEach(s => {
+            totais[s.tipo] = (totais[s.tipo] || 0) + parseFloat(s.valor || 0);
         });
-
         return totais;
     }
 
-    // Formatar data (corrigido para evitar problema de timezone)
     formatarData(dataString) {
         if (!dataString) return '-';
-        // Usar split para evitar problema de timezone
-        const partes = dataString.split('-');
-        if (partes.length === 3) {
-            return `${partes[2]}/${partes[1]}/${partes[0]}`;
-        }
+        const partes = String(dataString).split('T')[0].split('-');
+        if (partes.length === 3) return `${partes[2]}/${partes[1]}/${partes[0]}`;
         return dataString;
     }
 
-    // Formatar dinheiro
     formatarDinheiro(valor) {
         return new Intl.NumberFormat('pt-BR', {
             style: 'currency',
             currency: 'BRL'
-        }).format(parseFloat(valor));
+        }).format(parseFloat(valor || 0));
     }
 
-    // Formatar categoria
     formatarCategoria(categoria) {
-        const categorias = {
-            'luz': 'Luz',
-            'agua': 'Água',
-            'aluguel': 'Aluguel',
-            'internet': 'Internet',
-            'funcionario': 'Funcionário',
-            'produtos': 'Produtos',
-            'vigilante': 'Vigilante',
-            'mei': 'MEI',
-            'prefeitura': 'Prefeitura',
-            'outros': 'Outros',
-            // Categorias antigas (compatibilidade)
-            'funcionarios': 'Funcionários',
-            'fornecedores': 'Fornecedores',
-            'impostos': 'Impostos',
-            'marketing': 'Marketing',
-            'transporte': 'Transporte',
-            'outras': 'Outras'
+        const map = {
+            'luz': 'Luz', 'agua': 'Água', 'aluguel': 'Aluguel', 'internet': 'Internet',
+            'funcionario': 'Funcionário', 'produtos': 'Produtos', 'vigilante': 'Vigilante',
+            'mei': 'MEI', 'prefeitura': 'Prefeitura', 'outros': 'Outros',
+            'funcionarios': 'Funcionários', 'fornecedores': 'Fornecedores', 'impostos': 'Impostos',
+            'marketing': 'Marketing', 'transporte': 'Transporte', 'outras': 'Outras'
         };
-        return categorias[categoria] || categoria;
+        return map[categoria] || categoria;
+    }
+
+    badgeTipo(tipo) {
+        if (tipo === 'fixo') return '<span class="badge bg-warning text-dark">Fixo</span>';
+        if (tipo === 'variavel') return '<span class="badge bg-info">Variável</span>';
+        return '<span class="badge bg-secondary">-</span>';
     }
 }
 
 // Instância global
 const saidasSystem = new SaidasSystem();
 
-// Funções globais para acesso pelo HTML
+// Abrir modal nova saída
 function openModalSaida() {
-    // Limpar formulário
     document.getElementById('formSaida').reset();
-    document.getElementById('saidaId').value = '';
-    
-    // Definir data atual
+    const saidaIdEl = document.getElementById('saidaId');
+    if (saidaIdEl) saidaIdEl.value = '';
     const hoje = new Date().toISOString().split('T')[0];
-    document.getElementById('saidaData').value = hoje;
-    
-    // Limpar edição
+    const dataEl = document.getElementById('saidaData');
+    if (dataEl) dataEl.value = hoje;
     saidasSystem.editingId = null;
-    
-    // Abrir modal
     const modal = new bootstrap.Modal(document.getElementById('modalSaida'));
     modal.show();
 }
@@ -333,29 +325,24 @@ function salvarSaida() {
         tipo: document.getElementById('saidaTipo').value,
         valor: parseFloat(document.getElementById('saidaValor').value)
     };
-
-    // Validação
     if (!saida.data || !saida.descricao || !saida.categoria || !saida.tipo || !saida.valor) {
         authSystem.showAlert('Preencha todos os campos!', 'warning');
         return;
     }
-
     if (saida.valor <= 0) {
         authSystem.showAlert('O valor deve ser maior que zero!', 'warning');
         return;
     }
-
-    // Salvar
     saidasSystem.salvarSaida(saida).then(success => {
         if (success) {
-            // Fechar modal
             const modal = bootstrap.Modal.getInstance(document.getElementById('modalSaida'));
-            modal.hide();
+            if (modal) modal.hide();
         }
     });
 }
 
-// Exportar para uso em outros módulos
 window.saidasSystem = saidasSystem;
 window.openModalSaida = openModalSaida;
 window.salvarSaida = salvarSaida;
+window.marcarComoPaga = (id) => saidasSystem.marcarComoPaga(id);
+window.excluirSaida = (id) => saidasSystem.excluirSaida(id);
