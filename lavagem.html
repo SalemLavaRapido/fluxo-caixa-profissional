@@ -530,6 +530,11 @@
                     <i class="fas fa-list-ol me-2"></i>Fila de Lavagem
                 </a>
             </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#tabAgenda" onclick="setTimeout(renderizarAgenda, 50)">
+                    <i class="fas fa-calendar-alt me-2"></i>Agenda
+                </a>
+            </li>
         </ul>
         
         <div class="tab-content">
@@ -628,6 +633,131 @@
                             </tbody>
                         </table>
                     </div>
+                </div>
+            </div>
+
+            <!-- Tab Agenda (NOVA - agenda de lavagens) -->
+            <div class="tab-pane fade" id="tabAgenda">
+                <div class="card-custom p-4 mb-3">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                        <h5 class="mb-0">
+                            <i class="fas fa-calendar-alt me-2"></i>Agenda de Lavagens
+                            <span class="badge bg-info ms-2" id="totalAgenda">0</span>
+                        </h5>
+                        <button class="btn btn-registrar" onclick="abrirModalAgenda()">
+                            <i class="fas fa-plus me-2"></i>Novo Agendamento
+                        </button>
+                    </div>
+
+                    <!-- Navegação por data -->
+                    <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                        <div class="btn-group" role="group">
+                            <button class="btn btn-sm btn-light" onclick="mudarVisaoAgenda('dia')" id="btnVisaoDia">Dia</button>
+                            <button class="btn btn-sm btn-light" onclick="mudarVisaoAgenda('semana')" id="btnVisaoSemana">Semana</button>
+                            <button class="btn btn-sm btn-light" onclick="mudarVisaoAgenda('mes')" id="btnVisaoMes">Mês</button>
+                        </div>
+                        <button class="btn btn-sm btn-outline-light" onclick="navegarAgenda(-1)">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <input type="date" class="form-control form-control-custom" id="agendaDataRef" style="max-width: 200px;" onchange="renderizarAgenda()">
+                        <button class="btn btn-sm btn-outline-light" onclick="navegarAgenda(1)">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                        <button class="btn btn-sm btn-warning" onclick="irHojeAgenda()">
+                            <i class="fas fa-calendar-day me-1"></i>Hoje
+                        </button>
+                        <input type="text" class="form-control form-control-custom" id="filtroAgendaBusca"
+                               placeholder="Buscar placa/cliente..." oninput="renderizarAgenda()" style="max-width: 250px;">
+                    </div>
+
+                    <!-- Container da agenda -->
+                    <div id="containerAgenda">
+                        <div class="text-center py-5 text-muted">
+                            <i class="fas fa-calendar fa-3x mb-3"></i>
+                            <p>Carregando agenda...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Novo/Editar Agendamento -->
+    <div class="modal fade" id="modalAgenda" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content" style="background: #1a1a2e; color: #fff;">
+                <div class="modal-header" style="background: linear-gradient(135deg, #00c6fb, #005bea); border: none;">
+                    <h5 class="modal-title">
+                        <i class="fas fa-calendar-plus me-2"></i><span id="modalAgendaTitulo">Novo Agendamento</span>
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="agendaId">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Data e Hora *</label>
+                            <input type="datetime-local" class="form-control form-control-custom" id="agendaDataHora" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Placa *</label>
+                            <input type="text" class="form-control form-control-custom" id="agendaPlaca"
+                                   maxlength="8" style="text-transform: uppercase;" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Cliente</label>
+                            <input type="text" class="form-control form-control-custom" id="agendaCliente" placeholder="Nome do cliente">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Telefone</label>
+                            <input type="text" class="form-control form-control-custom" id="agendaTelefone" placeholder="(00) 00000-0000">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Modelo</label>
+                            <input type="text" class="form-control form-control-custom" id="agendaModelo">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Cor</label>
+                            <input type="text" class="form-control form-control-custom" id="agendaCor">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Tipo Lavagem</label>
+                            <select class="form-control form-control-custom" id="agendaTipoLavagem">
+                                <option value="simples">Simples</option>
+                                <option value="completa">Completa</option>
+                                <option value="polimento">Polimento</option>
+                                <option value="outros">Outros</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Tipo Cliente</label>
+                            <select class="form-control form-control-custom" id="agendaTipoCliente">
+                                <option value="avulso">Avulso</option>
+                                <option value="mensalista">Mensalista</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Valor Estimado (R$)</label>
+                            <input type="number" class="form-control form-control-custom" id="agendaValor" step="0.01" min="0" value="0">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Observação</label>
+                        <textarea class="form-control form-control-custom" id="agendaObservacao" rows="2"
+                                  style="background: #fff; color: #000;"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-success" onclick="salvarAgendamento()">
+                        <i class="fas fa-save me-2"></i>Salvar
+                    </button>
                 </div>
             </div>
         </div>
@@ -1655,6 +1785,335 @@
             printWindow.document.close();
         }
         
+        // ========== AGENDA DE LAVAGENS ==========
+        let agendamentos = [];
+        let agendaVisao = 'dia'; // 'dia' | 'semana' | 'mes'
+
+        // Inicializar agenda na carga (sem quebrar nada existente)
+        document.addEventListener('DOMContentLoaded', () => {
+            try {
+                const inp = document.getElementById('agendaDataRef');
+                if (inp) {
+                    const hoje = new Date();
+                    inp.value = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,'0')}-${String(hoje.getDate()).padStart(2,'0')}`;
+                }
+                marcarBotaoVisaoAtiva();
+                carregarAgendamentos();
+            } catch (e) { console.warn('Agenda init:', e); }
+        });
+
+        async function carregarAgendamentos() {
+            try {
+                const user = JSON.parse(localStorage.getItem('currentUser'));
+                if (!user) return;
+                const { data, error } = await supabaseClient
+                    .from('agendamentos_lavagem')
+                    .select('*')
+                    .eq('user_id', user.id)
+                    .order('data_agendada', { ascending: true });
+                if (error) {
+                    console.warn('Erro ao carregar agenda (a tabela pode não existir ainda):', error);
+                    agendamentos = [];
+                } else {
+                    agendamentos = data || [];
+                }
+                renderizarAgenda();
+            } catch (e) {
+                console.error('Erro carregarAgendamentos:', e);
+            }
+        }
+
+        function abrirModalAgenda(id = null) {
+            // Limpar campos
+            document.getElementById('agendaId').value = id || '';
+            document.getElementById('agendaPlaca').value = '';
+            document.getElementById('agendaCliente').value = '';
+            document.getElementById('agendaTelefone').value = '';
+            document.getElementById('agendaModelo').value = '';
+            document.getElementById('agendaCor').value = '';
+            document.getElementById('agendaTipoLavagem').value = 'simples';
+            document.getElementById('agendaTipoCliente').value = 'avulso';
+            document.getElementById('agendaValor').value = '0';
+            document.getElementById('agendaObservacao').value = '';
+            document.getElementById('modalAgendaTitulo').textContent = id ? 'Editar Agendamento' : 'Novo Agendamento';
+
+            // Data padrão = data referência selecionada às 09:00, ou agora
+            const ref = document.getElementById('agendaDataRef').value;
+            if (ref) {
+                document.getElementById('agendaDataHora').value = `${ref}T09:00`;
+            } else {
+                const d = new Date();
+                document.getElementById('agendaDataHora').value =
+                    `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}T09:00`;
+            }
+
+            if (id) {
+                const a = agendamentos.find(x => x.id === id);
+                if (a) {
+                    const dt = new Date(a.data_agendada);
+                    const pad = n => String(n).padStart(2, '0');
+                    document.getElementById('agendaDataHora').value =
+                        `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
+                    document.getElementById('agendaPlaca').value = a.placa || '';
+                    document.getElementById('agendaCliente').value = a.cliente_nome || '';
+                    document.getElementById('agendaTelefone').value = a.telefone || '';
+                    document.getElementById('agendaModelo').value = a.modelo || '';
+                    document.getElementById('agendaCor').value = a.cor || '';
+                    document.getElementById('agendaTipoLavagem').value = a.tipo_lavagem || 'simples';
+                    document.getElementById('agendaTipoCliente').value = a.tipo_cliente || 'avulso';
+                    document.getElementById('agendaValor').value = a.valor_estimado || 0;
+                    document.getElementById('agendaObservacao').value = a.observacao || '';
+                }
+            }
+            const modal = new bootstrap.Modal(document.getElementById('modalAgenda'));
+            modal.show();
+        }
+
+        async function salvarAgendamento() {
+            const user = JSON.parse(localStorage.getItem('currentUser'));
+            if (!user) return;
+            const id = document.getElementById('agendaId').value;
+            const dataHora = document.getElementById('agendaDataHora').value;
+            const placa = document.getElementById('agendaPlaca').value.trim().toUpperCase();
+            if (!dataHora || !placa) {
+                showAlert('Data/hora e placa são obrigatórias', 'warning');
+                return;
+            }
+            const payload = {
+                user_id: user.id,
+                data_agendada: new Date(dataHora).toISOString(),
+                placa,
+                cliente_nome: document.getElementById('agendaCliente').value.trim() || null,
+                telefone: document.getElementById('agendaTelefone').value.trim() || null,
+                modelo: document.getElementById('agendaModelo').value.trim() || null,
+                cor: document.getElementById('agendaCor').value.trim() || null,
+                tipo_lavagem: document.getElementById('agendaTipoLavagem').value,
+                tipo_cliente: document.getElementById('agendaTipoCliente').value,
+                valor_estimado: parseFloat(document.getElementById('agendaValor').value) || 0,
+                observacao: document.getElementById('agendaObservacao').value.trim() || null
+            };
+            try {
+                let error;
+                if (id) {
+                    ({ error } = await supabaseClient.from('agendamentos_lavagem').update(payload).eq('id', id));
+                } else {
+                    payload.status = 'agendado';
+                    ({ error } = await supabaseClient.from('agendamentos_lavagem').insert([payload]));
+                }
+                if (error) {
+                    showAlert('Erro: ' + error.message, 'danger');
+                    return;
+                }
+                bootstrap.Modal.getInstance(document.getElementById('modalAgenda')).hide();
+                showAlert(id ? 'Agendamento atualizado!' : 'Agendamento criado!', 'success');
+                await carregarAgendamentos();
+            } catch (e) {
+                console.error(e);
+                showAlert('Erro ao salvar agendamento', 'danger');
+            }
+        }
+
+        async function excluirAgendamento(id) {
+            if (!confirm('Excluir este agendamento?')) return;
+            const { error } = await supabaseClient.from('agendamentos_lavagem').delete().eq('id', id);
+            if (error) { showAlert('Erro: ' + error.message, 'danger'); return; }
+            showAlert('Agendamento excluído', 'success');
+            await carregarAgendamentos();
+        }
+
+        async function concluirAgendamento(id) {
+            // Marca como concluido E adiciona na fila de lavagem
+            const a = agendamentos.find(x => x.id === id);
+            if (!a) return;
+            if (!confirm(`Concluir agendamento de ${a.placa} e enviar para a Fila de Lavagem?`)) return;
+            const user = JSON.parse(localStorage.getItem('currentUser'));
+            try {
+                // Adicionar na fila
+                await supabaseClient.from('fila_lavagem').insert([{
+                    user_id: user.id,
+                    placa: a.placa,
+                    modelo: a.modelo,
+                    cor: a.cor,
+                    tipo_lavagem: a.tipo_lavagem,
+                    tipo_cliente: a.tipo_cliente,
+                    valor: a.valor_estimado || 0,
+                    celular: a.telefone,
+                    observacao: a.observacao
+                }]);
+                // Marcar agendamento como concluído
+                await supabaseClient.from('agendamentos_lavagem').update({ status: 'concluido' }).eq('id', id);
+                showAlert('Enviado para a Fila de Lavagem!', 'success');
+                await carregarAgendamentos();
+                if (typeof carregarDados === 'function') await carregarDados();
+            } catch (e) {
+                console.error(e);
+                showAlert('Erro ao concluir', 'danger');
+            }
+        }
+
+        async function cancelarAgendamento(id) {
+            if (!confirm('Cancelar este agendamento?')) return;
+            await supabaseClient.from('agendamentos_lavagem').update({ status: 'cancelado' }).eq('id', id);
+            showAlert('Agendamento cancelado', 'success');
+            await carregarAgendamentos();
+        }
+
+        function mudarVisaoAgenda(visao) {
+            agendaVisao = visao;
+            marcarBotaoVisaoAtiva();
+            renderizarAgenda();
+        }
+
+        function marcarBotaoVisaoAtiva() {
+            ['Dia','Semana','Mes'].forEach(v => {
+                const btn = document.getElementById('btnVisao' + v);
+                if (!btn) return;
+                btn.classList.remove('btn-warning');
+                btn.classList.add('btn-light');
+            });
+            const map = { dia: 'Dia', semana: 'Semana', mes: 'Mes' };
+            const btnAtivo = document.getElementById('btnVisao' + map[agendaVisao]);
+            if (btnAtivo) {
+                btnAtivo.classList.remove('btn-light');
+                btnAtivo.classList.add('btn-warning');
+            }
+        }
+
+        function navegarAgenda(direcao) {
+            const inp = document.getElementById('agendaDataRef');
+            if (!inp.value) return;
+            const d = new Date(inp.value + 'T12:00:00');
+            if (agendaVisao === 'dia') d.setDate(d.getDate() + direcao);
+            else if (agendaVisao === 'semana') d.setDate(d.getDate() + (direcao * 7));
+            else d.setMonth(d.getMonth() + direcao);
+            const pad = n => String(n).padStart(2, '0');
+            inp.value = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+            renderizarAgenda();
+        }
+
+        function irHojeAgenda() {
+            const d = new Date();
+            const pad = n => String(n).padStart(2, '0');
+            document.getElementById('agendaDataRef').value =
+                `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+            renderizarAgenda();
+        }
+
+        function renderizarAgenda() {
+            const container = document.getElementById('containerAgenda');
+            if (!container) return;
+            const refStr = document.getElementById('agendaDataRef').value;
+            if (!refStr) return;
+            const ref = new Date(refStr + 'T12:00:00');
+            const busca = (document.getElementById('filtroAgendaBusca').value || '').toLowerCase().trim();
+
+            // Filtrar agendamentos pelo período da visão
+            let inicio, fim;
+            if (agendaVisao === 'dia') {
+                inicio = new Date(ref); inicio.setHours(0,0,0,0);
+                fim = new Date(ref); fim.setHours(23,59,59,999);
+            } else if (agendaVisao === 'semana') {
+                inicio = new Date(ref); inicio.setDate(ref.getDate() - ref.getDay()); inicio.setHours(0,0,0,0);
+                fim = new Date(inicio); fim.setDate(inicio.getDate() + 6); fim.setHours(23,59,59,999);
+            } else {
+                inicio = new Date(ref.getFullYear(), ref.getMonth(), 1);
+                fim = new Date(ref.getFullYear(), ref.getMonth()+1, 0); fim.setHours(23,59,59,999);
+            }
+
+            const lista = agendamentos.filter(a => {
+                const dt = new Date(a.data_agendada);
+                if (dt < inicio || dt > fim) return false;
+                if (!busca) return true;
+                return (a.placa || '').toLowerCase().includes(busca)
+                    || (a.cliente_nome || '').toLowerCase().includes(busca);
+            });
+
+            document.getElementById('totalAgenda').textContent = lista.length;
+
+            if (lista.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-5 text-muted">
+                        <i class="fas fa-calendar-times fa-3x mb-3"></i>
+                        <p>Nenhum agendamento neste período</p>
+                    </div>`;
+                return;
+            }
+
+            // Agrupar por dia
+            const grupos = {};
+            lista.forEach(a => {
+                const dt = new Date(a.data_agendada);
+                const chave = dt.toISOString().split('T')[0];
+                if (!grupos[chave]) grupos[chave] = [];
+                grupos[chave].push(a);
+            });
+            const diasOrdenados = Object.keys(grupos).sort();
+
+            container.innerHTML = diasOrdenados.map(dia => {
+                const dt = new Date(dia + 'T12:00:00');
+                const diaSemana = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'][dt.getDay()];
+                const dataFmt = dt.toLocaleDateString('pt-BR');
+                const cards = grupos[dia].sort((a,b)=> new Date(a.data_agendada) - new Date(b.data_agendada))
+                    .map(a => cardAgendamento(a)).join('');
+                return `
+                    <div class="mb-4">
+                        <h6 class="text-warning mb-2">
+                            <i class="fas fa-calendar-day me-2"></i>${diaSemana}, ${dataFmt}
+                            <span class="badge bg-secondary ms-2">${grupos[dia].length}</span>
+                        </h6>
+                        <div class="row g-2">${cards}</div>
+                    </div>`;
+            }).join('');
+        }
+
+        function cardAgendamento(a) {
+            const dt = new Date(a.data_agendada);
+            const hora = dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            const statusBadge = {
+                'agendado': '<span class="badge bg-info">Agendado</span>',
+                'concluido': '<span class="badge bg-success">Concluído</span>',
+                'cancelado': '<span class="badge bg-secondary">Cancelado</span>'
+            }[a.status] || '';
+            const acoes = a.status === 'agendado' ? `
+                <button class="btn btn-sm btn-success" onclick="concluirAgendamento('${a.id}')" title="Concluir e enviar pra fila">
+                    <i class="fas fa-check"></i>
+                </button>
+                <button class="btn btn-sm btn-primary" onclick="abrirModalAgenda('${a.id}')" title="Editar">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn btn-sm btn-warning" onclick="cancelarAgendamento('${a.id}')" title="Cancelar">
+                    <i class="fas fa-ban"></i>
+                </button>
+                <button class="btn btn-sm btn-danger" onclick="excluirAgendamento('${a.id}')" title="Excluir">
+                    <i class="fas fa-trash"></i>
+                </button>` : `
+                <button class="btn btn-sm btn-danger" onclick="excluirAgendamento('${a.id}')" title="Excluir">
+                    <i class="fas fa-trash"></i>
+                </button>`;
+            return `
+                <div class="col-md-6 col-lg-4">
+                    <div class="card-custom p-3 h-100">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div>
+                                <strong style="font-size: 1.2em;">${hora}</strong>
+                                ${statusBadge}
+                            </div>
+                            <span class="placa-badge">${a.placa || '-'}</span>
+                        </div>
+                        ${a.cliente_nome ? `<div><i class="fas fa-user me-1"></i>${a.cliente_nome}</div>` : ''}
+                        ${a.telefone ? `<div><i class="fas fa-phone me-1"></i>${a.telefone}</div>` : ''}
+                        ${a.modelo || a.cor ? `<div><i class="fas fa-car me-1"></i>${[a.modelo, a.cor].filter(Boolean).join(' - ')}</div>` : ''}
+                        <div class="mt-1">
+                            <span class="badge bg-info me-1">${a.tipo_lavagem || ''}</span>
+                            <span class="badge bg-secondary me-1">${a.tipo_cliente || ''}</span>
+                            ${a.valor_estimado > 0 ? `<span class="badge bg-success">R$ ${parseFloat(a.valor_estimado).toFixed(2)}</span>` : ''}
+                        </div>
+                        ${a.observacao ? `<div class="mt-2 small fst-italic">"${a.observacao}"</div>` : ''}
+                        <div class="mt-2 d-flex gap-1 flex-wrap">${acoes}</div>
+                    </div>
+                </div>`;
+        }
+
         // Logout
         function logout() {
             localStorage.removeItem('currentUser');
