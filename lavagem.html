@@ -1757,6 +1757,17 @@
                 </div>
             `;
             
+            // Detectar se é PC ou Mobile - mobile mantém comportamento atual
+            const isMobile = window.innerWidth <= 768 || /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
+            const cssPC = isMobile ? '' : `
+                        /* SOBRESCRITA SOMENTE PARA PC/DESKTOP - mobile fica intacto */
+                        @media print {
+                            @page { size: 80mm auto !important; margin: 2mm !important; }
+                            html, body { width: 76mm !important; max-width: 76mm !important; margin: 0 auto !important; padding: 0 !important; }
+                            body > div { max-width: 76mm !important; padding: 2mm !important; }
+                            * { word-wrap: break-word !important; overflow-wrap: break-word !important; }
+                        }`;
+
             // Abrir janela de impressão
             const printWindow = window.open('', '_blank');
             printWindow.document.write(`
@@ -1769,6 +1780,7 @@
                             body { margin: 0; }
                             @page { margin: 10mm; }
                         }
+                        ${cssPC}
                     </style>
                 </head>
                 <body>

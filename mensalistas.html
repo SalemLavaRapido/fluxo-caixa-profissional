@@ -2342,6 +2342,17 @@
             };
             const formaPagamentoFormatada = formaPagamentoMap[formaPagamento] || formaPagamento;
             
+            // Detectar PC vs Mobile - mobile mantém comportamento atual
+            const isMobile = window.innerWidth <= 768 || /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
+            const cssPC = isMobile ? '' : `
+                        /* SOBRESCRITA SOMENTE PARA PC/DESKTOP - mobile fica intacto */
+                        @media print {
+                            @page { size: 80mm auto !important; margin: 2mm !important; }
+                            html, body { width: 76mm !important; max-width: 76mm !important; margin: 0 auto !important; padding: 0 !important; }
+                            .recibo-58mm { width: 76mm !important; max-width: 76mm !important; padding: 2mm !important; }
+                            * { word-wrap: break-word !important; overflow-wrap: break-word !important; }
+                        }`;
+
             // Criar conteúdo do recibo para impressora térmica 58mm
             const reciboContent = `
                 <!DOCTYPE html>
@@ -2377,6 +2388,7 @@
                                 margin: 6px 0;
                             }
                         }
+                        ${cssPC}
                     </style>
                 </head>
                 <body>
@@ -2482,8 +2494,12 @@
                 </div>
             `;
             
+            // Detectar PC vs Mobile - mobile mantém comportamento atual
+            const isMobileC = window.innerWidth <= 768 || /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
+            const cssPCComp = isMobileC ? '' : ' @media print { @page { size: 80mm auto !important; margin: 2mm !important; } html, body { width: 76mm !important; max-width: 76mm !important; margin: 0 auto !important; padding: 0 !important; } body > div { max-width: 76mm !important; padding: 2mm !important; } * { word-wrap: break-word !important; overflow-wrap: break-word !important; } } ';
+
             const printWindow = window.open('', '_blank');
-            printWindow.document.write('<!DOCTYPE html><html><head><title>Comprovante de Pagamento - ' + clienteNome + '</title><style>@media print { body { margin: 0; } @page { margin: 10mm; } }</style></head><body>' + comprovanteContent + '</body></html>');
+            printWindow.document.write('<!DOCTYPE html><html><head><title>Comprovante de Pagamento - ' + clienteNome + '</title><style>@media print { body { margin: 0; } @page { margin: 10mm; } }' + cssPCComp + '</style></head><body>' + comprovanteContent + '</body></html>');
             printWindow.document.close();
             printWindow.onload = function() {
                 printWindow.print();

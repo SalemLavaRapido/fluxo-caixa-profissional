@@ -1881,6 +1881,16 @@ Obrigado pela preferência!`;
         
         // Função de impressão simples para recibo de saída
         function imprimirReciboSimples(texto, placa) {
+            const isMobile = window.innerWidth <= 768 || /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
+            const cssPC = isMobile ? '' : `
+    <style>
+        /* SOBRESCRITA SOMENTE PARA PC/DESKTOP - mobile fica intacto */
+        @media print {
+            @page { size: 80mm auto !important; margin: 2mm !important; }
+            html, body { width: 76mm !important; max-width: 76mm !important; margin: 0 auto !important; padding: 2mm !important; }
+            pre { white-space: pre-wrap !important; word-wrap: break-word !important; overflow-wrap: break-word !important; }
+        }
+    </style>`;
             const html = `
 <!DOCTYPE html>
 <html>
@@ -1951,6 +1961,7 @@ Obrigado pela preferência!`;
             .status { font-size: 18px; }
         }
     </style>
+    ${cssPC}
 </head>
 <body>
     <pre>${texto}</pre>
@@ -1996,6 +2007,15 @@ Obrigado pela preferência!`;
             const valorHora = dados.valorHora || VALORES_HORA[tipoVeiculo] || 8.00;
             const nomeTipo = tipoVeiculo === 'moto' ? 'MOTO' : tipoVeiculo === 'caminhonete' ? 'CAMINHONETE' : 'CARRO';
             const numeroComprovante = dados.numeroComprovante || '0000000';
+            const isMobile = window.innerWidth <= 768 || /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
+            const cssPC = isMobile ? '' : `
+                    <style>
+                        @media print {
+                            @page { size: 80mm auto !important; margin: 2mm !important; }
+                            html, body { width: 76mm !important; max-width: 76mm !important; margin: 0 auto !important; }
+                            * { word-wrap: break-word !important; overflow-wrap: break-word !important; }
+                        }
+                    </style>`;
             
             const conteudo = `
                 <!DOCTYPE html>
@@ -2024,6 +2044,7 @@ Obrigado pela preferência!`;
                             @page { margin: 0; size: 58mm auto; }
                         }
                     </style>
+                    ${cssPC}
                 </head>
                 <body>
                     <div class="titulo">SALEM ESTACIONAMENTO</div>
@@ -2107,6 +2128,16 @@ ${cliente ? `<div class="info">CLIENTE: ${cliente}</div>` : ''}
         
         // Função de impressão simples para cupom de entrada
         function imprimirCupomSimples(texto, placa) {
+            const isMobile = window.innerWidth <= 768 || /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
+            const cssPC = isMobile ? '' : `
+    <style>
+        /* SOBRESCRITA SOMENTE PARA PC/DESKTOP - mobile fica intacto */
+        @media print {
+            @page { size: 80mm auto !important; margin: 2mm !important; }
+            html, body { width: 76mm !important; max-width: 76mm !important; margin: 0 auto !important; padding: 2mm !important; }
+            * { word-wrap: break-word !important; overflow-wrap: break-word !important; }
+        }
+    </style>`;
             const html = `
 <!DOCTYPE html>
 <html>
@@ -2175,6 +2206,7 @@ ${cliente ? `<div class="info">CLIENTE: ${cliente}</div>` : ''}
             .aviso { font-size: 12px; }
         }
     </style>
+    ${cssPC}
 </head>
 <body>
     ${texto}
