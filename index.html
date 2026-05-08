@@ -565,7 +565,7 @@
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-6 mb-3">
-                    <div class="dashboard-card warning fade-in" style="cursor: pointer;" onclick="abrirModalContasPagar()">
+                    <div class="dashboard-card warning fade-in">
                         <div class="card-icon">
                             <i class="fas fa-file-invoice-dollar"></i>
                         </div>
@@ -684,11 +684,21 @@
                             </button>
                         </div>
 
-                        <div class="table-custom">
-                            <table class="table table-hover">
+                        <!-- BLOCO 1: CONTAS A PAGAR (pendentes) -->
+                        <div class="table-custom mb-4" style="border-left: 5px solid #ffc107;">
+                            <div class="d-flex justify-content-between align-items-center px-3 pt-3">
+                                <h6 class="mb-0 text-warning">
+                                    <i class="fas fa-clock me-2"></i>Contas a Pagar (Pendentes)
+                                </h6>
+                                <div class="text-end">
+                                    <div class="fw-bold text-danger" id="totalBlocoPendente">R$ 0,00</div>
+                                    <small class="text-muted" id="qtdBlocoPendente">0 conta(s)</small>
+                                </div>
+                            </div>
+                            <table class="table table-hover mb-0">
                                 <thead>
                                     <tr>
-                                        <th>Data</th>
+                                        <th>Vencimento</th>
                                         <th>Descrição</th>
                                         <th>Categoria</th>
                                         <th>Tipo</th>
@@ -696,11 +706,45 @@
                                         <th>Ações</th>
                                     </tr>
                                 </thead>
-                                <tbody id="tabelaSaidas">
+                                <tbody id="tabelaContasPagar">
                                     <tr>
-                                        <td colspan="6" class="text-center text-muted">
+                                        <td colspan="6" class="text-center text-muted py-4">
+                                            <i class="fas fa-check-circle fa-2x mb-2 text-success"></i>
+                                            <p class="mb-0">Nenhuma conta pendente</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- BLOCO 2: SAÍDAS PAGAS -->
+                        <div class="table-custom" style="border-left: 5px solid #198754;">
+                            <div class="d-flex justify-content-between align-items-center px-3 pt-3">
+                                <h6 class="mb-0 text-success">
+                                    <i class="fas fa-check-double me-2"></i>Saídas Pagas
+                                </h6>
+                                <div class="text-end">
+                                    <div class="fw-bold text-danger" id="totalBlocoPago">R$ 0,00</div>
+                                    <small class="text-muted" id="qtdBlocoPago">0 conta(s)</small>
+                                </div>
+                            </div>
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Vencimento</th>
+                                        <th>Pagamento</th>
+                                        <th>Descrição</th>
+                                        <th>Categoria</th>
+                                        <th>Tipo</th>
+                                        <th>Valor</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabelaSaidasPagas">
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted py-4">
                                             <i class="fas fa-inbox fa-2x mb-2"></i>
-                                            <p>Nenhuma saída encontrada</p>
+                                            <p class="mb-0">Nenhuma saída paga no período</p>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -1151,7 +1195,7 @@
             
             let error;
             if (saidaId) {
-                // EDITAR: fazer UPDATE
+                // EDITAR: fazer UPDATE (preserva status atual)
                 const result = await supabase
                     .from('saidas')
                     .update(dados)
@@ -1159,7 +1203,9 @@
                     .eq('user_id', user.id);
                 error = result.error;
             } else {
-                // NOVO: fazer INSERT
+                // NOVO: fazer INSERT como PENDENTE (vai pra Contas a Pagar)
+                dados.status = 'pendente';
+                dados.data_pagamento = null;
                 const result = await supabase
                     .from('saidas')
                     .insert([dados]);
@@ -1299,28 +1345,27 @@
             modal.show();
         }
 
-        // Carregar contas a pagar
-        async function carregarContasPagar() {
+        // Carregar contas a pagar (saidas com status='pendente') - respeita filtro de data
+        async function carregarContasPagar(filtros = {}) {
             try {
                 const userStr = localStorage.getItem('currentUser');
                 if (!userStr) return;
-                
                 const user = JSON.parse(userStr);
-                const dataAtual = new Date();
-                const primeiroDia = new Date(dataAtual.getFullYear(), dataAtual.getMonth(), 1);
-                const ultimoDia = new Date(dataAtual.getFullYear(), dataAtual.getMonth() + 1, 0);
 
-                const { data, error } = await supabaseClient
-                    .from('contas_pagar')
+                // Usar os mesmos filtros de data do dashboard
+                let query = supabaseClient
+                    .from('saidas')
                     .select('*')
                     .eq('user_id', user.id)
                     .eq('status', 'pendente')
-                    .gte('data_vencimento', primeiroDia.toISOString())
-                    .lte('data_vencimento', ultimoDia.toISOString())
-                    .order('data_vencimento', { ascending: true });
+                    .order('data', { ascending: true });
 
+                if (filtros.dataInicio) query = query.gte('data', filtros.dataInicio);
+                if (filtros.dataFim)    query = query.lte('data', filtros.dataFim);
+
+                const { data, error } = await query;
                 if (error) throw error;
-                
+
                 contasPagar = data || [];
                 atualizarCardContasPagar();
                 renderizarContasPagar();
@@ -1329,11 +1374,14 @@
             }
         }
 
-        // Atualizar card do dashboard
+        // Atualizar card do dashboard (somente exibição, sem clique)
         function atualizarCardContasPagar() {
-            const total = contasPagar.reduce((sum, conta) => sum + conta.valor, 0);
-            document.getElementById('totalContasPagar').textContent = `R$ ${total.toFixed(2)}`;
-            document.getElementById('qtdContasPendentes').textContent = `${contasPagar.length} pendentes`;
+            const total = contasPagar.reduce((sum, conta) => sum + parseFloat(conta.valor || 0), 0);
+            const totalFmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(total);
+            const elTotal = document.getElementById('totalContasPagar');
+            const elQtd   = document.getElementById('qtdContasPendentes');
+            if (elTotal) elTotal.textContent = totalFmt;
+            if (elQtd)   elQtd.textContent = `${contasPagar.length} pendente(s)`;
         }
 
         // Renderizar lista de contas
@@ -1357,13 +1405,15 @@
                 console.log('Tipos:', contasPagar.map(c => ({descricao: c.descricao, tipo: c.tipo})));
                 
                 tbody.innerHTML = contasPagar.map(conta => {
-                    const tipo = conta.tipo || 'fixo'; // Padrão "fixo" se não tiver ou for undefined
+                    // Lidar com contas antigas sem campo tipo
+                    const tipo = conta.tipo || 'fixo';
                     
+                    // Badge para tipo (com fallback para contas antigas)
                     const tipoBadge = tipo === 'fixo' 
                         ? '<span class="badge bg-primary">Fixo</span>'
                         : tipo === 'variavel'
                         ? '<span class="badge bg-warning text-dark">Variável</span>'
-                        : '<span class="badge bg-primary">Fixo</span>'; // Padrão "Fixo"
+                        : '<span class="badge bg-secondary">-</span>'; // Para valores inesperados
                 return `
                 <tr>
                     <td>${conta.descricao}</td>
@@ -1385,13 +1435,17 @@
             e.preventDefault();
             
             try {
+                console.log('[DEBUG] Iniciando salvamento de conta...');
+                
                 const userStr = localStorage.getItem('currentUser');
                 if (!userStr) {
+                    console.log('[DEBUG] Usuário não logado');
                     alert('Faça login primeiro!');
                     return;
                 }
                 
                 const user = JSON.parse(userStr);
+                console.log('[DEBUG] User ID:', user.id);
                 
                 const novaConta = {
                     user_id: user.id,
@@ -1402,18 +1456,30 @@
                     tipo: document.getElementById('contaTipo').value || 'fixo',
                     status: 'pendente'
                 };
+                
+                console.log('[DEBUG] Dados da conta:', novaConta);
 
-                const { error } = await supabaseClient
+                const { data, error } = await supabaseClient
                     .from('contas_pagar')
                     .insert([novaConta]);
+                
+                console.log('[DEBUG] Resultado insert:', { data, error });
 
-                if (error) throw error;
+                if (error) {
+                    console.log('[DEBUG] Erro ao salvar:', error);
+                    throw error;
+                }
+
+                console.log('[DEBUG] Conta salva com sucesso!');
 
                 // Limpar formulário
                 document.getElementById('formNovaConta').reset();
                 
                 // Recarregar lista
                 await carregarContasPagar();
+                
+                // Atualizar card do dashboard
+                atualizarCardContasPagar();
                 
                 alert('Conta cadastrada com sucesso!');
             } catch (error) {
