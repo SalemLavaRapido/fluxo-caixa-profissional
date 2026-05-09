@@ -312,12 +312,17 @@ function verificarStatus() {
     return app.verificarStatus();
 }
 
-// Auto-atualizar dados a cada 5 minutos
+// Auto-atualizar dados a cada 15 segundos (sincroniza PC <-> Mobile)
+// Pula se houver modal aberto ou se algum input estiver com foco (digitando)
 setInterval(() => {
-    if (authSystem.isLoggedIn()) {
-        app.atualizarDados();
-    }
-}, 5 * 60 * 1000);
+    if (!authSystem.isLoggedIn()) return;
+    // Não atualiza se modal aberto
+    if (document.querySelector('.modal.show')) return;
+    // Não atualiza se usuário está digitando em algum campo
+    const ativo = document.activeElement;
+    if (ativo && (ativo.tagName === 'INPUT' || ativo.tagName === 'TEXTAREA' || ativo.tagName === 'SELECT')) return;
+    app.atualizarDados();
+}, 15 * 1000);
 
 // Exportar para uso em outros módulos
 window.app = app;

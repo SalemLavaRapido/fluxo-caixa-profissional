@@ -819,6 +819,15 @@
             setupBusca();
 
             await carregarDados();
+
+            // Auto-sincronizar com banco a cada 15s (PC <-> Mobile)
+            // Pula se houver modal aberto ou input em foco
+            setInterval(async () => {
+                if (document.querySelector('.modal.show')) return;
+                const ativo = document.activeElement;
+                if (ativo && (ativo.tagName === 'INPUT' || ativo.tagName === 'TEXTAREA' || ativo.tagName === 'SELECT')) return;
+                try { await carregarDados(); } catch (e) { console.warn('Auto-sync falhou:', e); }
+            }, 15000);
         });
 
         // Formulário de cliente

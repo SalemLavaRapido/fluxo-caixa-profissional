@@ -845,6 +845,19 @@
             intervaloAtualizacao = setInterval(() => {
                 atualizarTemposValores();
             }, 60000);
+
+            // Auto-sincronizar com banco a cada 15s (PC <-> Mobile)
+            // Pula se houver modal aberto ou input em foco
+            setInterval(async () => {
+                if (document.querySelector('.modal.show')) return;
+                const ativo = document.activeElement;
+                if (ativo && (ativo.tagName === 'INPUT' || ativo.tagName === 'TEXTAREA' || ativo.tagName === 'SELECT')) return;
+                try {
+                    await carregarVeiculosPatio();
+                    await carregarEstatisticas();
+                    await carregarHistorico();
+                } catch (e) { console.warn('Auto-sync falhou:', e); }
+            }, 15000);
         });
         
         // Formulário de entrada
