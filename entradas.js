@@ -111,6 +111,9 @@ class EntradasSystem {
                 return false;
             }
 
+            // Buscar a entrada antes de excluir (para saber se é mensalista)
+            const entrada = this.entradas.find(e => e.id === id);
+
             const { error } = await supabase
                 .from('entradas')
                 .delete()
@@ -118,6 +121,42 @@ class EntradasSystem {
 
             if (error) {
                 throw error;
+            }
+
+            // Se for entrada de mensalista, apagar também o pagamento correspondente
+            // na tabela 'pagamentos' (vínculo com a página Mensalistas)
+            if (entrada && entrada.categoria === 'mensalista' && entrada.descricao) {
+                try {
+                    // Extrair nome do cliente: "Mensalidade - NOME (2026-05) - Veículos: ..."
+                    const matchNome = entrada.descricao.match(/Mensalidade\s*-\s*([^\(]+?)\s*\(/i);
+                    // Extrair mês de referência: "(2026-05)"
+                    const matchMes = entrada.descricao.match(/\((\d{4}-\d{2})\)/);
+                    const nomeCliente = matchNome ? matchNome[1].trim() : null;
+                    const mesRef = matchMes ? matchMes[1] : null;
+                    const userId = authSystem.getCurrentUserId();
+
+                    if (nomeCliente && mesRef && userId) {
+                        // Buscar o cliente pelo nome (case-insensitive)
+                        const { data: clientes } = await supabase
+                            .from('clientes_estacionamento')
+                            .select('id, nome')
+                            .eq('user_id', userId)
+                            .ilike('nome', nomeCliente);
+
+                        // Só apaga se encontrar exatamente 1 cliente (segurança)
+                        if (clientes && clientes.length === 1) {
+                            await supabase
+                                .from('pagamentos')
+                                .delete()
+                                .eq('user_id', userId)
+                                .eq('cliente_id', clientes[0].id)
+                                .eq('mes_referencia', mesRef)
+                                .eq('valor', entrada.valor);
+                        }
+                    }
+                } catch (errPag) {
+                    console.warn('Não foi possível apagar pagamento vinculado:', errPag);
+                }
             }
 
             authSystem.showAlert('Entrada excluída com sucesso!', 'success');
