@@ -2293,7 +2293,7 @@
                                             <button class="btn btn-sm btn-outline-primary me-1" onclick="imprimirComprovantePagamento('${p.id}', '${cliente.nome}', '${p.valor}', '${p.mes_referencia}', '${p.forma_pagamento}', '${p.data_pagamento}')" title="Imprimir Comprovante">
                                                 <i class="fas fa-print"></i>
                                             </button>
-                                            <button class="btn btn-sm btn-outline-danger" onclick="excluirPagamento('${p.id}', '${formatarMes(p.mes_referencia)}')" title="Excluir Pagamento">
+                                            <button class="btn btn-sm btn-outline-danger" onclick="excluirPagamento('${p.id}', '${formatarMes(p.mes_referencia)}', '${(cliente.nome || '').replace(/'/g, '\\\'')}', ${p.valor || 0}, '${p.mes_referencia || ''}', '${p.data_pagamento || ''}')" title="Excluir Pagamento">
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                         </td>
@@ -2516,7 +2516,7 @@
         }
 
         // Excluir pagamento
-        async function excluirPagamento(pagamentoId, mesReferencia) {
+        async function excluirPagamento(pagamentoId, mesReferencia, clienteNome, valor, mesRefRaw, dataPagamento) {
             if (!confirm(`Tem certeza que deseja excluir o pagamento de ${mesReferencia}?`)) {
                 return;
             }
@@ -2556,12 +2556,25 @@
                         return;
                     }
 
-                    // Excluir também do fluxo de caixa (entradas) se existir
-                    await supabaseClient
-                        .from('entradas')
-                        .delete()
-                        .eq('user_id', user.id)
-                        .ilike('descricao', '%Mensalidade%');
+                    // Excluir também do fluxo de caixa (entradas) - APENAS a entrada exata
+                    // Filtrando por: cliente nome + mes referencia + valor + data
+                    if (clienteNome && valor) {
+                        let queryDel = supabaseClient
+                            .from('entradas')
+                            .delete()
+                            .eq('user_id', user.id)
+                            .eq('categoria', 'mensalista')
+                            .eq('valor', valor)
+                            .ilike('descricao', `%${clienteNome}%`);
+                        if (mesRefRaw) {
+                            queryDel = queryDel.ilike('descricao', `%${mesRefRaw}%`);
+                        }
+                        if (dataPagamento) {
+                            const dataFmt = String(dataPagamento).split('T')[0];
+                            queryDel = queryDel.eq('data', dataFmt);
+                        }
+                        await queryDel;
+                    }
                 }
 
                 showAlert('Pagamento excluído com sucesso!', 'success');
