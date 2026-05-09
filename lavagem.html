@@ -1134,6 +1134,9 @@
                         ` : '-'}
                     </td>
                     <td>
+                        <button class="btn btn-info btn-sm me-1" onclick="reimprimirReciboLavagem('${l.id}')" title="Imprimir Recibo">
+                            <i class="fas fa-print"></i>
+                        </button>
                         <button class="btn btn-warning btn-sm me-1" onclick="abrirModalEditarLavagem('${l.id}')" title="Editar">
                             <i class="fas fa-edit"></i>
                         </button>
@@ -1684,6 +1687,114 @@
             window.open(url, '_blank');
         }
         
+        // Reimprimir recibo de uma lavagem já realizada (a partir do ID)
+        function reimprimirReciboLavagem(id) {
+            const l = lavagens.find(x => x.id === id);
+            if (!l) {
+                alert('Lavagem não encontrada!');
+                return;
+            }
+
+            const dt = new Date(l.data_lavagem);
+            const dataAtual = dt.toLocaleDateString('pt-BR');
+            const horaAtual = dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+            const tiposLavagem = {
+                'simples': 'Lavagem Simples',
+                'completa': 'Lavagem Completa',
+                'polimento': 'Polimento',
+                'higienizacao': 'Higienização'
+            };
+
+            const formasPagto = {
+                'dinheiro': 'Dinheiro',
+                'pix': 'PIX',
+                'credito': 'Cartão Crédito',
+                'debito': 'Cartão Débito',
+                'cartao_credito': 'Cartão Crédito',
+                'cartao_debito': 'Cartão Débito'
+            };
+
+            const reciboContent = `
+                <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 400px; margin: 0 auto;">
+                    <div style="text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px;">
+                        <h2 style="margin: 0; color: #333;">RECIBO DE LAVAGEM</h2>
+                        <p style="margin: 5px 0; color: #666;">Salém Lava Rápido</p>
+                    </div>
+
+                    <div style="margin-bottom: 20px;">
+                        <p style="margin: 5px 0;"><strong>Data:</strong> ${dataAtual} - ${horaAtual}</p>
+                        <p style="margin: 5px 0;"><strong>Placa:</strong> ${(l.placa || '').toUpperCase()}</p>
+                        <p style="margin: 5px 0;"><strong>Veículo:</strong> ${l.modelo || '-'} ${l.cor || ''}</p>
+                        <p style="margin: 5px 0;"><strong>Tipo:</strong> ${tiposLavagem[l.tipo_lavagem] || l.tipo_lavagem || '-'}</p>
+                        <p style="margin: 5px 0;"><strong>Cliente:</strong> ${l.tipo_cliente === 'mensalista' ? 'Mensalista' : 'Avulso'}</p>
+                        ${l.celular ? `<p style="margin: 5px 0;"><strong>Celular:</strong> ${l.celular}</p>` : ''}
+                        ${l.forma_pagamento ? `<p style="margin: 5px 0;"><strong>Pagamento:</strong> ${formasPagto[l.forma_pagamento] || l.forma_pagamento}</p>` : ''}
+                        ${l.observacao ? `<p style="margin: 5px 0;"><strong>Obs:</strong> ${l.observacao}</p>` : ''}
+                    </div>
+
+                    <div style="border: 2px solid #333; padding: 15px; margin-bottom: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 18px; font-weight: bold;">VALOR:</span>
+                            <span style="font-size: 24px; font-weight: bold; color: #333;">R$ ${parseFloat(l.valor || 0).toFixed(2)}</span>
+                        </div>
+                    </div>
+
+                    <div style="text-align: center; margin-top: 20px;">
+                        <p style="margin: 0; font-size: 11px;">Obrigado pela preferência!</p>
+                    </div>
+                </div>
+            `;
+
+            // Detectar PC vs Mobile - mobile mantém comportamento atual
+            const isMobile = window.innerWidth <= 768 || /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
+            const cssPC = isMobile ? '' : `
+                        /* SOBRESCRITA PC/DESKTOP - igual mobile (58mm) + cor preta forte */
+                        @media print {
+                            @page { size: 58mm auto !important; margin: 0 !important; }
+                            html, body { width: 58mm !important; max-width: 58mm !important; margin: 0 !important; padding: 1mm !important; }
+                            body > div { max-width: 58mm !important; padding: 1mm !important; margin: 0 !important; }
+                            * {
+                                color: #000 !important;
+                                -webkit-print-color-adjust: exact !important;
+                                print-color-adjust: exact !important;
+                                color-adjust: exact !important;
+                                font-weight: bold !important;
+                                word-wrap: break-word !important;
+                                overflow-wrap: break-word !important;
+                                font-size: 11px !important;
+                            }
+                            h2 { font-size: 13px !important; }
+                        }`;
+
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Recibo de Lavagem - ${(l.placa || '').toUpperCase()}</title>
+                    <style>
+                        @media print {
+                            body { margin: 0; }
+                            @page { margin: 10mm; }
+                        }
+                        ${cssPC}
+                    </style>
+                </head>
+                <body>
+                    ${reciboContent}
+                    <scr` + `ipt>
+                        window.onload = function() {
+                            window.print();
+                            window.close();
+                        }
+                    </scr` + `ipt>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+        }
+
         // Imprimir recibo de lavagem
         function imprimirReciboLavagem() {
             const placa = document.getElementById('placaLavagem').value;
