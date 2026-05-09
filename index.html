@@ -394,10 +394,17 @@
             h5, .h5 { font-size: 0.95rem !important; }
 
             table { font-size: 0.8rem; }
-            .table-responsive {
-                overflow-x: auto;
+            .table-responsive,
+            .table-custom.table-responsive {
+                overflow-x: auto !important;
                 -webkit-overflow-scrolling: touch;
+                max-width: 100%;
             }
+            .table-custom { overflow-x: auto !important; }
+            .main-container { overflow-x: hidden; }
+            .table-responsive table { min-width: 600px; }
+            /* Garantir que badges/botões dentro da tabela não quebrem */
+            .table td, .table th { white-space: nowrap; }
 
             .modal-dialog {
                 margin: 10px auto !important;
@@ -650,8 +657,8 @@
                             </button>
                         </div>
 
-                        <div class="table-custom">
-                            <table class="table table-hover">
+                        <div class="table-custom table-responsive">
+                            <table class="table table-hover mb-0">
                                 <thead>
                                     <tr>
                                         <th>Data</th>
@@ -684,8 +691,8 @@
                             </button>
                         </div>
 
-                        <div class="table-custom">
-                            <table class="table table-hover">
+                        <div class="table-custom table-responsive">
+                            <table class="table table-hover mb-0">
                                 <thead>
                                     <tr>
                                         <th>Data</th>
