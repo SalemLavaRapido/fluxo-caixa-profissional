@@ -493,6 +493,13 @@
                            placeholder="Cor">
                 </div>
                 <div class="col">
+                    <select class="form-control form-control-custom" id="tipoVeiculo" title="Tipo de Veículo">
+                        <option value="carro">Carro</option>
+                        <option value="moto">Moto</option>
+                        <option value="caminhonete">Caminhonete</option>
+                    </select>
+                </div>
+                <div class="col">
                     <select class="form-control form-control-custom" id="tipoLavagem">
                         <option value="simples">Simples</option>
                         <option value="completa">Completa</option>
@@ -1010,6 +1017,7 @@
             const placa = document.getElementById('placaLavagem').value.toUpperCase().trim();
             const modelo = document.getElementById('modeloLavagem').value.trim();
             const cor = document.getElementById('corLavagem').value.trim();
+            const tipoVeiculo = document.getElementById('tipoVeiculo').value;
             const tipoLavagem = document.getElementById('tipoLavagem').value;
             const tipoCliente = document.getElementById('tipoCliente').value;
             const valor = parseFloat(document.getElementById('valorLavagem').value) || 0;
@@ -1031,6 +1039,7 @@
                     placa: placa,
                     modelo: modelo || null,
                     cor: cor || null,
+                    tipo_veiculo: tipoVeiculo,
                     tipo_lavagem: tipoLavagem,
                     tipo_cliente: tipoCliente,
                     valor: valor,
@@ -1370,6 +1379,10 @@
             
             const user = JSON.parse(localStorage.getItem('currentUser'));
             
+            // Determinar categoria baseada no tipo de veículo
+            const tipoVeiculo = item.tipo_veiculo || 'carro';
+            const categoriaLavagem = `lavagem_${tipoVeiculo}`;
+            
             // Inserir no histórico de lavagens
             const { error: errorLavagem } = await supabaseClient
                 .from('lavagens')
@@ -1378,6 +1391,7 @@
                     placa: item.placa,
                     modelo: item.modelo,
                     cor: item.cor,
+                    tipo_veiculo: tipoVeiculo,
                     tipo_lavagem: item.tipo_lavagem,
                     tipo_cliente: item.tipo_cliente,
                     valor: valor,
@@ -1398,10 +1412,10 @@
                     .insert([{
                         user_id: user.id,
                         data: new Date().toISOString().split('T')[0],
-                        descricao: `Lavagem ${item.tipo_lavagem} (${item.tipo_cliente})`,
+                        descricao: `Lavagem ${item.tipo_lavagem} ${tipoVeiculo} (${item.tipo_cliente})`,
                         placa: item.placa,
                         valor: valor,
-                        categoria: 'lavagem_carro',
+                        categoria: categoriaLavagem,
                         forma_pagamento: formaPagamento
                     }]);
             }
