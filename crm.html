@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRM - Clientes</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --crm-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #fff;
+        }
+        .navbar-custom {
+            background: var(--crm-gradient);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        .stats-card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .stats-number {
+            font-size: 2em;
+            font-weight: bold;
+        }
+        .filter-card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .table-custom {
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            overflow: hidden;
+        }
+        .table-custom thead th {
+            background: rgba(240,147,251,0.2);
+            color: #fff;
+            border: none;
+            padding: 12px;
+        }
+        .table-custom tbody tr {
+            background: rgba(255,255,255,0.03);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .table-custom tbody tr:hover {
+            background: rgba(255,255,255,0.08);
+        }
+        .table-custom tbody td {
+            padding: 12px;
+            border: none;
+            vertical-align: middle;
+        }
+        .badge-tag {
+            margin-right: 4px;
+            font-size: 0.75rem;
+        }
+        .form-control-custom, .form-select-custom {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #fff;
+        }
+        .form-control-custom:focus, .form-select-custom:focus {
+            background: rgba(255,255,255,0.15);
+            color: #fff;
+            border-color: #f093fb;
+            box-shadow: none;
+        }
+        .form-control-custom::placeholder { color: rgba(255,255,255,0.5); }
+        .btn-voltar {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: #fff;
+        }
+        .btn-voltar:hover {
+            background: rgba(255,255,255,0.3);
+            color: #fff;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: rgba(255,255,255,0.6);
+        }
+        .empty-state i { font-size: 4em; margin-bottom: 15px; }
+        .placa-badge {
+            background: linear-gradient(135deg, #ffc107, #ff9800);
+            color: #000;
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-family: monospace;
+        }
+        .star-fav {
+            cursor: pointer;
+            font-size: 1.2em;
+        }
+        .star-fav.active { color: #ffc107; }
+        .star-fav:not(.active) { color: rgba(255,255,255,0.3); }
+        .modal-content {
+            background: #1a1a2e;
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-address-book me-2"></i>CRM - Clientes
+            </a>
+            <div class="d-flex align-items-center">
+                <span class="me-3" id="userInfo"></span>
+                <a href="index.html" class="btn btn-voltar me-2">
+                    <i class="fas fa-arrow-left me-2"></i>Voltar
+                </a>
+                <button class="btn btn-outline-light" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container py-4">
+        <div id="alertContainer"></div>
+
+        <!-- Stats -->
+        <div class="row mb-4 g-2">
+            <div class="col-md-3 col-6">
+                <div class="stats-card">
+                    <i class="fas fa-users fa-2x mb-2" style="color:#f093fb;"></i>
+                    <div class="stats-number" id="totalClientes">0</div>
+                    <div>Total de Clientes</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stats-card">
+                    <i class="fas fa-id-card fa-2x mb-2" style="color:#38ef7d;"></i>
+                    <div class="stats-number" id="totalMensalistas">0</div>
+                    <div>Mensalistas</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stats-card">
+                    <i class="fas fa-car-wash fa-2x mb-2" style="color:#00c6fb;"></i>
+                    <div class="stats-number" id="totalLavagem">0</div>
+                    <div>Clientes Lavagem</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stats-card">
+                    <i class="fas fa-star fa-2x mb-2" style="color:#ffc107;"></i>
+                    <div class="stats-number" id="totalFavoritos">0</div>
+                    <div>Favoritos</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="filter-card">
+            <div class="row g-2">
+                <div class="col-md-4">
+                    <input type="text" id="busca" class="form-control form-control-custom" placeholder="🔍 Buscar por nome, telefone, placa...">
+                </div>
+                <div class="col-md-3">
+                    <select id="filtroTipo" class="form-select form-control-custom">
+                        <option value="">Todos os tipos</option>
+                        <option value="mensalista">Mensalistas</option>
+                        <option value="lavagem">Clientes Lavagem</option>
+                        <option value="avulso">Estacionamento Avulso</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select id="filtroAtividade" class="form-select form-control-custom">
+                        <option value="">Toda atividade</option>
+                        <option value="ativo">Ativos (últimos 30 dias)</option>
+                        <option value="inativo">Inativos (+30 dias)</option>
+                        <option value="favorito">Apenas favoritos</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-light w-100" onclick="aplicarFiltros()">
+                        <i class="fas fa-filter me-1"></i>Filtrar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabela de Clientes -->
+        <div class="table-responsive table-custom">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>Nome</th>
+                        <th>Telefone</th>
+                        <th>Placa(s)</th>
+                        <th>Tipo</th>
+                        <th>Visitas</th>
+                        <th>Total Gasto</th>
+                        <th>Última Visita</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="tabelaClientes">
+                    <tr>
+                        <td colspan="9" class="empty-state">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>Carregando clientes...</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="text-center text-muted small mt-3">
+            <i class="fas fa-info-circle"></i>
+            Clientes unificados por telefone ou placa | Apenas leitura — não altera dados originais
+        </div>
+    </div>
+
+    <!-- Modal Editar Cliente -->
+    <div class="modal fade" id="modalCliente" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header" style="background: var(--crm-gradient); border:none;">
+                    <h5 class="modal-title"><i class="fas fa-user-edit me-2"></i>Editar Cliente</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="editChave">
+                    <input type="hidden" id="editTipoChave">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Nome</label>
+                            <input type="text" id="editNome" class="form-control form-control-custom">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Telefone</label>
+                            <input type="text" id="editTelefone" class="form-control form-control-custom">
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">E-mail</label>
+                            <input type="email" id="editEmail" class="form-control form-control-custom">
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">Tags <small class="text-muted">(separadas por vírgula)</small></label>
+                            <input type="text" id="editTags" class="form-control form-control-custom" placeholder="VIP, fidelizado, novo...">
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">Observações</label>
+                            <textarea id="editObs" rows="4" class="form-control form-control-custom" style="background:#fff;color:#000;"></textarea>
+                        </div>
+                        <div class="col-12">
+                            <hr>
+                            <h6><i class="fas fa-history me-2"></i>Histórico do Cliente</h6>
+                            <div id="historicoCliente" style="max-height: 250px; overflow-y: auto; background: rgba(0,0,0,0.2); border-radius: 8px; padding: 10px;">
+                                <p class="text-muted">Nenhum histórico</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-success" onclick="salvarCliente()">
+                        <i class="fas fa-save me-2"></i>Salvar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const SUPABASE_URL = 'https://emkiewosmlnyjnpujbui.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVta2lld29zbWxueWpucHVqYnVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4MDMxOTIsImV4cCI6MjA5MjM3OTE5Mn0.ohXoyqFJfyJxlyS1Efpykr0l0zezC2MZjVJWf55NV0c';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let todosClientes = [];
+        let crmDados = {}; // cache de anotações do crm_clientes
+
+        // Auth
+        document.addEventListener('DOMContentLoaded', async () => {
+            const user = JSON.parse(localStorage.getItem('currentUser'));
+            if (!user) { window.location.href = 'index.html'; return; }
+            document.getElementById('userInfo').textContent = user.email;
+            await carregarTudo();
+        });
+
+        function logout() {
+            localStorage.removeItem('currentUser');
+            window.location.href = 'index.html';
+        }
+
+        function showAlert(msg, tipo = 'success') {
+            const c = document.getElementById('alertContainer');
+            c.innerHTML = `<div class="alert alert-${tipo} alert-dismissible fade show" role="alert">
+                ${msg}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>`;
+            setTimeout(() => { c.innerHTML = ''; }, 4000);
+        }
+
+        // Função principal: carrega todos os dados e unifica
+        async function carregarTudo() {
+            const user = JSON.parse(localStorage.getItem('currentUser'));
+            if (!user) return;
+
+            try {
+                // 1. Carregar dados do CRM (anotações próprias)
+                const { data: crmData } = await supabaseClient
+                    .from('crm_clientes')
+                    .select('*')
+                    .eq('user_id', user.id);
+                
+                crmDados = {};
+                (crmData || []).forEach(c => {
+                    const k = `${c.tipo_chave}:${c.chave}`;
+                    crmDados[k] = c;
+                });
+
+                // 2. Carregar mensalistas
+                const { data: mensalistas } = await supabaseClient
+                    .from('clientes_estacionamento')
+                    .select('*')
+                    .eq('user_id', user.id);
+
+                // 3. Carregar veículos de mensalistas
+                const { data: veiculos } = await supabaseClient
+                    .from('veiculos')
+                    .select('*')
+                    .eq('user_id', user.id);
+
+                // 4. Carregar lavagens
+                const { data: lavagens } = await supabaseClient
+                    .from('lavagens')
+                    .select('*')
+                    .eq('user_id', user.id);
+
+                // 5. Carregar movimentações avulsas
+                const { data: avulsos } = await supabaseClient
+                    .from('movimentacao_avulso')
+                    .select('*')
+                    .eq('user_id', user.id);
+
+                // Unificar dados
+                todosClientes = unificarClientes({
+                    mensalistas: mensalistas || [],
+                    veiculos: veiculos || [],
+                    lavagens: lavagens || [],
+                    avulsos: avulsos || []
+                });
+
+                renderizar();
+                atualizarStats();
+            } catch (e) {
+                console.error(e);
+                showAlert('Erro ao carregar: ' + e.message, 'danger');
+            }
+        }
+
+        function unificarClientes({ mensalistas, veiculos, lavagens, avulsos }) {
+            const mapa = new Map();
+
+            // Função auxiliar pra criar/obter cliente no mapa
+            const getOrCreate = (chave, tipoChave) => {
+                if (!chave) return null;
+                const k = `${tipoChave}:${chave}`;
+                if (!mapa.has(k)) {
+                    const crm = crmDados[k] || {};
+                    mapa.set(k, {
+                        chave: chave,
+                        tipoChave: tipoChave,
+                        nome: crm.nome || '',
+                        telefone: tipoChave === 'telefone' ? chave : (crm.telefone || ''),
+                        email: crm.email || '',
+                        tags: crm.tags || [],
+                        observacao: crm.observacao || '',
+                        favorito: crm.favorito || false,
+                        placas: new Set(),
+                        tipos: new Set(),
+                        visitas: 0,
+                        totalGasto: 0,
+                        ultimaVisita: null,
+                        historico: []
+                    });
+                }
+                return mapa.get(k);
+            };
+
+            // 1) Mensalistas (chave: telefone se houver, senão CPF, senão ID)
+            mensalistas.forEach(m => {
+                const chave = m.telefone || m.cpf || m.id;
+                const tipo = m.telefone ? 'telefone' : 'placa';
+                const c = getOrCreate(chave, tipo);
+                if (!c) return;
+                if (!c.nome) c.nome = m.nome || '';
+                if (!c.telefone) c.telefone = m.telefone || '';
+                if (!c.email) c.email = m.email || '';
+                c.tipos.add('mensalista');
+                // Veículos do mensalista
+                veiculos.filter(v => v.cliente_id === m.id).forEach(v => {
+                    if (v.placa) c.placas.add(v.placa.toUpperCase());
+                });
+            });
+
+            // 2) Lavagens (chave: celular)
+            lavagens.forEach(l => {
+                const chave = l.celular || l.placa;
+                if (!chave) return;
+                const tipo = l.celular ? 'telefone' : 'placa';
+                const c = getOrCreate(chave, tipo);
+                if (!c) return;
+                if (l.placa) c.placas.add(l.placa.toUpperCase());
+                if (!c.telefone && l.celular) c.telefone = l.celular;
+                c.tipos.add('lavagem');
+                c.visitas++;
+                c.totalGasto += parseFloat(l.valor || 0);
+                const data = l.data_lavagem ? new Date(l.data_lavagem) : null;
+                if (data && (!c.ultimaVisita || data > c.ultimaVisita)) c.ultimaVisita = data;
+                c.historico.push({
+                    tipo: 'Lavagem',
+                    descricao: `${l.tipo_lavagem || ''} ${l.tipo_veiculo || ''}`.trim() || 'Lavagem',
+                    valor: l.valor || 0,
+                    data: data,
+                    placa: l.placa
+                });
+            });
+
+            // 3) Avulsos (chave: placa)
+            avulsos.forEach(a => {
+                const chave = a.placa;
+                if (!chave) return;
+                const c = getOrCreate(chave.toUpperCase(), 'placa');
+                if (!c) return;
+                c.placas.add(chave.toUpperCase());
+                c.tipos.add('avulso');
+                if (a.status === 'finalizado' && a.valor) {
+                    c.visitas++;
+                    c.totalGasto += parseFloat(a.valor || 0);
+                    const data = a.data_saida ? new Date(a.data_saida) : null;
+                    if (data && (!c.ultimaVisita || data > c.ultimaVisita)) c.ultimaVisita = data;
+                    c.historico.push({
+                        tipo: 'Estacionamento Avulso',
+                        descricao: `${a.modelo || ''} ${a.cor || ''}`.trim(),
+                        valor: a.valor || 0,
+                        data: data,
+                        placa: a.placa
+                    });
+                }
+            });
+
+            // Converter para array e ordenar histórico
+            const arr = Array.from(mapa.values());
+            arr.forEach(c => {
+                c.placas = Array.from(c.placas);
+                c.tipos = Array.from(c.tipos);
+                c.historico.sort((a, b) => (b.data || 0) - (a.data || 0));
+            });
+            return arr;
+        }
+
+        function atualizarStats() {
+            document.getElementById('totalClientes').textContent = todosClientes.length;
+            document.getElementById('totalMensalistas').textContent =
+                todosClientes.filter(c => c.tipos.includes('mensalista')).length;
+            document.getElementById('totalLavagem').textContent =
+                todosClientes.filter(c => c.tipos.includes('lavagem')).length;
+            document.getElementById('totalFavoritos').textContent =
+                todosClientes.filter(c => c.favorito).length;
+        }
+
+        function aplicarFiltros() {
+            renderizar();
+        }
+
+        document.addEventListener('input', (e) => {
+            if (e.target.id === 'busca') renderizar();
+        });
+        document.addEventListener('change', (e) => {
+            if (e.target.id === 'filtroTipo' || e.target.id === 'filtroAtividade') renderizar();
+        });
+
+        function renderizar() {
+            const busca = (document.getElementById('busca')?.value || '').toLowerCase().trim();
+            const filtroTipo = document.getElementById('filtroTipo')?.value || '';
+            const filtroAtv = document.getElementById('filtroAtividade')?.value || '';
+            const agora = new Date();
+            const dia30 = 30 * 24 * 60 * 60 * 1000;
+
+            let lista = todosClientes.filter(c => {
+                // Busca
+                if (busca) {
+                    const txt = `${c.nome} ${c.telefone} ${c.placas.join(' ')} ${c.email}`.toLowerCase();
+                    if (!txt.includes(busca)) return false;
+                }
+                // Tipo
+                if (filtroTipo && !c.tipos.includes(filtroTipo)) return false;
+                // Atividade
+                if (filtroAtv === 'favorito' && !c.favorito) return false;
+                if (filtroAtv === 'ativo') {
+                    if (!c.ultimaVisita || (agora - c.ultimaVisita) > dia30) return false;
+                }
+                if (filtroAtv === 'inativo') {
+                    if (c.ultimaVisita && (agora - c.ultimaVisita) <= dia30) return false;
+                }
+                return true;
+            });
+
+            // Ordenar: favoritos primeiro, depois por última visita
+            lista.sort((a, b) => {
+                if (a.favorito !== b.favorito) return b.favorito - a.favorito;
+                return (b.ultimaVisita || 0) - (a.ultimaVisita || 0);
+            });
+
+            const tbody = document.getElementById('tabelaClientes');
+            if (lista.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="empty-state">
+                    <i class="fas fa-user-slash"></i>
+                    <p>Nenhum cliente encontrado</p>
+                </td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = lista.map((c, idx) => {
+                const ultimaFmt = c.ultimaVisita
+                    ? c.ultimaVisita.toLocaleDateString('pt-BR')
+                    : '-';
+                const totalFmt = `R$ ${c.totalGasto.toFixed(2)}`;
+                const tiposBadges = c.tipos.map(t => {
+                    const cores = { mensalista: 'success', lavagem: 'info', avulso: 'warning' };
+                    return `<span class="badge bg-${cores[t]||'secondary'} badge-tag">${t}</span>`;
+                }).join(' ');
+                const placasFmt = c.placas.length > 0
+                    ? c.placas.slice(0, 3).map(p => `<span class="placa-badge">${p}</span>`).join(' ')
+                      + (c.placas.length > 3 ? ` +${c.placas.length - 3}` : '')
+                    : '-';
+                const idxStr = idx;
+                return `<tr>
+                    <td><i class="fas fa-star star-fav ${c.favorito ? 'active' : ''}" onclick="toggleFavorito(${idxStr})"></i></td>
+                    <td>${c.nome || '<em class="text-muted">Sem nome</em>'}</td>
+                    <td>${c.telefone || '-'}</td>
+                    <td>${placasFmt}</td>
+                    <td>${tiposBadges}</td>
+                    <td><strong>${c.visitas}</strong></td>
+                    <td class="text-success fw-bold">${totalFmt}</td>
+                    <td>${ultimaFmt}</td>
+                    <td>
+                        ${c.telefone ? `<button class="btn btn-success btn-sm me-1" onclick="abrirWhatsApp('${c.telefone}')" title="WhatsApp"><i class="fab fa-whatsapp"></i></button>` : ''}
+                        <button class="btn btn-info btn-sm" onclick="abrirModalCliente(${idxStr})" title="Editar"><i class="fas fa-edit"></i></button>
+                    </td>
+                </tr>`;
+            }).join('');
+
+            // Salvar lista filtrada para usar nos botões
+            window._listaFiltrada = lista;
+        }
+
+        function abrirWhatsApp(telefone) {
+            const tel = telefone.replace(/\D/g, '');
+            const numero = tel.startsWith('55') ? tel : '55' + tel;
+            window.open(`https://wa.me/${numero}`, '_blank');
+        }
+
+        async function toggleFavorito(idx) {
+            const c = window._listaFiltrada[idx];
+            if (!c) return;
+            c.favorito = !c.favorito;
+            await salvarCRM(c);
+            renderizar();
+            atualizarStats();
+        }
+
+        async function salvarCRM(c) {
+            const user = JSON.parse(localStorage.getItem('currentUser'));
+            const k = `${c.tipoChave}:${c.chave}`;
+            const dados = {
+                user_id: user.id,
+                chave: c.chave,
+                tipo_chave: c.tipoChave,
+                nome: c.nome || null,
+                telefone: c.telefone || null,
+                email: c.email || null,
+                tags: c.tags && c.tags.length > 0 ? c.tags : null,
+                observacao: c.observacao || null,
+                favorito: c.favorito || false,
+                updated_at: new Date().toISOString()
+            };
+            const existe = crmDados[k];
+            if (existe) {
+                const { error } = await supabaseClient
+                    .from('crm_clientes')
+                    .update(dados)
+                    .eq('id', existe.id);
+                if (error) { showAlert('Erro: ' + error.message, 'danger'); return; }
+            } else {
+                const { data, error } = await supabaseClient
+                    .from('crm_clientes')
+                    .insert([dados])
+                    .select()
+                    .single();
+                if (error) { showAlert('Erro: ' + error.message, 'danger'); return; }
+                crmDados[k] = data;
+            }
+        }
+
+        function abrirModalCliente(idx) {
+            const c = window._listaFiltrada[idx];
+            if (!c) return;
+            window._editandoCliente = c;
+            document.getElementById('editChave').value = c.chave;
+            document.getElementById('editTipoChave').value = c.tipoChave;
+            document.getElementById('editNome').value = c.nome || '';
+            document.getElementById('editTelefone').value = c.telefone || '';
+            document.getElementById('editEmail').value = c.email || '';
+            document.getElementById('editTags').value = (c.tags || []).join(', ');
+            document.getElementById('editObs').value = c.observacao || '';
+
+            // Histórico
+            const hist = document.getElementById('historicoCliente');
+            if (c.historico.length === 0) {
+                hist.innerHTML = '<p class="text-muted">Nenhum histórico</p>';
+            } else {
+                hist.innerHTML = c.historico.slice(0, 30).map(h => {
+                    const dataFmt = h.data ? h.data.toLocaleDateString('pt-BR') : '-';
+                    const valorFmt = h.valor ? `R$ ${parseFloat(h.valor).toFixed(2)}` : '';
+                    return `<div class="border-bottom pb-2 mb-2">
+                        <strong>${h.tipo}</strong> — ${h.descricao || ''} 
+                        ${h.placa ? `<span class="placa-badge">${h.placa}</span>` : ''}
+                        <br><small>${dataFmt} ${valorFmt ? '• <span class="text-success">' + valorFmt + '</span>' : ''}</small>
+                    </div>`;
+                }).join('');
+            }
+
+            new bootstrap.Modal(document.getElementById('modalCliente')).show();
+        }
+
+        async function salvarCliente() {
+            const c = window._editandoCliente;
+            if (!c) return;
+            c.nome = document.getElementById('editNome').value.trim();
+            c.telefone = document.getElementById('editTelefone').value.trim();
+            c.email = document.getElementById('editEmail').value.trim();
+            const tagsStr = document.getElementById('editTags').value.trim();
+            c.tags = tagsStr ? tagsStr.split(',').map(t => t.trim()).filter(t => t) : [];
+            c.observacao = document.getElementById('editObs').value.trim();
+
+            await salvarCRM(c);
+            bootstrap.Modal.getInstance(document.getElementById('modalCliente')).hide();
+            showAlert('Cliente atualizado!');
+            renderizar();
+        }
+    </script>
+</body>
+</html>
