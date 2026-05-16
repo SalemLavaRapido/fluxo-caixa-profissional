@@ -111,9 +111,6 @@ class EntradasSystem {
                 return false;
             }
 
-            // Buscar a entrada antes de excluir (para saber se é mensalista)
-            const entrada = this.entradas.find(e => e.id === id);
-
             const { error } = await supabase
                 .from('entradas')
                 .delete()
@@ -121,42 +118,6 @@ class EntradasSystem {
 
             if (error) {
                 throw error;
-            }
-
-            // Se for entrada de mensalista, apagar também o pagamento correspondente
-            // na tabela 'pagamentos' (vínculo com a página Mensalistas)
-            if (entrada && entrada.categoria === 'mensalista' && entrada.descricao) {
-                try {
-                    // Extrair nome do cliente: "Mensalidade - NOME (2026-05) - Veículos: ..."
-                    const matchNome = entrada.descricao.match(/Mensalidade\s*-\s*([^\(]+?)\s*\(/i);
-                    // Extrair mês de referência: "(2026-05)"
-                    const matchMes = entrada.descricao.match(/\((\d{4}-\d{2})\)/);
-                    const nomeCliente = matchNome ? matchNome[1].trim() : null;
-                    const mesRef = matchMes ? matchMes[1] : null;
-                    const userId = authSystem.getCurrentUserId();
-
-                    if (nomeCliente && mesRef && userId) {
-                        // Buscar o cliente pelo nome (case-insensitive)
-                        const { data: clientes } = await supabase
-                            .from('clientes_estacionamento')
-                            .select('id, nome')
-                            .eq('user_id', userId)
-                            .ilike('nome', nomeCliente);
-
-                        // Só apaga se encontrar exatamente 1 cliente (segurança)
-                        if (clientes && clientes.length === 1) {
-                            await supabase
-                                .from('pagamentos')
-                                .delete()
-                                .eq('user_id', userId)
-                                .eq('cliente_id', clientes[0].id)
-                                .eq('mes_referencia', mesRef)
-                                .eq('valor', entrada.valor);
-                        }
-                    }
-                } catch (errPag) {
-                    console.warn('Não foi possível apagar pagamento vinculado:', errPag);
-                }
             }
 
             authSystem.showAlert('Entrada excluída com sucesso!', 'success');
@@ -211,7 +172,32 @@ class EntradasSystem {
             return;
         }
 
-        tbody.innerHTML = this.entradas.map(entrada => `
+        // Aplicar filtro de busca por placa/descrição/categoria (se houver)
+        const inputBusca = document.getElementById('buscarPlacaEntrada');
+        const termo = inputBusca ? inputBusca.value.trim().toLowerCase() : '';
+        let lista = this.entradas;
+        if (termo) {
+            lista = this.entradas.filter(e => {
+                const placa = (e.placa || '').toLowerCase();
+                const desc = (e.descricao || '').toLowerCase();
+                const cat = this.formatarCategoria(e.categoria).toLowerCase();
+                return placa.includes(termo) || desc.includes(termo) || cat.includes(termo);
+            });
+        }
+
+        if (lista.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" class="text-center text-muted">
+                        <i class="fas fa-search fa-2x mb-2"></i>
+                        <p>Nenhuma entrada encontrada para "${termo}"</p>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        tbody.innerHTML = lista.map(entrada => `
             <tr>
                 <td>${this.formatarData(entrada.data)}</td>
                 <td>${entrada.descricao}</td>
@@ -365,7 +351,25 @@ function salvarEntrada() {
     });
 }
 
+// Filtrar entradas pela busca (placa/descrição/categoria)
+function filtrarEntradasPorPlaca() {
+    if (typeof entradasSystem !== 'undefined') {
+        entradasSystem.renderizarTabela();
+    }
+}
+
+// Limpar campo de busca
+function limparBuscaEntrada() {
+    const input = document.getElementById('buscarPlacaEntrada');
+    if (input) {
+        input.value = '';
+        filtrarEntradasPorPlaca();
+    }
+}
+
 // Exportar para uso em outros módulos
 window.entradasSystem = entradasSystem;
 window.openModalEntrada = openModalEntrada;
 window.salvarEntrada = salvarEntrada;
+window.filtrarEntradasPorPlaca = filtrarEntradasPorPlaca;
+window.limparBuscaEntrada = limparBuscaEntrada;
