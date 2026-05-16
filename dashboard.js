@@ -199,14 +199,16 @@ class DashboardSystem {
                 datasets: [{
                     data: dados.valores,
                     backgroundColor: [
-                        'rgba(40, 167, 69, 0.8)',
-                        'rgba(32, 201, 151, 0.8)',
-                        'rgba(102, 178, 102, 0.8)',
-                        'rgba(0, 128, 0, 0.8)',
-                        'rgba(144, 238, 144, 0.8)',
-                        'rgba(60, 179, 113, 0.8)',
-                        'rgba(46, 139, 87, 0.8)',
-                        'rgba(0, 100, 0, 0.8)'
+                        'rgba(54, 162, 235, 0.85)',   // Azul
+                        'rgba(220, 53, 69, 0.85)',    // Vermelho
+                        'rgba(40, 167, 69, 0.85)',    // Verde
+                        'rgba(255, 193, 7, 0.85)',    // Amarelo
+                        'rgba(111, 66, 193, 0.85)',   // Roxo
+                        'rgba(255, 127, 0, 0.85)',    // Laranja
+                        'rgba(139, 69, 19, 0.85)',    // Marrom
+                        'rgba(232, 62, 140, 0.85)',   // Rosa
+                        'rgba(23, 162, 184, 0.85)',   // Ciano
+                        'rgba(108, 117, 125, 0.85)'   // Cinza
                     ],
                     borderWidth: 1
                 }]
@@ -252,14 +254,16 @@ class DashboardSystem {
                 datasets: [{
                     data: dados.valores,
                     backgroundColor: [
-                        'rgba(220, 53, 69, 0.8)',
-                        'rgba(255, 99, 132, 0.8)',
-                        'rgba(255, 159, 64, 0.8)',
-                        'rgba(255, 87, 51, 0.8)',
-                        'rgba(178, 34, 34, 0.8)',
-                        'rgba(205, 92, 92, 0.8)',
-                        'rgba(139, 0, 0, 0.8)',
-                        'rgba(255, 69, 0, 0.8)'
+                        'rgba(54, 162, 235, 0.85)',   // Azul
+                        'rgba(220, 53, 69, 0.85)',    // Vermelho
+                        'rgba(40, 167, 69, 0.85)',    // Verde
+                        'rgba(255, 193, 7, 0.85)',    // Amarelo
+                        'rgba(111, 66, 193, 0.85)',   // Roxo
+                        'rgba(255, 127, 0, 0.85)',    // Laranja
+                        'rgba(139, 69, 19, 0.85)',    // Marrom
+                        'rgba(232, 62, 140, 0.85)',   // Rosa
+                        'rgba(23, 162, 184, 0.85)',   // Ciano
+                        'rgba(108, 117, 125, 0.85)'   // Cinza
                     ],
                     borderWidth: 1
                 }]
