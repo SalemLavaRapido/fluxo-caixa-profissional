@@ -125,6 +125,51 @@
             color: #fff;
             border: 1px solid rgba(255,255,255,0.1);
         }
+
+        /* ===== Ajustes para Mobile (tabela cortando) ===== */
+        @media (max-width: 768px) {
+            .container { padding-left: 8px !important; padding-right: 8px !important; }
+
+            /* Tabela rola lateralmente sem cortar */
+            .table-responsive.table-custom {
+                overflow-x: auto !important;
+                -webkit-overflow-scrolling: touch;
+                border-radius: 10px;
+            }
+            .table-responsive.table-custom table {
+                min-width: 900px;  /* garante largura para todas as 9 colunas */
+                margin-bottom: 0;
+            }
+            .table-custom thead th,
+            .table-custom tbody td {
+                padding: 8px 6px !important;
+                font-size: 0.78rem !important;
+                white-space: nowrap;
+            }
+            .placa-badge {
+                font-size: 0.7rem;
+                padding: 2px 6px;
+            }
+            .badge-tag { font-size: 0.65rem; }
+
+            /* Cards de estatísticas mais compactos */
+            .stats-card { padding: 10px 6px; }
+            .stats-number { font-size: 1.4em; }
+            .stats-card div:last-child { font-size: 0.75rem; }
+            .stats-card i.fa-2x { font-size: 1.4em !important; margin-bottom: 6px !important; }
+
+            .filter-card { padding: 12px; }
+
+            /* Dica visual indicando scroll horizontal */
+            .table-responsive.table-custom::after {
+                content: "← deslize para o lado →";
+                display: block;
+                text-align: center;
+                font-size: 0.7rem;
+                color: rgba(255,255,255,0.4);
+                padding: 6px 0;
+            }
+        }
     </style>
 </head>
 <body>
