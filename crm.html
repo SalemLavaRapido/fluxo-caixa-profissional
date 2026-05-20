@@ -592,6 +592,55 @@
                 }
             });
 
+            // 2º PASSE: mesclar clientes que compartilham a mesma placa
+            // Ex: visita 1 sem telefone (chave=placa) + visita 2 com telefone (chave=telefone)
+            // → fundir num único cliente
+            const todos = Array.from(mapa.values());
+            const placaIndex = new Map(); // placa → cliente "principal"
+            const mesclados = new Set(); // chaves de clientes já absorvidos
+
+            // Prioridade: clientes com telefone vêm primeiro (são "principais")
+            todos.sort((a, b) => {
+                const aTem = a.tipoChave === 'telefone' ? 1 : 0;
+                const bTem = b.tipoChave === 'telefone' ? 1 : 0;
+                return bTem - aTem;
+            });
+
+            todos.forEach(c => {
+                const chaveCliente = `${c.tipoChave}:${c.chave}`;
+                if (mesclados.has(chaveCliente)) return;
+                // Tenta encontrar um principal já existente por alguma das placas
+                let principal = null;
+                for (const p of c.placas) {
+                    if (placaIndex.has(p)) {
+                        principal = placaIndex.get(p);
+                        break;
+                    }
+                }
+                if (principal && principal !== c) {
+                    // Mesclar c → principal
+                    c.placas.forEach(p => {
+                        principal.placas.add(p);
+                        placaIndex.set(p, principal);
+                    });
+                    c.tipos.forEach(t => principal.tipos.add(t));
+                    principal.visitas += c.visitas;
+                    principal.totalGasto += c.totalGasto;
+                    if (c.ultimaVisita && (!principal.ultimaVisita || c.ultimaVisita > principal.ultimaVisita)) {
+                        principal.ultimaVisita = c.ultimaVisita;
+                    }
+                    if (!principal.nome && c.nome) principal.nome = c.nome;
+                    if (!principal.telefone && c.telefone) principal.telefone = c.telefone;
+                    if (!principal.email && c.email) principal.email = c.email;
+                    principal.historico = principal.historico.concat(c.historico);
+                    mesclados.add(chaveCliente);
+                    mapa.delete(chaveCliente);
+                } else {
+                    // c vira (ou continua) principal
+                    c.placas.forEach(p => placaIndex.set(p, c));
+                }
+            });
+
             // Converter para array e ordenar histórico
             const arr = Array.from(mapa.values());
             arr.forEach(c => {
