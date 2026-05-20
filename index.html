@@ -591,6 +591,11 @@
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-6 mb-3">
+                    <!-- Alerta de Contas Próximas do Vencimento (acima do card) -->
+                    <div id="alertaVencimentos" class="alert alert-warning fade-in mb-2" style="display:none; padding: 8px 12px; font-size: 0.85rem;">
+                        <div class="fw-bold mb-1"><i class="fas fa-exclamation-triangle me-1"></i>Lembretes de Vencimento</div>
+                        <div id="listaAlertaVencimentos"></div>
+                    </div>
                     <div class="dashboard-card warning fade-in" style="position: relative;">
                         <div class="card-icon">
                             <i class="fas fa-file-invoice-dollar"></i>
@@ -603,12 +608,6 @@
                         </span>
                     </div>
                 </div>
-            </div>
-
-            <!-- Alerta de Contas Próximas do Vencimento -->
-            <div id="alertaVencimentos" class="alert alert-warning fade-in" style="display:none;">
-                <h5 class="mb-2"><i class="fas fa-exclamation-triangle me-2"></i>Lembretes de Vencimento</h5>
-                <div id="listaAlertaVencimentos"></div>
             </div>
 
             
@@ -1409,10 +1408,10 @@
             if (elTotal) elTotal.textContent = totalFmt;
             if (elQtd)   elQtd.textContent = `${contasPagar.length} pendente(s)`;
 
-            // Filtrar contas vencidas/vencendo nos próximos 3 dias
+            // Filtrar contas vencidas/vence hoje/vence amanhã (até pagamento)
             const proximas = contasPagar.filter(c => {
                 const dias = diasAteVencimento(c.data_vencimento);
-                return dias <= 3;
+                return dias <= 1;
             });
 
             // Atualizar badge no card
