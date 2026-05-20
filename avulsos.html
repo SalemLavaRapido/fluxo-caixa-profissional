@@ -500,9 +500,14 @@
                 </button>
             </div>
             <form id="formEntrada" class="row g-3">
-                <div class="col-md-2">
+                <div class="col-md-2" style="position: relative;">
                     <input type="text" class="form-control form-control-custom" id="placaEntrada" 
-                           placeholder="PLACA" maxlength="7" style="text-transform: uppercase;" required>
+                           placeholder="PLACA" maxlength="7" style="text-transform: uppercase;" required
+                           autocomplete="off"
+                           oninput="autocompletarPlaca(this.value)"
+                           onfocus="autocompletarPlaca(this.value)"
+                           onblur="setTimeout(()=>{ const el=document.getElementById('sugestoesPlaca'); if(el) el.style.display='none'; }, 200)">
+                    <div id="sugestoesPlaca" style="display:none; position:absolute; top:100%; left:12px; right:12px; background:#fff; color:#000; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.3); z-index:1050; max-height:260px; overflow-y:auto; margin-top:4px;"></div>
                 </div>
                 <div class="col">
                     <select class="form-control form-control-custom" id="tipoVeiculo">
@@ -1454,6 +1459,90 @@
             `).join('');
         }
         
+        // ========== AUTOCOMPLETE DA PLACA NA ENTRADA ==========
+        let _cachePlacas = null;
+        let _cachePlacasTs = 0;
+
+        async function _carregarPlacasUnicas() {
+            // Cache de 60s para não consultar toda hora
+            const agora = Date.now();
+            if (_cachePlacas && (agora - _cachePlacasTs) < 60000) return _cachePlacas;
+
+            const user = JSON.parse(localStorage.getItem('currentUser'));
+            if (!user) return [];
+
+            const { data, error } = await supabaseClient
+                .from('movimentacao_avulso')
+                .select('placa, modelo, cor, cliente_nome, telefone, data_entrada')
+                .eq('user_id', user.id)
+                .order('data_entrada', { ascending: false })
+                .limit(500);
+
+            if (error) return [];
+
+            // Deduplicar pela placa, mantendo o registro mais recente
+            const mapa = new Map();
+            (data || []).forEach(r => {
+                if (!r.placa) return;
+                const k = r.placa.toUpperCase();
+                if (!mapa.has(k)) mapa.set(k, r);
+            });
+            _cachePlacas = Array.from(mapa.values());
+            _cachePlacasTs = agora;
+            return _cachePlacas;
+        }
+
+        async function autocompletarPlaca(valor) {
+            const box = document.getElementById('sugestoesPlaca');
+            if (!box) return;
+            const termo = (valor || '').toUpperCase().trim();
+            if (termo.length < 1) {
+                box.style.display = 'none';
+                box.innerHTML = '';
+                return;
+            }
+            const lista = await _carregarPlacasUnicas();
+            const filtrados = lista.filter(r =>
+                (r.placa || '').toUpperCase().includes(termo) ||
+                (r.cliente_nome || '').toUpperCase().includes(termo)
+            ).slice(0, 8);
+
+            if (filtrados.length === 0) {
+                box.style.display = 'none';
+                box.innerHTML = '';
+                return;
+            }
+
+            box.innerHTML = filtrados.map(r => {
+                const placa = (r.placa || '').toUpperCase();
+                const nome = r.cliente_nome || '';
+                const modelo = r.modelo || '';
+                const cor = r.cor || '';
+                const tel = r.telefone || '';
+                const linha2 = [nome, modelo, cor].filter(Boolean).join(' • ');
+                return `
+                    <div style="padding:10px 12px; cursor:pointer; border-bottom:1px solid #eee;"
+                         onmouseover="this.style.background='#f0f0f0'"
+                         onmouseout="this.style.background='#fff'"
+                         onmousedown="event.preventDefault(); selecionarSugestaoPlaca('${placa.replace(/'/g,"\\'")}','${nome.replace(/'/g,"\\'")}','${tel.replace(/'/g,"\\'")}','${modelo.replace(/'/g,"\\'")}','${cor.replace(/'/g,"\\'")}')">
+                        <div style="font-weight:bold; color:#005bea;">${placa}</div>
+                        ${linha2 ? `<div style="font-size:12px; color:#666;">${linha2}</div>` : ''}
+                    </div>
+                `;
+            }).join('');
+            box.style.display = 'block';
+        }
+
+        function selecionarSugestaoPlaca(placa, nome, telefone, modelo, cor) {
+            document.getElementById('placaEntrada').value = placa;
+            if (nome) document.getElementById('nomeCliente').value = nome;
+            if (telefone) document.getElementById('telefoneCliente').value = telefone;
+            if (modelo) document.getElementById('modeloVeiculo').value = modelo;
+            if (cor) document.getElementById('corVeiculo').value = cor;
+            const box = document.getElementById('sugestoesPlaca');
+            if (box) { box.style.display = 'none'; box.innerHTML = ''; }
+        }
+
         // Selecionar cliente da busca
         function selecionarCliente(placa, nome, telefone, modelo, cor) {
             if (placa && placa !== '-') {
