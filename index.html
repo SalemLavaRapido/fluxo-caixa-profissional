@@ -533,9 +533,28 @@
                     <i class="fas fa-sign-out-alt"></i>
                 </button>
             </div>
-            <h1>Fluxo de Caixa Profissional</h1>
+            <h1>
+                Fluxo de Caixa Profissional
+                <button type="button" id="btnToggleValores" onclick="toggleVisibilidadeValores()" 
+                        title="Ocultar/Mostrar valores"
+                        style="background:rgba(255,255,255,0.2); border:none; color:#fff; padding:6px 12px; border-radius:8px; margin-left:10px; font-size:1rem; cursor:pointer; vertical-align:middle;">
+                    <i id="iconToggleValores" class="fas fa-eye"></i>
+                </button>
+            </h1>
             <p>Controle financeiro inteligente para seu negócio</p>
         </div>
+
+        <style>
+            .valores-ocultos #totalEntradas,
+            .valores-ocultos #totalSaidas,
+            .valores-ocultos #saldoFinal,
+            .valores-ocultos #totalContasPagar,
+            .valores-ocultos #qtdContasPendentes {
+                filter: blur(10px);
+                user-select: none;
+                pointer-events: none;
+            }
+        </style>
 
         <!-- Dashboard -->
         <div class="p-4">
@@ -1031,7 +1050,7 @@
     <!-- Scripts -->
     <script src="config.js"></script>
     <script src="auth.js"></script>
-    <script src="entradas.js"></script>
+    <script src="entradas.js?v=20260516a"></script>
     <script src="saidas.js"></script>
     <script src="dashboard.js"></script>
     <script src="relatorios.js"></script>
@@ -1616,11 +1635,65 @@
                 if (typeof authSystem !== 'undefined' && authSystem.isLoggedIn && authSystem.isLoggedIn()) {
                     clearInterval(tryLoad);
                     carregarContasPagar();
+                    carregarPreferenciaValores();
                 }
             }, 500);
             // Para de tentar após 30s
             setTimeout(() => clearInterval(tryLoad), 30000);
         });
+
+        // ========== TOGGLE VISIBILIDADE DOS VALORES DO DASHBOARD ==========
+        let _mostrarValores = true;
+
+        function aplicarVisibilidadeValores() {
+            const wrap = document.querySelector('.main-container') || document.body;
+            const icon = document.getElementById('iconToggleValores');
+            if (_mostrarValores) {
+                document.body.classList.remove('valores-ocultos');
+                if (icon) { icon.classList.remove('fa-eye-slash'); icon.classList.add('fa-eye'); }
+            } else {
+                document.body.classList.add('valores-ocultos');
+                if (icon) { icon.classList.remove('fa-eye'); icon.classList.add('fa-eye-slash'); }
+            }
+        }
+
+        async function carregarPreferenciaValores() {
+            try {
+                const userStr = localStorage.getItem('currentUser');
+                if (!userStr) return;
+                const user = JSON.parse(userStr);
+                const { data, error } = await supabase
+                    .from('preferencias_usuario')
+                    .select('mostrar_valores')
+                    .eq('user_id', user.id)
+                    .maybeSingle();
+                if (!error && data && typeof data.mostrar_valores === 'boolean') {
+                    _mostrarValores = data.mostrar_valores;
+                }
+                aplicarVisibilidadeValores();
+            } catch (e) {
+                console.error('Erro ao carregar preferência:', e);
+            }
+        }
+
+        async function toggleVisibilidadeValores() {
+            _mostrarValores = !_mostrarValores;
+            aplicarVisibilidadeValores();
+            try {
+                const userStr = localStorage.getItem('currentUser');
+                if (!userStr) return;
+                const user = JSON.parse(userStr);
+                await supabase
+                    .from('preferencias_usuario')
+                    .upsert({
+                        user_id: user.id,
+                        mostrar_valores: _mostrarValores,
+                        updated_at: new Date().toISOString()
+                    }, { onConflict: 'user_id' });
+            } catch (e) {
+                console.error('Erro ao salvar preferência:', e);
+            }
+        }
     </script>
 </body>
 </html>
