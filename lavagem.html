@@ -25,11 +25,6 @@
             color: #fff;
         }
         
-        /* Container mais largo no PC (aproveita melhor monitores grandes) */
-        @media (min-width: 1200px) {
-            .container { max-width: 1600px !important; }
-        }
-
         .navbar-custom {
             background: var(--lavagem-gradient);
             box-shadow: 0 4px 15px rgba(0,0,0,0.3);
@@ -484,31 +479,36 @@
             <h4 class="mb-4">
                 <i class="fas fa-plus-circle me-2"></i>Registrar Nova Lavagem
             </h4>
-            <form id="formLavagem" class="row g-3">
-                <div class="col-md-3">
+            <form id="formLavagem" class="row g-2">
+                <div class="col" style="position: relative;">
                     <input type="text" class="form-control form-control-custom" id="placaLavagem" 
-                           placeholder="PLACA" maxlength="7" style="text-transform: uppercase;" required>
+                           placeholder="PLACA" maxlength="7" style="text-transform: uppercase;" required
+                           autocomplete="off"
+                           oninput="autocompletarPlacaLavagem(this.value)"
+                           onfocus="autocompletarPlacaLavagem(this.value)"
+                           onblur="setTimeout(()=>{ const el=document.getElementById('sugestoesPlacaLavagem'); if(el) el.style.display='none'; }, 200)">
+                    <div id="sugestoesPlacaLavagem" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; color:#000; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.3); z-index:1050; max-height:260px; overflow-y:auto; margin-top:4px;"></div>
                 </div>
-                <div class="col-md-5">
+                <div class="col">
                     <input type="text" class="form-control form-control-custom" id="nomeLavagem" 
                            placeholder="Nome do Cliente">
                 </div>
-                <div class="col-md-4">
+                <div class="col">
                     <input type="text" class="form-control form-control-custom" id="modeloLavagem" 
                            placeholder="Modelo">
                 </div>
-                <div class="col-md-3">
+                <div class="col">
                     <input type="text" class="form-control form-control-custom" id="corLavagem" 
                            placeholder="Cor">
                 </div>
-                <div class="col-md-3">
+                <div class="col">
                     <select class="form-control form-control-custom" id="tipoVeiculo" title="Tipo de Veículo">
                         <option value="carro">Carro</option>
                         <option value="moto">Moto</option>
                         <option value="caminhonete">Caminhonete</option>
                     </select>
                 </div>
-                <div class="col-md-3">
+                <div class="col">
                     <select class="form-control form-control-custom" id="tipoLavagem">
                         <option value="simples">Simples</option>
                         <option value="completa">Completa</option>
@@ -516,27 +516,27 @@
                         <option value="higienizacao">Higienização</option>
                     </select>
                 </div>
-                <div class="col-md-3">
+                <div class="col">
                     <select class="form-control form-control-custom" id="tipoCliente">
                         <option value="avulso">Avulso</option>
                         <option value="mensalista">Mensalista</option>
                     </select>
                 </div>
-                <div class="col-md-3">
+                <div class="col">
                     <input type="number" class="form-control form-control-custom" id="valorLavagem" 
                            placeholder="R$" step="0.01" min="0">
                 </div>
-                <div class="col-md-3">
+                <div class="col">
                     <input type="text" class="form-control form-control-custom" id="celularLavagem" 
                            placeholder="Celular">
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <input type="text" class="form-control form-control-custom" id="obsLavagem" 
                            placeholder="Observação">
                 </div>
-                <div class="col-md-12 text-end">
-                    <button type="submit" class="btn btn-registrar btn-sm" style="padding: 6px 16px; font-size: 0.85rem;">
-                        <i class="fas fa-plus me-1"></i>Adicionar na Fila
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-registrar">
+                        <i class="fas fa-plus me-2"></i>Adicionar na Fila
                     </button>
                 </div>
                 <div class="col-auto">
@@ -1073,7 +1073,176 @@
             
             await carregarDados();
         }
-        
+
+        // ========== AUTOCOMPLETE DA PLACA NA LAVAGEM ==========
+        let _cachePlacasLav = null;
+        let _cachePlacasLavTs = 0;
+
+        async function _carregarPlacasLavagem() {
+            // Cache de 60s para não consultar toda hora
+            const agora = Date.now();
+            if (_cachePlacasLav && (agora - _cachePlacasLavTs) < 60000) return _cachePlacasLav;
+
+            const user = JSON.parse(localStorage.getItem('currentUser'));
+            if (!user) return [];
+
+            const mapa = new Map();
+
+            // 1) Lavagens anteriores
+            try {
+                const { data: lavs } = await supabaseClient
+                    .from('lavagens')
+                    .select('placa, modelo, cor, cliente_nome, celular, tipo_veiculo, data_lavagem')
+                    .eq('user_id', user.id)
+                    .order('data_lavagem', { ascending: false })
+                    .limit(500);
+                (lavs || []).forEach(r => {
+                    if (!r.placa) return;
+                    const k = r.placa.toUpperCase();
+                    if (!mapa.has(k)) mapa.set(k, {
+                        placa: k,
+                        modelo: r.modelo || '',
+                        cor: r.cor || '',
+                        nome: r.cliente_nome || '',
+                        telefone: r.celular || '',
+                        tipo_veiculo: r.tipo_veiculo || '',
+                        origem: 'Lavagem anterior'
+                    });
+                });
+            } catch (e) { console.warn('Erro buscar lavagens:', e); }
+
+            // 2) Mensalistas (veiculos + clientes_estacionamento)
+            try {
+                const { data: veics } = await supabaseClient
+                    .from('veiculos')
+                    .select('placa, modelo, cor, cliente_id, clientes_estacionamento(nome, telefone)')
+                    .eq('user_id', user.id);
+                (veics || []).forEach(v => {
+                    if (!v.placa) return;
+                    const k = v.placa.toUpperCase();
+                    const cli = v.clientes_estacionamento || {};
+                    if (!mapa.has(k)) {
+                        mapa.set(k, {
+                            placa: k,
+                            modelo: v.modelo || '',
+                            cor: v.cor || '',
+                            nome: cli.nome || '',
+                            telefone: cli.telefone || '',
+                            tipo_veiculo: '',
+                            origem: 'Mensalista'
+                        });
+                    } else {
+                        // Completa dados se faltava nome/telefone
+                        const reg = mapa.get(k);
+                        if (!reg.nome && cli.nome) reg.nome = cli.nome;
+                        if (!reg.telefone && cli.telefone) reg.telefone = cli.telefone;
+                        if (!reg.modelo && v.modelo) reg.modelo = v.modelo;
+                        if (!reg.cor && v.cor) reg.cor = v.cor;
+                        reg.origem = reg.origem + ' + Mensalista';
+                    }
+                });
+            } catch (e) { console.warn('Erro buscar mensalistas:', e); }
+
+            // 3) Avulsos
+            try {
+                const { data: avls } = await supabaseClient
+                    .from('movimentacao_avulso')
+                    .select('placa, modelo, cor, cliente_nome, telefone, tipo_veiculo, data_entrada')
+                    .eq('user_id', user.id)
+                    .order('data_entrada', { ascending: false })
+                    .limit(500);
+                (avls || []).forEach(r => {
+                    if (!r.placa) return;
+                    const k = r.placa.toUpperCase();
+                    if (!mapa.has(k)) {
+                        mapa.set(k, {
+                            placa: k,
+                            modelo: r.modelo || '',
+                            cor: r.cor || '',
+                            nome: r.cliente_nome || '',
+                            telefone: r.telefone || '',
+                            tipo_veiculo: r.tipo_veiculo || '',
+                            origem: 'Avulso'
+                        });
+                    } else {
+                        const reg = mapa.get(k);
+                        if (!reg.modelo && r.modelo) reg.modelo = r.modelo;
+                        if (!reg.cor && r.cor) reg.cor = r.cor;
+                        if (!reg.nome && r.cliente_nome) reg.nome = r.cliente_nome;
+                        if (!reg.telefone && r.telefone) reg.telefone = r.telefone;
+                        if (!reg.tipo_veiculo && r.tipo_veiculo) reg.tipo_veiculo = r.tipo_veiculo;
+                    }
+                });
+            } catch (e) { console.warn('Erro buscar avulsos:', e); }
+
+            _cachePlacasLav = Array.from(mapa.values());
+            _cachePlacasLavTs = agora;
+            return _cachePlacasLav;
+        }
+
+        async function autocompletarPlacaLavagem(valor) {
+            const box = document.getElementById('sugestoesPlacaLavagem');
+            if (!box) return;
+            const termo = (valor || '').toUpperCase().trim();
+            if (termo.length < 1) {
+                box.style.display = 'none';
+                box.innerHTML = '';
+                return;
+            }
+            const lista = await _carregarPlacasLavagem();
+            const filtrados = lista.filter(r =>
+                (r.placa || '').toUpperCase().includes(termo) ||
+                (r.nome || '').toUpperCase().includes(termo)
+            ).slice(0, 8);
+
+            if (filtrados.length === 0) {
+                box.style.display = 'none';
+                box.innerHTML = '';
+                return;
+            }
+
+            const esc = s => String(s || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+            box.innerHTML = filtrados.map(r => {
+                const placa = (r.placa || '').toUpperCase();
+                const nome = r.nome || '';
+                const modelo = r.modelo || '';
+                const cor = r.cor || '';
+                const tel = r.telefone || '';
+                const tipo = r.tipo_veiculo || '';
+                const origem = r.origem || '';
+                const linha2 = [nome, modelo, cor].filter(Boolean).join(' • ');
+                const linha3 = [tel, origem].filter(Boolean).join(' • ');
+                return `
+                    <div style="padding:10px 12px; cursor:pointer; border-bottom:1px solid #eee;"
+                         onmouseover="this.style.background='#f0f0f0'"
+                         onmouseout="this.style.background='#fff'"
+                         onmousedown="event.preventDefault(); selecionarSugestaoPlacaLavagem('${esc(placa)}','${esc(nome)}','${esc(tel)}','${esc(modelo)}','${esc(cor)}','${esc(tipo)}')">
+                        <div style="font-weight:bold; color:#005bea;">${placa}</div>
+                        ${linha2 ? `<div style="font-size:12px; color:#666;">${linha2}</div>` : ''}
+                        ${linha3 ? `<div style="font-size:11px; color:#999;">${linha3}</div>` : ''}
+                    </div>
+                `;
+            }).join('');
+            box.style.display = 'block';
+        }
+
+        function selecionarSugestaoPlacaLavagem(placa, nome, telefone, modelo, cor, tipoVeiculo) {
+            document.getElementById('placaLavagem').value = placa;
+            if (nome) document.getElementById('nomeLavagem').value = nome;
+            if (modelo) document.getElementById('modeloLavagem').value = modelo;
+            if (cor) document.getElementById('corLavagem').value = cor;
+            if (telefone) document.getElementById('celularLavagem').value = telefone;
+            if (tipoVeiculo) {
+                const sel = document.getElementById('tipoVeiculo');
+                if (sel) {
+                    const t = String(tipoVeiculo).toLowerCase();
+                    if (['carro','moto','caminhonete'].includes(t)) sel.value = t;
+                }
+            }
+            const box = document.getElementById('sugestoesPlacaLavagem');
+            if (box) { box.style.display = 'none'; box.innerHTML = ''; }
+        }
+
         // Carregar dados
         async function carregarDados() {
             const user = JSON.parse(localStorage.getItem('currentUser'));
