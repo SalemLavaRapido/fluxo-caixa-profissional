@@ -479,9 +479,9 @@
             <h4 class="mb-4">
                 <i class="fas fa-plus-circle me-2"></i>Registrar Nova Lavagem
             </h4>
-            <form id="formLavagem" class="row g-2">
-                <div class="col" style="position: relative;">
-                    <input type="text" class="form-control form-control-custom" id="placaLavagem" 
+            <form id="formLavagem" class="row g-3">
+                <div class="col-md-3" style="position: relative;">
+                    <input type="text" class="form-control form-control-custom" id="placaLavagem"
                            placeholder="PLACA" maxlength="7" style="text-transform: uppercase;" required
                            autocomplete="off"
                            oninput="autocompletarPlacaLavagem(this.value)"
@@ -489,26 +489,26 @@
                            onblur="setTimeout(()=>{ const el=document.getElementById('sugestoesPlacaLavagem'); if(el) el.style.display='none'; }, 200)">
                     <div id="sugestoesPlacaLavagem" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; color:#000; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.3); z-index:1050; max-height:260px; overflow-y:auto; margin-top:4px;"></div>
                 </div>
-                <div class="col">
-                    <input type="text" class="form-control form-control-custom" id="nomeLavagem" 
+                <div class="col-md-5">
+                    <input type="text" class="form-control form-control-custom" id="nomeLavagem"
                            placeholder="Nome do Cliente">
                 </div>
-                <div class="col">
-                    <input type="text" class="form-control form-control-custom" id="modeloLavagem" 
+                <div class="col-md-4">
+                    <input type="text" class="form-control form-control-custom" id="modeloLavagem"
                            placeholder="Modelo">
                 </div>
-                <div class="col">
-                    <input type="text" class="form-control form-control-custom" id="corLavagem" 
+                <div class="col-md-3">
+                    <input type="text" class="form-control form-control-custom" id="corLavagem"
                            placeholder="Cor">
                 </div>
-                <div class="col">
+                <div class="col-md-3">
                     <select class="form-control form-control-custom" id="tipoVeiculo" title="Tipo de Veículo">
                         <option value="carro">Carro</option>
                         <option value="moto">Moto</option>
                         <option value="caminhonete">Caminhonete</option>
                     </select>
                 </div>
-                <div class="col">
+                <div class="col-md-3">
                     <select class="form-control form-control-custom" id="tipoLavagem">
                         <option value="simples">Simples</option>
                         <option value="completa">Completa</option>
@@ -516,32 +516,30 @@
                         <option value="higienizacao">Higienização</option>
                     </select>
                 </div>
-                <div class="col">
+                <div class="col-md-3">
                     <select class="form-control form-control-custom" id="tipoCliente">
                         <option value="avulso">Avulso</option>
                         <option value="mensalista">Mensalista</option>
                     </select>
                 </div>
-                <div class="col">
-                    <input type="number" class="form-control form-control-custom" id="valorLavagem" 
+                <div class="col-md-3">
+                    <input type="number" class="form-control form-control-custom" id="valorLavagem"
                            placeholder="R$" step="0.01" min="0">
                 </div>
-                <div class="col">
-                    <input type="text" class="form-control form-control-custom" id="celularLavagem" 
+                <div class="col-md-3">
+                    <input type="text" class="form-control form-control-custom" id="celularLavagem"
                            placeholder="Celular">
                 </div>
-                <div class="col-md-2">
-                    <input type="text" class="form-control form-control-custom" id="obsLavagem" 
+                <div class="col-md-3">
+                    <input type="text" class="form-control form-control-custom" id="obsLavagem"
                            placeholder="Observação">
                 </div>
-                <div class="col-auto">
-                    <button type="submit" class="btn btn-registrar">
-                        <i class="fas fa-plus me-2"></i>Adicionar na Fila
+                <div class="col-md-12 text-end">
+                    <button type="submit" class="btn btn-registrar btn-sm" style="padding: 6px 16px; font-size: 0.85rem;">
+                        <i class="fas fa-plus me-1"></i>Adicionar na Fila
                     </button>
-                </div>
-                <div class="col-auto">
-                    <button type="button" class="btn btn-outline-primary" onclick="imprimirReciboLavagem()">
-                        <i class="fas fa-print me-2"></i>Imprimir Recibo
+                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="imprimirReciboLavagem()" style="padding: 6px 16px; font-size: 0.85rem;">
+                        <i class="fas fa-print me-1"></i>Imprimir Recibo
                     </button>
                 </div>
             </form>
