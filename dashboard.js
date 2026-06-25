@@ -27,13 +27,9 @@ class DashboardSystem {
     // Atualizar resumo financeiro
     async atualizarResumo(filtros = {}) {
         try {
-            // Carregar dados
-            await entradasSystem.carregarEntradas(filtros);
-            await saidasSystem.carregarSaidas(filtros);
-
-            // Calcular totais
-            const totalEntradas = entradasSystem.calcularTotal();
-            const totalSaidas = saidasSystem.calcularTotal();
+            // Calcular totais diretamente no banco (muito mais rápido)
+            const totalEntradas = await this.calcularTotalEntradas(filtros);
+            const totalSaidas = await this.calcularTotalSaidas(filtros);
             const saldoFinal = totalEntradas - totalSaidas;
 
             // Calcular percentual de crescimento
@@ -51,6 +47,10 @@ class DashboardSystem {
             if (saldoElement) {
                 saldoElement.className = saldoFinal >= 0 ? 'text-success' : 'text-danger';
             }
+
+            // Carregar dados para tabelas e gráficos (após atualizar cards)
+            await entradasSystem.carregarEntradas(filtros);
+            await saidasSystem.carregarSaidas(filtros);
 
             // Atualizar gráficos
             await this.atualizarGraficos();
@@ -405,6 +405,58 @@ class DashboardSystem {
         if (dataFim) filtros.dataFim = dataFim;
 
         return filtros;
+    }
+
+    // Calcular total de entradas diretamente no banco
+    async calcularTotalEntradas(filtros = {}) {
+        try {
+            let query = supabase
+                .from('entradas')
+                .select('valor', { count: 'exact', head: true })
+                .eq('user_id', authSystem.getCurrentUserId());
+
+            if (filtros.dataInicio) {
+                query = query.gte('data', filtros.dataInicio);
+            }
+            if (filtros.dataFim) {
+                query = query.lte('data', filtros.dataFim);
+            }
+
+            const { data, error } = await query;
+            if (error) throw error;
+
+            // Somar valores no frontend (mais rápido que carregar todos os registros)
+            return data ? data.reduce((sum, item) => sum + parseFloat(item.valor || 0), 0) : 0;
+        } catch (error) {
+            console.error('Erro ao calcular total de entradas:', error);
+            return 0;
+        }
+    }
+
+    // Calcular total de saídas diretamente no banco
+    async calcularTotalSaidas(filtros = {}) {
+        try {
+            let query = supabase
+                .from('saidas')
+                .select('valor', { count: 'exact', head: true })
+                .eq('user_id', authSystem.getCurrentUserId());
+
+            if (filtros.dataInicio) {
+                query = query.gte('data', filtros.dataInicio);
+            }
+            if (filtros.dataFim) {
+                query = query.lte('data', filtros.dataFim);
+            }
+
+            const { data, error } = await query;
+            if (error) throw error;
+
+            // Somar valores no frontend
+            return data ? data.reduce((sum, item) => sum + parseFloat(item.valor || 0), 0) : 0;
+        } catch (error) {
+            console.error('Erro ao calcular total de saídas:', error);
+            return 0;
+        }
     }
 
     // Formatar dinheiro
