@@ -71,10 +71,13 @@ class FluxoCaixaApp {
                 const target = e.target.getAttribute('data-bs-target');
                 
                 if (target === '#entradas') {
+                    entradasSystem.preencherFiltros();
                     await entradasSystem.renderizarTabela();
                 } else if (target === '#saidas') {
+                    saidasSystem.preencherFiltros();
                     await saidasSystem.renderizarTabela();
                 } else if (target === '#relatorios') {
+                    saidasSystem.preencherFiltros();
                     await dashboardSystem.atualizarGraficos();
                     await dashboardSystem.criarGraficoMensal();
                 }
