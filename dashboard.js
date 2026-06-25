@@ -455,6 +455,8 @@ class DashboardSystem {
             if (filtros.categoriaSaidas) {
                 query = query.eq('categoria', filtros.categoriaSaidas);
             }
+            // Somar apenas saídas PAGAS (inclui registros antigos sem status)
+            query = query.or('status.eq.paga,status.is.null');
 
             const { data, error } = await query;
             if (error) throw error;
