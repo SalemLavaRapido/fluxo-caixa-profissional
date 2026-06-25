@@ -2139,7 +2139,10 @@
 
         // Excluir cliente
         async function excluirCliente(clienteId, nome) {
-            if (!confirm(`Tem certeza que deseja excluir o cliente "${nome}"?\n\nIsso também excluirá todos os veículos e lavagens associados.`)) {
+            const cliente = clientes.find(c => c.id === clienteId);
+            const jaEstaInativo = cliente && cliente.status === 'inativo';
+
+            if (!confirm(`Tem certeza que deseja excluir o cliente "${nome}"?\n\n${jaEstaInativo ? 'Isso excluirá permanentemente o cliente e seus dados.' : 'Isso desativará o cliente e excluirá todos os veículos e lavagens associados.'}`)) {
                 return;
             }
 
@@ -2147,41 +2150,54 @@
             if (!user) return;
 
             try {
-                // Buscar veículos do cliente
-                const veiculosCliente = veiculos.filter(v => v.cliente_id === clienteId);
-                const idsVeiculos = veiculosCliente.map(v => v.id);
-
-                // Excluir lavagens dos veículos
-                if (idsVeiculos.length > 0) {
-                    await supabaseClient
-                        .from('lavagens')
+                // Se já está inativo, excluir permanentemente do banco
+                if (jaEstaInativo) {
+                    const { error } = await supabaseClient
+                        .from('clientes_estacionamento')
                         .delete()
-                        .in('veiculo_id', idsVeiculos);
+                        .eq('id', clienteId)
+                        .eq('user_id', user.id);
+
+                    if (error) {
+                        showAlert('Erro ao excluir cliente: ' + error.message, 'danger');
+                        return;
+                    }
+                } else {
+                    // Se está ativo: soft delete + excluir veículos e lavagens
+                    const veiculosCliente = veiculos.filter(v => v.cliente_id === clienteId);
+                    const idsVeiculos = veiculosCliente.map(v => v.id);
+
+                    if (idsVeiculos.length > 0) {
+                        await supabaseClient
+                            .from('lavagens')
+                            .delete()
+                            .in('veiculo_id', idsVeiculos);
+                    }
+
+                    await supabaseClient
+                        .from('veiculos')
+                        .delete()
+                        .eq('cliente_id', clienteId);
+
+                    const { error } = await supabaseClient
+                        .from('clientes_estacionamento')
+                        .update({ status: 'inativo' })
+                        .eq('id', clienteId);
+
+                    if (error) {
+                        showAlert('Erro ao excluir cliente: ' + error.message, 'danger');
+                        return;
+                    }
                 }
 
-                // Excluir veículos
-                await supabaseClient
-                    .from('veiculos')
-                    .delete()
-                    .eq('cliente_id', clienteId);
-
-                // Excluir cliente (soft delete - muda status)
-                const { error } = await supabaseClient
-                    .from('clientes_estacionamento')
-                    .update({ status: 'inativo' })
-                    .eq('id', clienteId);
-
-                if (error) {
-                    showAlert('Erro ao excluir cliente: ' + error.message, 'danger');
-                    return;
-                }
-
-                showAlert(`Cliente "${nome}" excluído!`, 'success');
+                showAlert(`Cliente "${nome}" ${jaEstaInativo ? 'excluído permanentemente' : 'desativado'}!`, 'success');
                 await carregarDados();
-                // Reaplicar busca se houver termo de busca
+                // Reaplicar busca ou renderizar conforme a visão atual
                 const campoBusca = document.getElementById('campoBusca');
                 if (campoBusca && campoBusca.value.trim()) {
                     filtrarClientes();
+                } else {
+                    renderizarClientes();
                 }
 
             } catch (error) {
