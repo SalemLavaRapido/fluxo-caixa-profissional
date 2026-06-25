@@ -8,9 +8,11 @@ class DashboardSystem {
 
     // Inicializar dashboard
     async init() {
+        // Configurar datas do mês atual ANTES de carregar dados
+        this.configurarDatasPadrao();
+        
         await this.atualizarResumo();
         await this.criarGraficoMensal();
-        this.configurarDatasPadrao();
         
         // Carregar contas a pagar
         if (typeof carregarContasPagar === 'function') {
