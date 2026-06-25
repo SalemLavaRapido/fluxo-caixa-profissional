@@ -38,11 +38,8 @@ class FluxoCaixaApp {
             // Mostrar aplicação principal
             authSystem.showMainApp();
 
-            // Inicializar componentes
+            // Inicializar componentes (já carrega dados com filtro do mês atual)
             await this.initComponents();
-
-            // Carregar dados iniciais
-            await this.carregarDadosIniciais();
 
             console.log('Aplicação principal carregada');
 
