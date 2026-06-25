@@ -76,6 +76,7 @@ class FluxoCaixaApp {
                     await saidasSystem.renderizarTabela();
                 } else if (target === '#relatorios') {
                     await dashboardSystem.atualizarGraficos();
+                    await dashboardSystem.criarGraficoMensal();
                 }
             });
         });

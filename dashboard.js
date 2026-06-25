@@ -12,7 +12,8 @@ class DashboardSystem {
         this.configurarDatasPadrao();
         
         await this.atualizarResumo();
-        await this.criarGraficoMensal();
+        // Não criar gráfico mensal na inicialização (carrega 6 meses de dados)
+        // await this.criarGraficoMensal();
         
         // Carregar contas a pagar
         if (typeof carregarContasPagar === 'function') {
