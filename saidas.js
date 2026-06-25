@@ -222,7 +222,8 @@ class SaidasSystem {
     preencherFiltros() {
         const select = document.getElementById('filtroCategoria');
         if (!select) return;
-        if (select.children.length > 1) return;
+        // Sempre preencher com categorias de saídas (sobrescreve categorias de entrada)
+        select.innerHTML = '<option value="">Todas</option>';
 
         this.getCategorias().forEach(cat => {
             const option = document.createElement('option');
@@ -243,6 +244,7 @@ class SaidasSystem {
             { value: 'vigilante', label: 'Vigilante' },
             { value: 'mei', label: 'MEI' },
             { value: 'prefeitura', label: 'Prefeitura' },
+            { value: 'salario', label: 'Salário' },
             { value: 'outros', label: 'Outros' }
         ];
     }
