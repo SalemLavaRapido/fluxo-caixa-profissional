@@ -443,7 +443,7 @@ class DashboardSystem {
         try {
             let query = supabase
                 .from('saidas')
-                .select('valor', { count: 'exact', head: true })
+                .select('*')
                 .eq('user_id', authSystem.getCurrentUserId());
 
             if (filtros.dataInicio) {
