@@ -461,8 +461,9 @@ class DashboardSystem {
             if (filtros.dataFim) {
                 query = query.lte('data', filtros.dataFim);
             }
-            if (filtros.categoria) {
-                query = query.eq('categoria', filtros.categoria);
+            // Usar categoriaSaidas em vez de categoria
+            if (filtros.categoriaSaidas) {
+                query = query.eq('categoria', filtros.categoriaSaidas);
             }
 
             const { data, error } = await query;
