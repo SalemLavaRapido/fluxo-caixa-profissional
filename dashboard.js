@@ -395,14 +395,17 @@ class DashboardSystem {
         }
     }
 
-    // Obter filtros atuais (apenas datas, não categoria para dashboard)
+    // Obter filtros atuais (categoria apenas para saídas)
     obterFiltrosAtuais() {
         const dataInicio = document.getElementById('dataInicio')?.value;
         const dataFim = document.getElementById('dataFim')?.value;
+        const categoria = document.getElementById('filtroCategoria')?.value;
 
         const filtros = {};
         if (dataInicio) filtros.dataInicio = dataInicio;
         if (dataFim) filtros.dataFim = dataFim;
+        // Categoria apenas para saídas, não para entradas
+        if (categoria) filtros.categoriaSaidas = categoria;
 
         return filtros;
     }
@@ -421,9 +424,10 @@ class DashboardSystem {
             if (filtros.dataFim) {
                 query = query.lte('data', filtros.dataFim);
             }
-            if (filtros.categoria) {
-                query = query.eq('categoria', filtros.categoria);
-            }
+            // NÃO aplicar filtro de categoria às entradas - apenas para saídas
+            // if (filtros.categoria) {
+            //     query = query.eq('categoria', filtros.categoria);
+            // }
 
             const { data, error } = await query;
             if (error) throw error;
