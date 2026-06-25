@@ -11,13 +11,16 @@ class DashboardSystem {
         // Configurar datas do mês atual ANTES de carregar dados
         this.configurarDatasPadrao();
         
-        await this.atualizarResumo();
+        // Obter filtros do mês atual
+        const filtros = this.obterFiltrosAtuais();
+        
+        await this.atualizarResumo(filtros);
         // Não criar gráfico mensal na inicialização (carrega 6 meses de dados)
         // await this.criarGraficoMensal();
         
         // Carregar contas a pagar
         if (typeof carregarContasPagar === 'function') {
-            await carregarContasPagar();
+            await carregarContasPagar(filtros);
         }
     }
 
@@ -390,6 +393,18 @@ class DashboardSystem {
         if (dataFim) {
             dataFim.value = ultimoDia.toISOString().split('T')[0];
         }
+    }
+
+    // Obter filtros atuais
+    obterFiltrosAtuais() {
+        const dataInicio = document.getElementById('dataInicio')?.value;
+        const dataFim = document.getElementById('dataFim')?.value;
+
+        const filtros = {};
+        if (dataInicio) filtros.dataInicio = dataInicio;
+        if (dataFim) filtros.dataFim = dataFim;
+
+        return filtros;
     }
 
     // Formatar dinheiro
