@@ -395,16 +395,14 @@ class DashboardSystem {
         }
     }
 
-    // Obter filtros atuais
+    // Obter filtros atuais (apenas datas, não categoria para dashboard)
     obterFiltrosAtuais() {
         const dataInicio = document.getElementById('dataInicio')?.value;
         const dataFim = document.getElementById('dataFim')?.value;
-        const categoria = document.getElementById('filtroCategoria')?.value;
 
         const filtros = {};
         if (dataInicio) filtros.dataInicio = dataInicio;
         if (dataFim) filtros.dataFim = dataFim;
-        if (categoria) filtros.categoria = categoria;
 
         return filtros;
     }
