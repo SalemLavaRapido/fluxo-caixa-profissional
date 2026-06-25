@@ -517,25 +517,32 @@
 
         <!-- Stats Cards -->
         <div class="row mb-4">
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <div class="stats-card fade-in">
                     <i class="fas fa-users fa-2x mb-2" style="color: #667eea;"></i>
                     <div class="stats-number" id="totalClientes">0</div>
                     <div>Clientes Ativos</div>
                 </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <div class="stats-card fade-in">
                     <i class="fas fa-car fa-2x mb-2" style="color: #38ef7d;"></i>
                     <div class="stats-number" id="totalVeiculos">0</div>
                     <div>Veículos Cadastrados</div>
                 </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <div class="stats-card fade-in">
                     <i class="fas fa-dollar-sign fa-2x mb-2" style="color: #4facfe;"></i>
                     <div class="stats-number" id="faturamentoMensal">R$ 0</div>
                     <div>Faturamento Mensal</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card fade-in" id="cardInativos" onclick="toggleInativos()" style="cursor: pointer;" title="Clique para ver os clientes inativos">
+                    <i class="fas fa-user-slash fa-2x mb-2" style="color: #f5576c;"></i>
+                    <div class="stats-number" id="totalInativos">0</div>
+                    <div>Clientes Inativos</div>
                 </div>
             </div>
         </div>
@@ -802,6 +809,15 @@
         let veiculos = [];
         let lavagens = [];
         let pagamentos = [];
+        let mostrarInativos = false; // controla se a lista mostra inativos ou ativos
+
+        // Helpers de filtro por status
+        function clientesAtivos() {
+            return clientes.filter(c => (c.status || 'ativo') === 'ativo');
+        }
+        function clientesInativos() {
+            return clientes.filter(c => c.status === 'inativo');
+        }
         let filtroAtual = '';
         let historicoClienteAtual = { id: null, nome: null }; // Para reabrir modal após exclusão
 
@@ -885,12 +901,11 @@
 
             console.log('%c[MENSALISTAS v2] carregarDados iniciado', 'color:#0f0;font-weight:bold');
             try {
-                // Carregar clientes
+                // Carregar clientes (TODOS - ativos e inativos; o filtro é feito no frontend)
                 const { data: clientesData, error: clientesError } = await supabaseClient
                     .from('clientes_estacionamento')
                     .select('*')
                     .eq('user_id', user.id)
-                    .eq('status', 'ativo')
                     .order('nome');
 
                 if (clientesError) throw clientesError;
@@ -1042,11 +1057,20 @@
         // Renderizar lista de clientes (aceita lista opcional para usar em buscas)
         function renderizarClientes(lista) {
             const container = document.getElementById('listaClientes');
-            const fonte = Array.isArray(lista) ? lista : clientes;
+            // Sem lista explícita: mostra inativos ou ativos conforme o estado atual
+            const fonte = Array.isArray(lista)
+                ? lista
+                : (mostrarInativos ? clientesInativos() : clientesAtivos());
             
             if (fonte.length === 0) {
                 if (!Array.isArray(lista)) {
-                    container.innerHTML = `
+                    container.innerHTML = mostrarInativos ? `
+                        <div class="text-center py-5">
+                            <i class="fas fa-user-slash fa-3x mb-3 text-muted"></i>
+                            <h5 class="text-muted">Nenhum cliente inativo</h5>
+                            <p class="text-muted">Todos os seus clientes estão ativos</p>
+                        </div>
+                    ` : `
                         <div class="text-center py-5">
                             <i class="fas fa-users fa-3x mb-3 text-muted"></i>
                             <h5 class="text-muted">Nenhum cliente cadastrado</h5>
@@ -1093,6 +1117,15 @@
                                 <button class="btn btn-success btn-sm me-2" onclick="abrirWhatsApp('${cliente.telefone}', 'Olá ${cliente.nome}!')" title="Chamar no WhatsApp">
                                     <i class="fab fa-whatsapp"></i>
                                 </button>
+                                ${cliente.status === 'inativo' ? `
+                                <button class="btn btn-outline-success btn-sm me-2" onclick="alternarStatusCliente('${cliente.id}', 'ativo', '${cliente.nome.replace(/'/g, "\\'")}')" title="Ativar Cliente">
+                                    <i class="fas fa-toggle-on"></i>
+                                </button>
+                                ` : `
+                                <button class="btn btn-outline-secondary btn-sm me-2" onclick="alternarStatusCliente('${cliente.id}', 'inativo', '${cliente.nome.replace(/'/g, "\\'")}')" title="Desativar Cliente">
+                                    <i class="fas fa-toggle-off"></i>
+                                </button>
+                                `}
                                 <button class="btn btn-outline-warning btn-sm me-2" onclick="abrirModalEditarCliente('${cliente.id}')">
                                     <i class="fas fa-edit"></i>
                                 </button>
@@ -1188,7 +1221,9 @@
                 return;
             }
             
-            const clientesFiltrados = clientes.filter(cliente => {
+            // Buscar apenas dentro da visão atual (ativos ou inativos)
+            const base = mostrarInativos ? clientesInativos() : clientesAtivos();
+            const clientesFiltrados = base.filter(cliente => {
                 // Buscar por nome
                 const nomeMatch = cliente.nome.toLowerCase().includes(termoBusca);
                 
@@ -1201,8 +1236,12 @@
                 return nomeMatch || placaMatch;
             });
             
-            // Usar a mesma renderização completa, com todos os botões funcionais
-            renderizarClientes(clientesFiltrados);
+            // Se encontrou apenas um cliente, mostrar o card completo
+            if (clientesFiltrados.length === 1) {
+                renderizarClienteCompleto(clientesFiltrados[0]);
+            } else {
+                renderizarClientesFiltrados(clientesFiltrados);
+            }
         }
 
         // Renderizar card completo de um único cliente encontrado na busca
@@ -1428,15 +1467,67 @@
             }
         }
 
-        // Atualizar estatísticas
+        // Atualizar estatísticas (somente clientes ATIVOS nos cards principais)
         function atualizarStats() {
-            document.getElementById('totalClientes').textContent = clientes.length;
-            
-            // Total de veículos cadastrados
-            document.getElementById('totalVeiculos').textContent = veiculos.length;
-            
-            const faturamentoMensal = clientes.reduce((sum, c) => sum + (c.valor_mensal || 0), 0);
+            const ativos = clientesAtivos();
+            const inativos = clientesInativos();
+            const idsAtivos = new Set(ativos.map(c => c.id));
+
+            document.getElementById('totalClientes').textContent = ativos.length;
+
+            // Total de veículos cadastrados - apenas de clientes ativos
+            document.getElementById('totalVeiculos').textContent =
+                veiculos.filter(v => idsAtivos.has(v.cliente_id)).length;
+
+            // Faturamento mensal - apenas de clientes ativos
+            const faturamentoMensal = ativos.reduce((sum, c) => sum + (c.valor_mensal || 0), 0);
             document.getElementById('faturamentoMensal').textContent = `R$ ${faturamentoMensal.toFixed(0)}`;
+
+            // Card de clientes inativos
+            const inativosEl = document.getElementById('totalInativos');
+            if (inativosEl) inativosEl.textContent = inativos.length;
+        }
+
+        // Alternar entre a visão de clientes ativos e inativos (card clicável)
+        function toggleInativos() {
+            mostrarInativos = !mostrarInativos;
+
+            // Destaque visual no card de inativos quando a visão está ativa
+            const card = document.getElementById('cardInativos');
+            if (card) {
+                card.style.outline = mostrarInativos ? '3px solid #f5576c' : '';
+            }
+
+            // Limpar busca ao trocar de visão
+            const campoBusca = document.getElementById('campoBusca');
+            if (campoBusca) campoBusca.value = '';
+
+            renderizarClientes();
+        }
+
+        // Ativar / Desativar cliente (apenas muda o status, mantém os veículos)
+        async function alternarStatusCliente(clienteId, novoStatus, nome) {
+            const user = JSON.parse(localStorage.getItem('currentUser'));
+            if (!user) return;
+
+            try {
+                const { error } = await supabaseClient
+                    .from('clientes_estacionamento')
+                    .update({ status: novoStatus })
+                    .eq('id', clienteId)
+                    .eq('user_id', user.id);
+
+                if (error) {
+                    showAlert('Erro ao alterar status: ' + error.message, 'danger');
+                    return;
+                }
+
+                showAlert(`Cliente "${nome}" ${novoStatus === 'ativo' ? 'ativado' : 'desativado'} com sucesso!`, 'success');
+                await carregarDados();
+            } catch (error) {
+                console.error('Erro ao alterar status do cliente:', error);
+                showAlert('Erro ao alterar status do cliente', 'danger');
+            }
         }
 
         // Atualizar status de pagamento do cliente
@@ -1486,7 +1577,7 @@
             
             const alertas = [];
             
-            clientes.forEach(cliente => {
+            clientesAtivos().forEach(cliente => {
                 // Verificar se cliente já pagou no mês atual
                 const mesAtualStr1 = `${anoAtual}-${String(mesAtual + 1).padStart(2, '0')}`;
                 const mesAtualStr2 = `${String(mesAtual + 1).padStart(2, '0')}/${anoAtual}`;
