@@ -413,6 +413,9 @@ class DashboardSystem {
     // Calcular total de entradas diretamente no banco
     async calcularTotalEntradas(filtros = {}) {
         try {
+            console.log('=== calcularTotalEntradas ===');
+            console.log('Filtros recebidos:', filtros);
+            
             let query = supabase
                 .from('entradas')
                 .select('valor', { count: 'exact', head: true })
@@ -430,10 +433,14 @@ class DashboardSystem {
             // }
 
             const { data, error } = await query;
+            console.log('Resultado da query:', { data, error });
+            
             if (error) throw error;
 
             // Somar valores no frontend (mais rápido que carregar todos os registros)
-            return data ? data.reduce((sum, item) => sum + parseFloat(item.valor || 0), 0) : 0;
+            const total = data ? data.reduce((sum, item) => sum + parseFloat(item.valor || 0), 0) : 0;
+            console.log('Total calculado:', total);
+            return total;
         } catch (error) {
             console.error('Erro ao calcular total de entradas:', error);
             return 0;
