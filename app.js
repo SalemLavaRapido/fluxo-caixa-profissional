@@ -136,15 +136,16 @@ class FluxoCaixaApp {
     // Carregar dados iniciais
     async carregarDadosIniciais() {
         try {
-            // Carregar dados sem filtros
-            await this.carregarTodosDados();
+            // Carregar dados com filtros do mês atual
+            const filtros = this.obterFiltrosAtuais();
+            await this.carregarTodosDados(filtros);
 
             // Renderizar tabelas
             await entradasSystem.renderizarTabela();
             await saidasSystem.renderizarTabela();
 
             // Atualizar dashboard
-            await dashboardSystem.atualizarResumo();
+            await dashboardSystem.atualizarResumo(filtros);
 
         } catch (error) {
             console.error('Erro ao carregar dados iniciais:', error);
@@ -311,6 +312,18 @@ function exportarTodosDados() {
 function verificarStatus() {
     return app.verificarStatus();
 }
+
+// Auto-atualizar dados a cada 15 segundos (sincroniza PC <-> Mobile)
+// Pula se houver modal aberto ou se algum input estiver com foco (digitando)
+setInterval(() => {
+    if (!authSystem.isLoggedIn()) return;
+    // Não atualiza se modal aberto
+    if (document.querySelector('.modal.show')) return;
+    // Não atualiza se usuário está digitando em algum campo
+    const ativo = document.activeElement;
+    if (ativo && (ativo.tagName === 'INPUT' || ativo.tagName === 'TEXTAREA' || ativo.tagName === 'SELECT')) return;
+    app.atualizarDados();
+}, 15 * 1000);
 
 // Exportar para uso em outros módulos
 window.app = app;
