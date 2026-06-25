@@ -399,10 +399,12 @@ class DashboardSystem {
     obterFiltrosAtuais() {
         const dataInicio = document.getElementById('dataInicio')?.value;
         const dataFim = document.getElementById('dataFim')?.value;
+        const categoria = document.getElementById('filtroCategoria')?.value;
 
         const filtros = {};
         if (dataInicio) filtros.dataInicio = dataInicio;
         if (dataFim) filtros.dataFim = dataFim;
+        if (categoria) filtros.categoria = categoria;
 
         return filtros;
     }
@@ -420,6 +422,9 @@ class DashboardSystem {
             }
             if (filtros.dataFim) {
                 query = query.lte('data', filtros.dataFim);
+            }
+            if (filtros.categoria) {
+                query = query.eq('categoria', filtros.categoria);
             }
 
             const { data, error } = await query;
@@ -446,6 +451,9 @@ class DashboardSystem {
             }
             if (filtros.dataFim) {
                 query = query.lte('data', filtros.dataFim);
+            }
+            if (filtros.categoria) {
+                query = query.eq('categoria', filtros.categoria);
             }
 
             const { data, error } = await query;
