@@ -413,12 +413,9 @@ class DashboardSystem {
     // Calcular total de entradas diretamente no banco
     async calcularTotalEntradas(filtros = {}) {
         try {
-            console.log('=== calcularTotalEntradas ===');
-            console.log('Filtros recebidos:', filtros);
-            
             let query = supabase
                 .from('entradas')
-                .select('valor', { count: 'exact', head: true })
+                .select('valor')
                 .eq('user_id', authSystem.getCurrentUserId());
 
             if (filtros.dataInicio) {
@@ -428,19 +425,12 @@ class DashboardSystem {
                 query = query.lte('data', filtros.dataFim);
             }
             // NÃO aplicar filtro de categoria às entradas - apenas para saídas
-            // if (filtros.categoria) {
-            //     query = query.eq('categoria', filtros.categoria);
-            // }
 
             const { data, error } = await query;
-            console.log('Resultado da query:', { data, error });
-            
             if (error) throw error;
 
-            // Somar valores no frontend (mais rápido que carregar todos os registros)
-            const total = data ? data.reduce((sum, item) => sum + parseFloat(item.valor || 0), 0) : 0;
-            console.log('Total calculado:', total);
-            return total;
+            // Somar valores no frontend
+            return data ? data.reduce((sum, item) => sum + parseFloat(item.valor || 0), 0) : 0;
         } catch (error) {
             console.error('Erro ao calcular total de entradas:', error);
             return 0;
