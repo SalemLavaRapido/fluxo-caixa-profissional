@@ -803,6 +803,8 @@
         document.addEventListener('DOMContentLoaded', function() {
             inicializarData();
             verificarConfiguracao();
+            atualizarDashboard();
+            atualizarEstatisticas();
         });
 
         // Configurar data atual
@@ -1228,80 +1230,110 @@
 
         // Atualizar dashboard
         function atualizarDashboard() {
-            const estacionamentoCarros = dados.entradas
-                .filter(e => e.servico === 'estacionamento' && e.tipo_veiculo === 'carro')
-                .reduce((sum, e) => sum + e.valor, 0);
-            
-            const estacionamentoMotos = dados.entradas
-                .filter(e => e.servico === 'estacionamento' && e.tipo_veiculo === 'moto')
-                .reduce((sum, e) => sum + e.valor, 0);
-            
-            const lavaSimples = dados.entradas
-                .filter(e => e.servico === 'lava_rapido' && e.tipo_lavagem === 'simples')
-                .reduce((sum, e) => sum + e.valor, 0);
-            
-            const lavaCompleto = dados.entradas
-                .filter(e => e.servico === 'lava_rapido' && e.tipo_lavagem === 'completo')
-                .reduce((sum, e) => sum + e.valor, 0);
-            
-            const totalEstacionamento = estacionamentoCarros + estacionamentoMotos;
-            const totalLavaRapido = lavaSimples + lavaCompleto;
-            const totalEntradas = totalEstacionamento + totalLavaRapido;
-            const totalDespesas = dados.despesas.reduce((sum, d) => sum + d.valor, 0);
-            const lucroLiquido = totalEntradas - totalDespesas;
-            
-            document.getElementById('totalDia').textContent = formatarDinheiro(totalEntradas);
-            document.getElementById('totalEstacionamento').textContent = formatarDinheiro(totalEstacionamento);
-            document.getElementById('totalLavaRapido').textContent = formatarDinheiro(totalLavaRapido);
-            document.getElementById('totalDespesas').textContent = formatarDinheiro(totalDespesas);
-            document.getElementById('lucroLiquido').textContent = formatarDinheiro(lucroLiquido);
-            
-            // Atualizar relatório
-            document.getElementById('relatorioTotalEntradas').textContent = formatarDinheiro(totalEntradas);
-            document.getElementById('relatorioTotalDespesas').textContent = formatarDinheiro(totalDespesas);
-            document.getElementById('relatorioLucro').textContent = formatarDinheiro(lucroLiquido);
+            try {
+                const estacionamentoCarros = dados.entradas
+                    .filter(e => e.servico === 'estacionamento' && e.tipo_veiculo === 'carro')
+                    .reduce((sum, e) => sum + (e.valor || 0), 0);
+                
+                const estacionamentoMotos = dados.entradas
+                    .filter(e => e.servico === 'estacionamento' && e.tipo_veiculo === 'moto')
+                    .reduce((sum, e) => sum + (e.valor || 0), 0);
+                
+                const lavaSimples = dados.entradas
+                    .filter(e => e.servico === 'lava_rapido' && e.tipo_lavagem === 'simples')
+                    .reduce((sum, e) => sum + (e.valor || 0), 0);
+                
+                const lavaCompleto = dados.entradas
+                    .filter(e => e.servico === 'lava_rapido' && e.tipo_lavagem === 'completo')
+                    .reduce((sum, e) => sum + (e.valor || 0), 0);
+                
+                const totalEstacionamento = estacionamentoCarros + estacionamentoMotos;
+                const totalLavaRapido = lavaSimples + lavaCompleto;
+                const totalEntradas = totalEstacionamento + totalLavaRapido;
+                const totalDespesas = dados.despesas.reduce((sum, d) => sum + (d.valor || 0), 0);
+                const lucroLiquido = totalEntradas - totalDespesas;
+                
+                const totalDiaEl = document.getElementById('totalDia');
+                const totalEstacionamentoEl = document.getElementById('totalEstacionamento');
+                const totalLavaRapidoEl = document.getElementById('totalLavaRapido');
+                const totalDespesasEl = document.getElementById('totalDespesas');
+                const lucroLiquidoEl = document.getElementById('lucroLiquido');
+                
+                if (totalDiaEl) totalDiaEl.textContent = formatarDinheiro(totalEntradas);
+                if (totalEstacionamentoEl) totalEstacionamentoEl.textContent = formatarDinheiro(totalEstacionamento);
+                if (totalLavaRapidoEl) totalLavaRapidoEl.textContent = formatarDinheiro(totalLavaRapido);
+                if (totalDespesasEl) totalDespesasEl.textContent = formatarDinheiro(totalDespesas);
+                if (lucroLiquidoEl) lucroLiquidoEl.textContent = formatarDinheiro(lucroLiquido);
+                
+                // Atualizar relatório
+                const relatorioTotalEntradasEl = document.getElementById('relatorioTotalEntradas');
+                const relatorioTotalDespesasEl = document.getElementById('relatorioTotalDespesas');
+                const relatorioLucroEl = document.getElementById('relatorioLucro');
+                
+                if (relatorioTotalEntradasEl) relatorioTotalEntradasEl.textContent = formatarDinheiro(totalEntradas);
+                if (relatorioTotalDespesasEl) relatorioTotalDespesasEl.textContent = formatarDinheiro(totalDespesas);
+                if (relatorioLucroEl) relatorioLucroEl.textContent = formatarDinheiro(lucroLiquido);
+            } catch (error) {
+                console.error('Erro ao atualizar dashboard:', error);
+            }
         }
 
         // Atualizar estatísticas
         function atualizarEstatisticas() {
-            const carros = dados.entradas.filter(e => e.servico === 'estacionamento' && e.tipo_veiculo === 'carro');
-            const motos = dados.entradas.filter(e => e.servico === 'estacionamento' && e.tipo_veiculo === 'moto');
-            const lavaSimples = dados.entradas.filter(e => e.servico === 'lava_rapido' && e.tipo_lavagem === 'simples');
-            const lavaCompleto = dados.entradas.filter(e => e.servico === 'lava_rapido' && e.tipo_lavagem === 'completo');
-            
-            const totalEntradas = dados.entradas.reduce((sum, e) => sum + e.valor, 0);
-            const ticketMedio = dados.entradas.length > 0 ? totalEntradas / dados.entradas.length : 0;
-            
-            // Encontrar serviço mais popular
-            const servicos = {};
-            dados.entradas.forEach(e => {
-                const key = e.servico === 'estacionamento' ? 
-                    (e.tipo_veiculo === 'carro' ? 'Est. Carros' : 'Est. Motos') :
-                    (e.tipo_lavagem === 'simples' ? 'Lava Simples' : 'Lava Completo');
-                servicos[key] = (servicos[key] || 0) + 1;
-            });
-            
-            const servicoMaisPopular = Object.keys(servicos).reduce((a, b) => 
-                servicos[a] > servicos[b] ? a : b, '-');
-            
-            // Atualizar contadores
-            document.getElementById('statTotalCarros').textContent = carros.length;
-            document.getElementById('statTotalMotos').textContent = motos.length;
-            document.getElementById('statTotalLavaSimples').textContent = lavaSimples.length;
-            document.getElementById('statTotalLavaCompleto').textContent = lavaCompleto.length;
-            document.getElementById('statTicketMedio').textContent = formatarDinheiro(ticketMedio);
-            document.getElementById('statServicoMaisPopular').textContent = servicoMaisPopular;
-            
-            // Atualizar faturamento
-            const fatCarros = carros.reduce((sum, e) => sum + e.valor, 0);
-            const fatMotos = motos.reduce((sum, e) => sum + e.valor, 0);
-            const fatLavaSimples = lavaSimples.reduce((sum, e) => sum + e.valor, 0);
-            const fatLavaCompleto = lavaCompleto.reduce((sum, e) => sum + e.valor, 0);
-            
-            document.getElementById('fatCarros').textContent = formatarDinheiro(fatCarros);
-            document.getElementById('fatMotos').textContent = formatarDinheiro(fatMotos);
-            document.getElementById('fatLavaSimples').textContent = formatarDinheiro(fatLavaSimples);
-            document.getElementById('fatLavaCompleto').textContent = formatarDinheiro(fatLavaCompleto);
+            try {
+                const carros = dados.entradas.filter(e => e.servico === 'estacionamento' && e.tipo_veiculo === 'carro');
+                const motos = dados.entradas.filter(e => e.servico === 'estacionamento' && e.tipo_veiculo === 'moto');
+                const lavaSimples = dados.entradas.filter(e => e.servico === 'lava_rapido' && e.tipo_lavagem === 'simples');
+                const lavaCompleto = dados.entradas.filter(e => e.servico === 'lava_rapido' && e.tipo_lavagem === 'completo');
+                
+                const totalEntradas = dados.entradas.reduce((sum, e) => sum + (e.valor || 0), 0);
+                const ticketMedio = dados.entradas.length > 0 ? totalEntradas / dados.entradas.length : 0;
+                
+                // Encontrar serviço mais popular
+                const servicos = {};
+                dados.entradas.forEach(e => {
+                    const key = e.servico === 'estacionamento' ? 
+                        (e.tipo_veiculo === 'carro' ? 'Est. Carros' : 'Est. Motos') :
+                        (e.tipo_lavagem === 'simples' ? 'Lava Simples' : 'Lava Completo');
+                    servicos[key] = (servicos[key] || 0) + 1;
+                });
+                
+                const servicoMaisPopular = Object.keys(servicos).length > 0 ? 
+                    Object.keys(servicos).reduce((a, b) => servicos[a] > servicos[b] ? a : b) : '-';
+                
+                // Atualizar contadores
+                const statTotalCarrosEl = document.getElementById('statTotalCarros');
+                const statTotalMotosEl = document.getElementById('statTotalMotos');
+                const statTotalLavaSimplesEl = document.getElementById('statTotalLavaSimples');
+                const statTotalLavaCompletoEl = document.getElementById('statTotalLavaCompleto');
+                const statTicketMedioEl = document.getElementById('statTicketMedio');
+                const statServicoMaisPopularEl = document.getElementById('statServicoMaisPopular');
+                
+                if (statTotalCarrosEl) statTotalCarrosEl.textContent = carros.length;
+                if (statTotalMotosEl) statTotalMotosEl.textContent = motos.length;
+                if (statTotalLavaSimplesEl) statTotalLavaSimplesEl.textContent = lavaSimples.length;
+                if (statTotalLavaCompletoEl) statTotalLavaCompletoEl.textContent = lavaCompleto.length;
+                if (statTicketMedioEl) statTicketMedioEl.textContent = formatarDinheiro(ticketMedio);
+                if (statServicoMaisPopularEl) statServicoMaisPopularEl.textContent = servicoMaisPopular;
+                
+                // Atualizar faturamento
+                const fatCarros = carros.reduce((sum, e) => sum + (e.valor || 0), 0);
+                const fatMotos = motos.reduce((sum, e) => sum + (e.valor || 0), 0);
+                const fatLavaSimples = lavaSimples.reduce((sum, e) => sum + (e.valor || 0), 0);
+                const fatLavaCompleto = lavaCompleto.reduce((sum, e) => sum + (e.valor || 0), 0);
+                
+                const fatCarrosEl = document.getElementById('fatCarros');
+                const fatMotosEl = document.getElementById('fatMotos');
+                const fatLavaSimplesEl = document.getElementById('fatLavaSimples');
+                const fatLavaCompletoEl = document.getElementById('fatLavaCompleto');
+                
+                if (fatCarrosEl) fatCarrosEl.textContent = formatarDinheiro(fatCarros);
+                if (fatMotosEl) fatMotosEl.textContent = formatarDinheiro(fatMotos);
+                if (fatLavaSimplesEl) fatLavaSimplesEl.textContent = formatarDinheiro(fatLavaSimples);
+                if (fatLavaCompletoEl) fatLavaCompletoEl.textContent = formatarDinheiro(fatLavaCompleto);
+            } catch (error) {
+                console.error('Erro ao atualizar estatísticas:', error);
+            }
         }
 
         // Renderizar entradas
