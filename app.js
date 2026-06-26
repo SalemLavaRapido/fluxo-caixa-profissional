@@ -51,6 +51,18 @@ class FluxoCaixaApp {
 
     // Inicializar componentes
     async initComponents() {
+        // Garantir que a sessão do Supabase foi restaurada ANTES de carregar os dados.
+        // A RLS exige auth.role() = 'authenticated'. Sem aguardar a sessão, a 1ª consulta
+        // rodava sem autenticação e retornava vazio, e os dados só apareciam quando o
+        // timer de 15s disparava (~16s de atraso).
+        try {
+            if (typeof supabase !== 'undefined' && supabase.auth && supabase.auth.getSession) {
+                await supabase.auth.getSession();
+            }
+        } catch (e) {
+            console.warn('Falha ao restaurar sessão do Supabase:', e);
+        }
+
         // Preencher filtros
         entradasSystem.preencherFiltros();
         saidasSystem.preencherFiltros();
