@@ -424,7 +424,10 @@ class DashboardSystem {
             if (filtros.dataFim) {
                 query = query.lte('data', filtros.dataFim);
             }
-            // NÃO aplicar filtro de categoria às entradas - apenas para saídas
+            // Aplicar filtro de categoria às entradas
+            if (filtros.categoria) {
+                query = query.eq('categoria', filtros.categoria);
+            }
 
             const { data, error } = await query;
             if (error) throw error;

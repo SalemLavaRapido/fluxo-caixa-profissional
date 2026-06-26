@@ -162,6 +162,17 @@ class FluxoCaixaApp {
             const filtros = this.obterFiltrosAtuais();
             await this.carregarTodosDados(filtros);
 
+            // Preencher filtros baseado na aba ativa
+            const activeTab = document.querySelector('.tab-pane.active');
+            if (activeTab && activeTab.id === 'entradas') {
+                entradasSystem.preencherFiltros();
+            } else if (activeTab && activeTab.id === 'saidas') {
+                saidasSystem.preencherFiltros();
+            } else {
+                // Se não identificar a aba, usa entrada (padrão)
+                entradasSystem.preencherFiltros();
+            }
+
             // Renderizar tabelas
             await entradasSystem.renderizarTabela();
             await saidasSystem.renderizarTabela();
