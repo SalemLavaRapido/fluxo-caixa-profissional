@@ -17,10 +17,11 @@ class EntradasSystem {
                 .select('*')
                 .eq('user_id', authSystem.getCurrentUserId())
                 .order('data', { ascending: false })
-                .order('created_at', { ascending: false })
-                .limit(100); // Limite reduzido para melhorar performance
+                .order('created_at', { ascending: false });
 
             // Aplicar filtros
+            const temFiltros = filtros.dataInicio || filtros.dataFim || filtros.categoria;
+
             if (filtros.dataInicio) {
                 query = query.gte('data', filtros.dataInicio);
             }
@@ -29,6 +30,12 @@ class EntradasSystem {
             }
             if (filtros.categoria) {
                 query = query.eq('categoria', filtros.categoria);
+            }
+
+            // Aplicar limite apenas quando não há filtros (para performance inicial)
+            // Quando há filtros, mostrar todos os registros para não perder dados
+            if (!temFiltros) {
+                query = query.limit(100);
             }
 
             const { data, error } = await query;
