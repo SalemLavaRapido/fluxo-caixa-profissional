@@ -1916,33 +1916,28 @@
                     ultimaLavagemPorPlaca[placa] = l;
                 }
             });
-            
-            // Verificar veículos de mensalistas
-            veiculosMensalistas.forEach(veiculo => {
-                const placa = veiculo.placa?.toUpperCase();
-                if (!placa) return;
-                
-                const cliente = clientes.find(c => c.id === veiculo.cliente_id);
-                if (!cliente) return;
-                
+
+            // Verificar TODAS as placas que têm lavagem registrada (mensalistas e avulsos)
+            Object.keys(ultimaLavagemPorPlaca).forEach(placa => {
                 const ultimaLavagem = ultimaLavagemPorPlaca[placa];
-                let diasSemLavar = 999;
-                
-                if (ultimaLavagem) {
-                    const dataUltimaLavagem = new Date(ultimaLavagem.data_lavagem);
-                    diasSemLavar = Math.floor((hoje - dataUltimaLavagem) / (1000 * 60 * 60 * 24));
-                }
-                
+                const dataUltimaLavagem = new Date(ultimaLavagem.data_lavagem);
+                const diasSemLavar = Math.floor((hoje - dataUltimaLavagem) / (1000 * 60 * 60 * 24));
+
                 // Alertar se mais de 30 dias sem lavar
                 if (diasSemLavar > 30) {
+                    // Verificar se é mensalista para pegar dados adicionais
+                    const veiculoMensalista = veiculosMensalistas.find(v => v.placa?.toUpperCase() === placa);
+                    const clienteMensalista = veiculoMensalista ? clientes.find(c => c.id === veiculoMensalista.cliente_id) : null;
+
                     alertas.push({
                         placa: placa,
-                        modelo: veiculo.modelo || '-',
-                        cor: veiculo.cor || '-',
-                        cliente: cliente.nome,
-                        telefone: cliente.telefone,
+                        modelo: veiculoMensalista?.modelo || ultimaLavagem.modelo || '-',
+                        cor: veiculoMensalista?.cor || ultimaLavagem.cor || '-',
+                        cliente: clienteMensalista?.nome || ultimaLavagem.cliente_nome || '-',
+                        telefone: clienteMensalista?.telefone || ultimaLavagem.celular || '-',
+                        tipoCliente: veiculoMensalista ? 'Mensalista' : 'Avulso',
                         diasSemLavar: diasSemLavar,
-                        ultimaLavagem: ultimaLavagem ? new Date(ultimaLavagem.data_lavagem).toLocaleDateString('pt-BR') : 'Nunca'
+                        ultimaLavagem: new Date(ultimaLavagem.data_lavagem).toLocaleDateString('pt-BR')
                     });
                 }
             });
@@ -1971,6 +1966,7 @@
                         <div>
                             <strong style="font-size: 1.1em;">${a.placa}</strong>
                             <span class="badge-dias-sem-lavar ms-2">${a.diasSemLavar === 999 ? 'Nunca lavou' : a.diasSemLavar + ' dias'}</span>
+                            <span class="badge ${a.tipoCliente === 'Mensalista' ? 'badge-mensalista' : 'badge-avulso'} ms-2">${a.tipoCliente}</span>
                             <br>
                             <small>${a.modelo} - ${a.cor} | Cliente: ${a.cliente}</small>
                             <br>
