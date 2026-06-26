@@ -222,7 +222,9 @@ class FluxoCaixaApp {
         const filtros = {};
         if (dataInicio) filtros.dataInicio = dataInicio;
         if (dataFim) filtros.dataFim = dataFim;
-        // Categoria apenas para saídas, não para entradas
+        // Categoria para entradas (usada por carregarEntradas)
+        if (categoria) filtros.categoria = categoria;
+        // Categoria para saídas (usada por carregarSaidas)
         if (categoria) filtros.categoriaSaidas = categoria;
 
         return filtros;
