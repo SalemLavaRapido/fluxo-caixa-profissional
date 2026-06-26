@@ -8,6 +8,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         :root {
             --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -1627,24 +1628,42 @@
             const inicioSemana = new Date(hoje);
             inicioSemana.setDate(hoje.getDate() - hoje.getDay());
             const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-            
-            // Lavagens hoje
-            const lavagensHoje = lavagens.filter(l => new Date(l.data_lavagem) >= inicioHoje);
-            document.getElementById('lavagensHoje').textContent = lavagensHoje.length;
-            
-            // Lavagens semana
-            const lavagensSemana = lavagens.filter(l => new Date(l.data_lavagem) >= inicioSemana);
-            document.getElementById('lavagensSemana').textContent = lavagensSemana.length;
-            
-            // Lavagens mês
-            const lavagensMes = lavagens.filter(l => new Date(l.data_lavagem) >= inicioMes);
-            document.getElementById('lavagensMes').textContent = lavagensMes.length;
-            
-            // Faturamento mês (apenas avulsos)
-            const faturamento = lavagensMes
-                .filter(l => l.tipo_cliente === 'avulso' && l.forma_pagamento !== 'cortesia')
-                .reduce((sum, l) => sum + (l.valor || 0), 0);
-            document.getElementById('faturamentoMes').textContent = `R$ ${faturamento.toFixed(0)}`;
+
+            // Verificar se há filtros aplicados
+            const dataInicio = document.getElementById('filtroDataInicio').value;
+            const dataFim = document.getElementById('filtroDataFim').value;
+            const filtroTipo = document.getElementById('filtroTipo').value;
+
+            let lavagensParaCalcular = lavagens;
+
+            // Se há filtros de data, usar os dados filtrados para cálculo
+            if (dataInicio || dataFim) {
+                // Se há filtros, mostra os totais do período filtrado
+                const totalLavagens = lavagens.length;
+                const faturamentoTotal = lavagens
+                    .filter(l => l.tipo_cliente === 'avulso' && l.forma_pagamento !== 'cortesia')
+                    .reduce((sum, l) => sum + (l.valor || 0), 0);
+
+                document.getElementById('lavagensHoje').textContent = totalLavagens;
+                document.getElementById('lavagensSemana').textContent = totalLavagens;
+                document.getElementById('lavagensMes').textContent = totalLavagens;
+                document.getElementById('faturamentoMes').textContent = `R$ ${faturamentoTotal.toFixed(0)}`;
+            } else {
+                // Sem filtros, usa as datas fixas (hoje, semana, mês)
+                const lavagensHoje = lavagens.filter(l => new Date(l.data_lavagem) >= inicioHoje);
+                document.getElementById('lavagensHoje').textContent = lavagensHoje.length;
+
+                const lavagensSemana = lavagens.filter(l => new Date(l.data_lavagem) >= inicioSemana);
+                document.getElementById('lavagensSemana').textContent = lavagensSemana.length;
+
+                const lavagensMes = lavagens.filter(l => new Date(l.data_lavagem) >= inicioMes);
+                document.getElementById('lavagensMes').textContent = lavagensMes.length;
+
+                const faturamento = lavagensMes
+                    .filter(l => l.tipo_cliente === 'avulso' && l.forma_pagamento !== 'cortesia')
+                    .reduce((sum, l) => sum + (l.valor || 0), 0);
+                document.getElementById('faturamentoMes').textContent = `R$ ${faturamento.toFixed(0)}`;
+            }
         }
         
         // Formatar tipo de lavagem
@@ -1915,7 +1934,7 @@
             window.open(url, '_blank');
         }
         
-        // Reimprimir recibo de uma lavagem já realizada (a partir do ID)
+        // Reimprimir recibo de uma lavagem já realizada (a partir do ID) - usando jsPDF para funcionar no celular
         function reimprimirReciboLavagem(id) {
             const l = lavagens.find(x => x.id === id);
             if (!l) {
@@ -1943,84 +1962,75 @@
                 'cartao_debito': 'Cartão Débito'
             };
 
-            const reciboContent = `
-                <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 400px; margin: 0 auto;">
-                    <div style="text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px;">
-                        <h2 style="margin: 0; color: #333;">RECIBO DE LAVAGEM</h2>
-                        <p style="margin: 5px 0; color: #666;">Salém Lava Rápido</p>
-                    </div>
+            // Criar PDF usando jsPDF
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: [58, 100]  // 58mm de largura (tamanho cupom térmico)
+            });
 
-                    <div style="margin-bottom: 20px;">
-                        <p style="margin: 5px 0;"><strong>Data:</strong> ${dataAtual} - ${horaAtual}</p>
-                        <p style="margin: 5px 0;"><strong>Placa:</strong> ${(l.placa || '').toUpperCase()}</p>
-                        <p style="margin: 5px 0;"><strong>Veículo:</strong> ${l.modelo || '-'} ${l.cor || ''}</p>
-                        <p style="margin: 5px 0;"><strong>Tipo:</strong> ${tiposLavagem[l.tipo_lavagem] || l.tipo_lavagem || '-'}</p>
-                        <p style="margin: 5px 0;"><strong>Cliente:</strong> ${l.tipo_cliente === 'mensalista' ? 'Mensalista' : 'Avulso'}</p>
-                        ${l.celular ? `<p style="margin: 5px 0;"><strong>Celular:</strong> ${l.celular}</p>` : ''}
-                        ${l.forma_pagamento ? `<p style="margin: 5px 0;"><strong>Pagamento:</strong> ${formasPagto[l.forma_pagamento] || l.forma_pagamento}</p>` : ''}
-                        ${l.observacao ? `<p style="margin: 5px 0;"><strong>Obs:</strong> ${l.observacao}</p>` : ''}
-                    </div>
+            let y = 10;
+            const leftMargin = 4;
+            const maxWidth = 50;
 
-                    <div style="border: 2px solid #333; padding: 15px; margin-bottom: 20px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="font-size: 18px; font-weight: bold;">VALOR:</span>
-                            <span style="font-size: 24px; font-weight: bold; color: #333;">R$ ${parseFloat(l.valor || 0).toFixed(2)}</span>
-                        </div>
-                    </div>
+            // Título
+            pdf.setFontSize(12);
+            pdf.setFont('helvetica', 'bold');
+            pdf.text('RECIBO DE LAVAGEM', leftMargin, y);
+            y += 6;
+            pdf.setFontSize(9);
+            pdf.setFont('helvetica', 'normal');
+            pdf.text('Salém Lava Rápido', leftMargin, y);
+            y += 8;
 
-                    <div style="text-align: center; margin-top: 20px;">
-                        <p style="margin: 0; font-size: 11px;">Obrigado pela preferência!</p>
-                    </div>
-                </div>
-            `;
+            // Linha separadora
+            pdf.line(leftMargin, y, leftMargin + maxWidth, y);
+            y += 5;
 
-            // Detectar PC vs Mobile - mobile mantém comportamento atual
-            const isMobile = window.innerWidth <= 768 || /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
-            const cssPC = isMobile ? '' : `
-                        /* SOBRESCRITA PC/DESKTOP - igual mobile (58mm) + cor preta forte */
-                        @media print {
-                            @page { size: 58mm auto !important; margin: 0 !important; }
-                            html, body { width: 58mm !important; max-width: 58mm !important; margin: 0 !important; padding: 1mm !important; }
-                            body > div { max-width: 58mm !important; padding: 1mm !important; margin: 0 !important; }
-                            * {
-                                color: #000 !important;
-                                -webkit-print-color-adjust: exact !important;
-                                print-color-adjust: exact !important;
-                                color-adjust: exact !important;
-                                font-weight: bold !important;
-                                word-wrap: break-word !important;
-                                overflow-wrap: break-word !important;
-                                font-size: 11px !important;
-                            }
-                            h2 { font-size: 13px !important; }
-                        }`;
+            // Data e hora
+            pdf.setFontSize(8);
+            pdf.text(`Data: ${dataAtual} - ${horaAtual}`, leftMargin, y);
+            y += 4;
+            pdf.text(`Placa: ${(l.placa || '').toUpperCase()}`, leftMargin, y);
+            y += 4;
+            pdf.text(`Veículo: ${l.modelo || '-'} ${l.cor || ''}`, leftMargin, y);
+            y += 4;
+            pdf.text(`Tipo: ${tiposLavagem[l.tipo_lavagem] || l.tipo_lavagem || '-'}`, leftMargin, y);
+            y += 4;
+            pdf.text(`Cliente: ${l.tipo_cliente === 'mensalista' ? 'Mensalista' : 'Avulso'}`, leftMargin, y);
+            y += 4;
+            if (l.celular) {
+                pdf.text(`Celular: ${l.celular}`, leftMargin, y);
+                y += 4;
+            }
+            if (l.forma_pagamento) {
+                pdf.text(`Pagamento: ${formasPagto[l.forma_pagamento] || l.forma_pagamento}`, leftMargin, y);
+                y += 4;
+            }
+            if (l.observacao) {
+                pdf.text(`Obs: ${l.observacao}`, leftMargin, y);
+                y += 4;
+            }
 
-            const printWindow = window.open('', '_blank');
-            printWindow.document.write(`
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>Recibo de Lavagem - ${(l.placa || '').toUpperCase()}</title>
-                    <style>
-                        @media print {
-                            body { margin: 0; }
-                            @page { margin: 10mm; }
-                        }
-                        ${cssPC}
-                    </style>
-                </head>
-                <body>
-                    ${reciboContent}
-                    <scr` + `ipt>
-                        window.onload = function() {
-                            window.print();
-                            window.close();
-                        }
-                    </scr` + `ipt>
-                </body>
-                </html>
-            `);
-            printWindow.document.close();
+            // Linha separadora
+            y += 2;
+            pdf.line(leftMargin, y, leftMargin + maxWidth, y);
+            y += 5;
+
+            // Valor
+            pdf.setFontSize(10);
+            pdf.setFont('helvetica', 'bold');
+            pdf.text(`VALOR: R$ ${parseFloat(l.valor || 0).toFixed(2)}`, leftMargin, y);
+            y += 8;
+
+            // Rodapé
+            pdf.setFontSize(7);
+            pdf.setFont('helvetica', 'normal');
+            pdf.text('Obrigado pela preferência!', leftMargin, y);
+
+            // Salvar PDF
+            pdf.save(`recibo-lavagem-${(l.placa || '').toUpperCase()}.pdf`);
         }
 
         // Imprimir recibo de lavagem
