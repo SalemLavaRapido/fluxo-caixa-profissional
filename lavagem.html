@@ -598,6 +598,11 @@
                         <i class="fas fa-list me-2"></i>Lavagens Realizadas
                         <span class="badge bg-primary ms-2" id="totalLavagens">0</span>
                     </h5>
+                    <div class="mb-3">
+                        <input type="text" class="form-control form-control-custom" id="buscaLavagens"
+                               placeholder="Buscar por placa ou nome..."
+                               oninput="filtrarLavagensBusca(this.value)">
+                    </div>
                     <div class="table-responsive table-lavagens">
                         <table class="table mb-0">
                             <thead>
@@ -1306,6 +1311,75 @@
         // Aplicar filtros
         function aplicarFiltros() {
             carregarDados();
+        }
+        
+        // Filtrar lavagens por busca (placa ou nome)
+        function filtrarLavagensBusca(termo) {
+            const termoBusca = termo.trim().toLowerCase();
+            
+            if (!termoBusca) {
+                renderizarLavagens();
+                return;
+            }
+            
+            const lavagensFiltradas = lavagens.filter(l => {
+                const placa = (l.placa || '').toLowerCase();
+                const nome = (l.cliente_nome || '').toLowerCase();
+                return placa.includes(termoBusca) || nome.includes(termoBusca);
+            });
+            
+            const tbody = document.getElementById('tabelaLavagens');
+            const total = document.getElementById('totalLavagens');
+            
+            total.textContent = lavagensFiltradas.length;
+            
+            if (lavagensFiltradas.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="11" class="empty-state">
+                            <i class="fas fa-car-wash"></i>
+                            <p>Nenhuma lavagem encontrada</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = lavagensFiltradas.map(l => `
+                <tr>
+                    <td><span class="placa-badge">${l.placa}</span></td>
+                    <td>${l.cliente_nome || '-'}</td>
+                    <td>${l.modelo || '-'}</td>
+                    <td>${l.cor || '-'}</td>
+                    <td>
+                        <span class="badge-tipo ${l.tipo_cliente === 'mensalista' ? 'badge-mensalista' : 'badge-avulso'}">
+                            ${l.tipo_cliente === 'mensalista' ? 'Mensalista' : 'Avulso'}
+                        </span>
+                    </td>
+                    <td>${formatarTipoLavagem(l.tipo_lavagem)}</td>
+                    <td>${formatarDataHora(l.data_lavagem)}</td>
+                    <td><strong>R$ ${(l.valor || 0).toFixed(2)}</strong></td>
+                    <td>${formatarFormaPagamento(l.forma_pagamento)}</td>
+                    <td>
+                        ${l.celular ? `
+                            <button class="btn btn-success btn-sm" onclick="abrirWhatsApp('${l.celular}', 'Olá!')" title="WhatsApp">
+                                <i class="fab fa-whatsapp"></i>
+                            </button>
+                        ` : '-'}
+                    </td>
+                    <td>
+                        <button class="btn btn-info btn-sm me-1" onclick="reimprimirReciboLavagem('${l.id}')" title="Imprimir Recibo">
+                            <i class="fas fa-print"></i>
+                        </button>
+                        <button class="btn btn-warning btn-sm me-1" onclick="abrirModalEditarLavagem('${l.id}')" title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-danger btn-sm" onclick="excluirLavagem('${l.id}', '${l.placa}')" title="Excluir">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
         }
         
         // Renderizar tabela de lavagens
