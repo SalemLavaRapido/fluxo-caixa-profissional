@@ -176,9 +176,19 @@ class EntradasSystem {
         // Aplicar filtro de busca por placa/descrição/categoria (se houver)
         const inputBusca = document.getElementById('buscarPlacaEntrada');
         const termo = inputBusca ? inputBusca.value.trim().toLowerCase() : '';
+        const filtroCategoria = document.getElementById('filtroCategoria');
+        const categoriaSelecionada = filtroCategoria ? filtroCategoria.value : '';
+
         let lista = this.entradas;
+
+        // Aplicar filtro de categoria do dropdown
+        if (categoriaSelecionada) {
+            lista = lista.filter(e => e.categoria === categoriaSelecionada);
+        }
+
+        // Aplicar filtro de busca por texto
         if (termo) {
-            lista = this.entradas.filter(e => {
+            lista = lista.filter(e => {
                 const placa = (e.placa || '').toLowerCase();
                 const desc = (e.descricao || '').toLowerCase();
                 const cat = this.formatarCategoria(e.categoria).toLowerCase();
