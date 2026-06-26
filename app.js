@@ -55,8 +55,13 @@ class FluxoCaixaApp {
         entradasSystem.preencherFiltros();
         saidasSystem.preencherFiltros();
 
-        // Inicializar dashboard
-        await dashboardSystem.init();
+        // Configurar datas do mês atual antes de carregar os dados
+        dashboardSystem.configurarDatasPadrao();
+
+        // Carregar e renderizar TODOS os dados imediatamente (entradas, saídas e dashboard)
+        // Antes só chamava dashboardSystem.init(), que não renderizava a tabela de entradas,
+        // fazendo as entradas só aparecerem quando o timer de 15s disparava (~16s de atraso).
+        await this.carregarDadosIniciais();
 
         // Configurar event listeners
         this.setupEventListeners();
