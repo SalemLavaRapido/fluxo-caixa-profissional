@@ -18,7 +18,7 @@ class EntradasSystem {
                 .eq('user_id', authSystem.getCurrentUserId())
                 .order('data', { ascending: false })
                 .order('created_at', { ascending: false })
-                .limit(500); // Limite para melhorar performance
+                .limit(100); // Limite reduzido para melhorar performance
 
             // Aplicar filtros
             if (filtros.dataInicio) {

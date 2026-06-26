@@ -48,9 +48,9 @@ class DashboardSystem {
                 saldoElement.className = saldoFinal >= 0 ? 'text-success' : 'text-danger';
             }
 
-            // Carregar dados para tabelas e gráficos (após atualizar cards)
-            await entradasSystem.carregarEntradas(filtros);
-            await saidasSystem.carregarSaidas(filtros);
+            // Dados já são carregados em outro lugar - removido para evitar duplicação
+            // await entradasSystem.carregarEntradas(filtros);
+            // await saidasSystem.carregarSaidas(filtros);
 
             // Atualizar gráficos
             await this.atualizarGraficos();
