@@ -63,9 +63,13 @@ class FluxoCaixaApp {
             console.warn('Falha ao restaurar sessão do Supabase:', e);
         }
 
-        // Preencher filtros
-        entradasSystem.preencherFiltros();
+        // Preencher filtros.
+        // A aba "Entradas" é a ativa por padrão e o evento shown.bs.tab NÃO dispara
+        // para a aba já ativa no carregamento. Por isso preenchemos com as categorias
+        // de ENTRADA por último, para o dropdown corresponder à aba ativa e permitir
+        // filtrar as entradas por categoria já ao abrir a página.
         saidasSystem.preencherFiltros();
+        entradasSystem.preencherFiltros();
 
         // Configurar datas do mês atual antes de carregar os dados
         dashboardSystem.configurarDatasPadrao();
