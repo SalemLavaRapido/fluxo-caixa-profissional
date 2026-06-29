@@ -1291,6 +1291,15 @@
                             <button class="btn btn-success btn-sm me-2" onclick="abrirWhatsApp('${cliente.telefone}', 'Olá ${cliente.nome}!')" title="Chamar no WhatsApp">
                                 <i class="fab fa-whatsapp"></i>
                             </button>
+                            ${cliente.status === 'inativo' ? `
+                            <button class="btn btn-outline-success btn-sm me-2" onclick="alternarStatusCliente('${cliente.id}', 'ativo', '${cliente.nome.replace(/'/g, "\\'")}')" title="Ativar Cliente">
+                                <i class="fas fa-toggle-on"></i>
+                            </button>
+                            ` : `
+                            <button class="btn btn-outline-secondary btn-sm me-2" onclick="alternarStatusCliente('${cliente.id}', 'inativo', '${cliente.nome.replace(/'/g, "\\'")}')" title="Desativar Cliente">
+                                <i class="fas fa-toggle-off"></i>
+                            </button>
+                            `}
                             <button class="btn btn-outline-warning btn-sm me-2" onclick="abrirModalEditarCliente('${cliente.id}')">
                                 <i class="fas fa-edit"></i>
                             </button>
