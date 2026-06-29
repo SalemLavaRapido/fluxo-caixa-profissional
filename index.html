@@ -560,6 +560,18 @@
             </div>
         </nav>
 
+        <!-- Alerta de Contas a Vencer Hoje -->
+        <div id="alertaContasVencer" class="alert alert-warning alert-dismissible fade show" style="display: none; margin: 0; border-radius: 0;">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-exclamation-triangle me-2 fa-lg"></i>
+                <div>
+                    <strong><i class="fas fa-bell me-1"></i>Contas a Vencer Hoje:</strong>
+                    <span id="listaContasVencer"></span>
+                </div>
+            </div>
+            <button type="button" class="btn-close" onclick="fecharAlertaContas()"></button>
+        </div>
+
         <!-- Header -->
         <div class="header">
             <div class="user-info">
@@ -1688,6 +1700,7 @@
                     clearInterval(tryLoad);
                     carregarContasPagar();
                     carregarPreferenciaValores();
+                    verificarContasVencerHoje(); // Verificar contas a vencer hoje
                 }
             }, 500);
             // Para de tentar após 30s
@@ -1744,6 +1757,57 @@
                     }, { onConflict: 'user_id' });
             } catch (e) {
                 console.error('Erro ao salvar preferência:', e);
+            }
+        }
+
+        // ========== ALERTA DE CONTAS A VENCER HOJE ==========
+        async function verificarContasVencerHoje() {
+            try {
+                const userStr = localStorage.getItem('currentUser');
+                if (!userStr) return;
+                const user = JSON.parse(userStr);
+
+                // Obter data atual no formato YYYY-MM-DD
+                const hoje = new Date();
+                const hojeFormatado = hoje.toISOString().split('T')[0];
+
+                // Buscar contas a pagar que vencem hoje (status='pendente')
+                const { data, error } = await supabase
+                    .from('saidas')
+                    .select('*')
+                    .eq('user_id', user.id)
+                    .eq('status', 'pendente')
+                    .eq('data', hojeFormatado);
+
+                if (error) {
+                    console.error('Erro ao buscar contas a vencer:', error);
+                    return;
+                }
+
+                const contasVencerHoje = data || [];
+
+                if (contasVencerHoje.length > 0) {
+                    const alerta = document.getElementById('alertaContasVencer');
+                    const lista = document.getElementById('listaContasVencer');
+
+                    // Formatar lista de contas
+                    const listaHTML = contasVencerHoje.map(conta => {
+                        const valor = parseFloat(conta.valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                        return `<div class="mt-1"><small>${conta.descricao} - ${valor}</small></div>`;
+                    }).join('');
+
+                    lista.innerHTML = listaHTML;
+                    alerta.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Erro ao verificar contas a vencer:', error);
+            }
+        }
+
+        function fecharAlertaContas() {
+            const alerta = document.getElementById('alertaContasVencer');
+            if (alerta) {
+                alerta.style.display = 'none';
             }
         }
     </script>
