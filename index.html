@@ -333,8 +333,9 @@
             }
 
             .btn-action {
-                padding: 6px 10px;
-                font-size: 12px;
+                padding: 8px 12px;
+                font-size: 13px;
+                min-height: 36px;
             }
         }
 
@@ -372,8 +373,14 @@
             }
 
             .stat-card, .chart-wrapper {
-                padding: 12px !important;
+                padding: 16px !important;
                 margin-bottom: 12px !important;
+            }
+            .stat-card h3, .stat-card .stats-number {
+                font-size: 1.3rem !important;
+            }
+            .stat-card .stats-label {
+                font-size: 0.9rem !important;
             }
 
             input.form-control, select.form-control, textarea.form-control,
@@ -384,8 +391,8 @@
             .btn { font-size: 0.85rem; }
             .btn-sm { font-size: 0.75rem; }
 
-            .navbar-brand { font-size: 0.95rem !important; }
-            .navbar-nav .nav-link { font-size: 0.9rem; padding: 8px !important; }
+            .navbar-brand { font-size: 1rem !important; }
+            .navbar-nav .nav-link { font-size: 0.9rem; padding: 10px 12px !important; min-height: 44px; display: flex; align-items: center; }
 
             h1, .h1 { font-size: 1.5rem !important; }
             h2, .h2 { font-size: 1.3rem !important; }
@@ -393,7 +400,7 @@
             h4, .h4 { font-size: 1rem !important; }
             h5, .h5 { font-size: 0.95rem !important; }
 
-            table { font-size: 0.8rem; }
+            table { font-size: 0.85rem; }
             .table-responsive,
             .table-custom.table-responsive {
                 overflow-x: auto !important;
@@ -402,9 +409,12 @@
             }
             .table-custom { overflow-x: auto !important; }
             .main-container { overflow-x: hidden; }
-            .table-responsive table { min-width: 600px; }
-            /* Garantir que badges/botões dentro da tabela não quebrem */
-            .table td, .table th { white-space: nowrap; }
+            .table-responsive table { min-width: 100%; }
+            /* Permitir quebra de texto em células para evitar cortes */
+            .table td, .table th { white-space: normal; word-wrap: break-word; }
+            /* Manter nowrap apenas em badges e botões */
+            .table td .badge, .table th .badge,
+            .table td .btn, .table th .btn { white-space: nowrap; }
 
             .modal-dialog {
                 margin: 10px auto !important;
