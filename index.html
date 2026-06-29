@@ -308,23 +308,6 @@
             justify-content: center;
         }
 
-        /* Reduzir espaçamento entre colunas da tabela de entradas */
-        #entradas table th:nth-child(3),
-        #entradas table td:nth-child(3) {
-            width: 100px;
-            min-width: 100px;
-        }
-        #entradas table th:nth-child(4),
-        #entradas table td:nth-child(4) {
-            width: 120px;
-            min-width: 120px;
-        }
-        #entradas table th:nth-child(5),
-        #entradas table td:nth-child(5) {
-            width: 130px;
-            min-width: 130px;
-        }
-
         @media (max-width: 768px) {
             .main-container {
                 margin: 10px;
@@ -432,6 +415,23 @@
             /* Manter nowrap apenas em badges e botões */
             .table td .badge, .table th .badge,
             .table td .btn, .table th .btn { white-space: nowrap; }
+
+            /* Reduzir espaçamento entre colunas da tabela de entradas no mobile */
+            #entradas table th:nth-child(3),
+            #entradas table td:nth-child(3) {
+                width: 90px;
+                min-width: 90px;
+            }
+            #entradas table th:nth-child(4),
+            #entradas table td:nth-child(4) {
+                width: 110px;
+                min-width: 110px;
+            }
+            #entradas table th:nth-child(5),
+            #entradas table td:nth-child(5) {
+                width: 120px;
+                min-width: 120px;
+            }
 
             .modal-dialog {
                 margin: 10px auto !important;
