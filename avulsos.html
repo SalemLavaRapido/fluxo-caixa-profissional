@@ -1603,25 +1603,32 @@
         async function carregarHistorico() {
             const user = JSON.parse(localStorage.getItem('currentUser'));
             if (!user) return;
-            
+
             const dataInicio = document.getElementById('filtroDataInicio').value;
             const dataFim = document.getElementById('filtroDataFim').value;
-            
+
             let query = supabaseClient
                 .from('movimentacao_avulso')
                 .select('*')
                 .eq('user_id', user.id)
                 .eq('status', 'finalizado')
                 .order('data_saida', { ascending: false });
-            
+
             if (dataInicio) {
                 query = query.gte('data_saida', dataInicio + 'T00:00:00');
             }
             if (dataFim) {
                 query = query.lte('data_saida', dataFim + 'T23:59:59');
             }
-            
-            const { data, error } = await query.limit(100);
+
+            // Aplicar limite apenas quando não há filtros de data (para performance inicial)
+            // Quando há filtros, mostrar todos os registros para não perder dados
+            const temFiltrosData = dataInicio || dataFim;
+            if (!temFiltrosData) {
+                query = query.limit(100);
+            }
+
+            const { data, error } = await query;
             
             if (error) {
                 console.error('Erro ao carregar histórico:', error);
@@ -1637,13 +1644,35 @@
         function filtrarHistorico() {
             const filtroNome = document.getElementById('filtroNome').value.toLowerCase().trim();
             const filtroPlaca = document.getElementById('filtroPlaca').value.toUpperCase().trim();
-            
+            const filtroDataInicio = document.getElementById('filtroDataInicio').value;
+            const filtroDataFim = document.getElementById('filtroDataFim').value;
+
             historicoFiltrado = historicoEstadias.filter(h => {
                 const matchNome = !filtroNome || (h.cliente_nome && h.cliente_nome.toLowerCase().includes(filtroNome));
                 const matchPlaca = !filtroPlaca || (h.placa && h.placa.includes(filtroPlaca));
-                return matchNome && matchPlaca;
+
+                // Filtro de data (usa data_entrada ou data_saida)
+                let matchData = true;
+                if (filtroDataInicio || filtroDataFim) {
+                    const dataRegistro = h.data_saida || h.data_entrada;
+                    if (!dataRegistro) {
+                        matchData = false;
+                    } else {
+                        const dataRegistroObj = new Date(dataRegistro);
+                        if (filtroDataInicio) {
+                            const dataInicioObj = new Date(filtroDataInicio + 'T00:00:00');
+                            matchData = matchData && dataRegistroObj >= dataInicioObj;
+                        }
+                        if (filtroDataFim) {
+                            const dataFimObj = new Date(filtroDataFim + 'T23:59:59');
+                            matchData = matchData && dataRegistroObj <= dataFimObj;
+                        }
+                    }
+                }
+
+                return matchNome && matchPlaca && matchData;
             });
-            
+
             renderizarHistorico();
         }
         
