@@ -308,6 +308,23 @@
             justify-content: center;
         }
 
+        /* Reduzir espaçamento entre colunas da tabela de entradas */
+        #entradas table th:nth-child(3),
+        #entradas table td:nth-child(3) {
+            width: 120px;
+            min-width: 120px;
+        }
+        #entradas table th:nth-child(4),
+        #entradas table td:nth-child(4) {
+            width: 150px;
+            min-width: 150px;
+        }
+        #entradas table th:nth-child(5),
+        #entradas table td:nth-child(5) {
+            width: 140px;
+            min-width: 140px;
+        }
+
         @media (max-width: 768px) {
             .main-container {
                 margin: 10px;
@@ -368,8 +385,8 @@
             }
 
             .container, .container-fluid {
-                padding-left: 10px !important;
-                padding-right: 10px !important;
+                padding-left: 5px !important;
+                padding-right: 5px !important;
             }
 
             .stat-card, .chart-wrapper {
